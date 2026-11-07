@@ -1,0 +1,24 @@
+{
+  "name": "Flappy Flame Arcade",
+  "short_name": "Flappy Flame",
+  "description": "Arcade dragon flappy game featuring epic fires, knights, and Khaleesi powerups!",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0b0b1a",
+  "theme_color": "#0b0b1a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
