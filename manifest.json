@@ -34,14 +34,21 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Khaleesi Powerup Boost"
+      "label": "Fire breathing action"
     },
     {
       "src": "screenshot3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Fire Breathing Action"
+      "label": "Find your Khaleesi"
+    },
+       {
+      "src": "screenshot3.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Khaleesi Crush!"
     }
    
   ]
