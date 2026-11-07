@@ -8,6 +8,11 @@
   "background_color": "#0b0b1a",
   "theme_color": "#0b0b1a",
   "orientation": "portrait",
+  "categories": [
+    "games",
+    "arcade",
+    "entertainment"
+  ],
   "icons": [
     {
       "src": "icon.png",
