@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Flappy Flame Arcade</title>
+  <title>Flappy Dragon Conqueror</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0b0b1a">
   <style>
     * {
       box-sizing: border-box;
@@ -18,7 +20,7 @@
       height: 100%;
       overflow: hidden;
       background-color: #0b0b1a;
-      font-family: 'Courier New', Courier, monospace;
+      font-family: 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -40,7 +42,9 @@
       display: block;
       width: 100%;
       height: 100%;
+      touch-action: none;
       image-rendering: pixelated;
+      image-rendering: crisp-edges;
     }
     .score-display {
       position: absolute;
@@ -48,7 +52,7 @@
       width: 100%;
       text-align: center;
       font-size: 42px;
-      font-weight: bold;
+      font-weight: 800;
       color: #fff;
       text-shadow: 3px 3px 0px #000, -2px -2px 0px #000;
       pointer-events: none;
@@ -56,72 +60,413 @@
     }
     .hearts-display {
       position: absolute;
-      top: 15px;
+      top: 55px;
       right: 15px;
-      font-size: 24px;
+      font-size: 18px;
       z-index: 20;
       pointer-events: none;
       text-shadow: 2px 2px 0 #000;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
     }
-    .sound-toggle {
+    .level-progress-badge {
       position: absolute;
-      top: 55px;
+      top: 12px;
       right: 15px;
-      background: rgba(0,0,0,0.5);
-      border: 2px solid #fff;
+      width: 150px;
+      height: 28px;
+      background: rgba(0, 0, 0, 0.85);
+      border: 2px solid #f1c40f;
+      border-radius: 8px;
+      overflow: hidden;
+      z-index: 20;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    }
+    .level-progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #e74c3c, #f1c40f, #2ecc71);
+      transition: width 0.1s linear;
+      z-index: 1;
+    }
+    .level-progress-text {
+      position: absolute;
+      top: 0;
+      right: 10px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+      z-index: 2;
+      letter-spacing: 1px;
+    }
+    .bottom-controls-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 0;
+      width: 100%;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      padding: 0 6px;
+      gap: 4px;
+      z-index: 50;
+    }
+    .bottom-controls-bar.flipped {
+      flex-direction: row-reverse;
+    }
+    .action-btn {
+      background: rgba(16, 20, 30, 0.85);
+      border: 2px solid #f1c40f;
       color: #fff;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
+      font-family: 'Proxima Nova', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      font-weight: 700;
+      font-size: 11px;
+      min-height: 52px;
+      padding: 10px 6px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #8e44ad;
+      touch-action: manipulation;
+      white-space: nowrap;
+      flex: 1;
+      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 4px;
+    }
+    .btn-symbol {
+      font-size: 18px;
+      line-height: 1;
+    }
+    .btn-symbol-large {
+      font-family: 'Segoe UI Symbol', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+      font-size: 18px;
+      line-height: 1;
+      font-weight: 900;
+    }
+    .action-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #8e44ad;
+    }
+    .action-btn.active {
+      background: rgba(16, 20, 30, 0.85);
+      border-color: #f1c40f;
+      box-shadow: 0 4px 0 #8e44ad;
+    }
+    .fire-btn {
+      background: #ff0000 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 4px 0 #990000 !important;
+      color: #ffffff !important;
+      text-shadow: 1px 1px 2px #000;
+      flex: 0 0 28% !important;
+      max-width: 28% !important;
+      width: 28% !important;
+    }
+    .fire-btn:active {
+      box-shadow: 0 2px 0 #990000 !important;
+    }
+    .sound-toggle-btn {
+      max-width: 48px;
+      min-width: 44px;
+      height: 52px;
+      padding: 0;
       display: flex;
       justify-content: center;
       align-items: center;
       font-size: 18px;
-      cursor: pointer;
-      z-index: 20;
+      flex: 0 0 auto;
     }
-    .fire-toggle {
+    .modal-overlay {
       position: absolute;
-      bottom: 20px;
-      left: 20px;
-      background: linear-gradient(180deg, #ff9f43 0%, #ee5253 100%);
-      border: 2px solid #fff;
-      color: #fff;
-      border-radius: 8px;
-      padding: 14px 24px;
-      font-size: 18px;
-      font-weight: bold;
-      font-family: inherit;
-      cursor: pointer;
-      z-index: 20;
-      box-shadow: 0 4px 0 #801818;
-      text-shadow: 1px 1px 0 #000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      padding: 20px;
     }
-    .fire-toggle:active {
-      transform: translateY(2px);
-      box-shadow: 0 2px 0 #801818;
+    .modal-box {
+      background: #11161d;
+      border: 3px solid #f1c40f;
+      border-radius: 12px;
+      padding: 20px;
+      width: 95%;
+      max-width: 380px;
+      text-align: center;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
+    }
+    .modal-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #f1c40f;
+      margin-bottom: 12px;
+    }
+    .save-code-box {
+      background: #000;
+      color: #2ecc71;
+      font-size: 24px;
+      letter-spacing: 4px;
+      font-weight: bold;
+      padding: 12px;
+      border: 1px dashed #2ecc71;
+      border-radius: 6px;
+      margin: 14px 0;
+      word-break: break-all;
+      user-select: all;
+      -webkit-user-select: all;
+    }
+    .save-input-box {
+      width: 100%;
+      background: #000;
+      color: #f1c40f;
+      font-size: 18px;
+      letter-spacing: 3px;
+      font-family: inherit;
+      padding: 10px;
+      border: 1px solid #f1c40f;
+      border-radius: 6px;
+      margin: 14px 0;
+      text-align: center;
+      text-transform: uppercase;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    #shareCanvas {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 2px solid #f1c40f;
+      margin-bottom: 12px;
     }
   </style>
 </head>
 <body>
 
+  <!-- Level & Cutscene Audio Tracks -->
+  <audio id="bgMusic" src="battleground_remastered.mp3" loop preload="auto"></audio>
+  <audio id="uiMusic" src="EpicOrchestralFantasy.mp3" loop preload="auto"></audio>
+  <audio id="cutsceneMusic" src="Dark Descent.mp3" loop preload="auto"></audio>
+
+  <!-- Sound Effects Preload -->
+  <audio id="sfxBoost" src="wings_flap_large.flac" preload="auto"></audio>
+  <audio id="sfxFire" src="Fire.aif" preload="auto"></audio>
+  <audio id="sfxRockBreak" src="rock_breaking.flac" preload="auto"></audio>
+  <audio id="sfxArrow" src="swish_3.wav" preload="auto"></audio>
+  <audio id="sfxBoulder" src="cannon_01.ogg" preload="auto"></audio>
+  <audio id="sfxScore" src="score_point.wav" preload="auto"></audio>
+  <audio id="sfxHeart" src="heart_pickup.flac" preload="auto"></audio>
+  <audio id="sfxPowerup" src="powerup_collect.flac" preload="auto"></audio>
+  <audio id="sfxHit" src="dragon_hit.flac" preload="auto"></audio>
+  <audio id="sfxKnightHit" src="knight_hit.flac" preload="auto"></audio>
+
+  <!-- Celebration Audio Elements -->
+  <audio id="sfxFireworks" src="fw_loop.ogg" preload="auto"></audio>
+
+  <!-- Royal Entrance Audio Elements -->
+  <audio id="sfxQueenEntrance" src="lets_go_i_cant_stand_another_minute_here.ogg" preload="auto"></audio>
+  <audio id="sfxKingEntrance" src="ogalaughter_2.ogg" preload="auto"></audio>
+
   <div id="game-container">
     <canvas id="gameCanvas"></canvas>
    
+    <div class="level-progress-badge">
+      <div id="progressBarFill" class="level-progress-fill"></div>
+      <div id="levelBadge" class="level-progress-text">LVL 1</div>
+    </div>
+
     <div id="scoreDisplay" class="score-display">0</div>
-    <div id="heartsDisplay" class="hearts-display">❤️❤️❤️</div>
-    <button id="soundBtn" class="sound-toggle">🔊</button>
-    <button id="fireBtn" class="fire-toggle">🔥 FIRE</button>
+    <div id="heartsDisplay" class="hearts-display">
+      <div id="heartsText">❤️❤️❤️</div>
+      <div id="headsText" style="font-size: 14px; color: #f1c40f; margin-top: 2px;">👑 0</div>
+    </div>
+
+    <div id="bottomControlsBar" class="bottom-controls-bar">
+      <button id="manualFireBtn" class="action-btn fire-btn">FIRE <span class="btn-symbol">🔥</span></button>
+      <button id="toggleFireModeBtn" class="action-btn active">MODE <span class="btn-symbol-large">🔄</span></button>
+      <button id="pauseBtn" class="action-btn">PAUSE <span class="btn-symbol">⏸</span></button>
+      <button id="soundBtn" class="action-btn sound-toggle-btn">🔊</button>
+    </div>
+
+    <div id="pauseModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">SAVE CODE</div>
+        <p style="font-size: 12px; color: #ccc;">Your save code:</p>
+        <div id="saveCodeDisplay" class="save-code-box">-------</div>
+        <div style="display: flex; gap: 8px;">
+          <button id="copyCodeBtn" class="action-btn" style="flex: 1;">COPY CODE</button>
+          <button id="closeSaveModalBtn" class="action-btn" style="flex: 1; background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">RETURN</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="shareModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">SHARE VICTORY POST</div>
+        <canvas id="shareCanvas" width="800" height="800"></canvas>
+        <div style="display: flex; gap: 8px;">
+          <button id="downloadShareBtn" class="action-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">DOWNLOAD PHOTO</button>
+          <button id="closeShareModalBtn" class="action-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="loadModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">LOAD GAME</div>
+        <p style="font-size: 12px; color: #ccc;">Enter save code:</p>
+        <input type="text" id="loadCodeInput" class="save-input-box" maxlength="7" placeholder="XXXXXXX">
+        <div style="display: flex; gap: 8px;">
+          <button id="cancelLoadBtn" class="action-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;">CANCEL</button>
+          <button id="confirmLoadBtn" class="action-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">LOAD</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script>
+<script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+
+    function createFallbackCanvas(width, height, color, label) {
+      const c = document.createElement('canvas');
+      c.width = width;
+      c.height = height;
+      const x = c.getContext('2d');
+      x.fillStyle = color;
+      x.fillRect(0, 0, width, height);
+      x.fillStyle = '#ffffff';
+      x.font = 'bold 12px sans-serif';
+      x.textAlign = 'center';
+      x.fillText(label, width / 2, height / 2);
+      const img = new Image();
+      img.src = c.toDataURL();
+      return img;
+    }
+
+    const bgMusicAudio = document.getElementById('bgMusic');
+    const uiMusicAudio = document.getElementById('uiMusic');
+    const cutsceneMusicAudio = document.getElementById('cutsceneMusic');
+
+    const sfxBoost = document.getElementById('sfxBoost');
+    const sfxFire = document.getElementById('sfxFire');
+    const sfxRockBreak = document.getElementById('sfxRockBreak');
+    const sfxArrow = document.getElementById('sfxArrow');
+    const sfxBoulder = document.getElementById('sfxBoulder');
+    const sfxScore = document.getElementById('sfxScore');
+    const sfxHeart = document.getElementById('sfxHeart');
+    const sfxPowerup = document.getElementById('sfxPowerup');
+    const sfxHit = document.getElementById('sfxHit');
+    const sfxKnightHit = document.getElementById('sfxKnightHit');
+    const sfxQueenEntrance = document.getElementById('sfxQueenEntrance');
+    const sfxKingEntrance = document.getElementById('sfxKingEntrance');
+    const sfxFireworks = document.getElementById('sfxFireworks');
+
+    bgMusicAudio.volume = 0.25;
+    uiMusicAudio.volume = 0.25;
+    cutsceneMusicAudio.volume = 0.25;
+
+    const khaleesiFrame1 = new Image(); khaleesiFrame1.src = './khaleesi1.png';
+    const khaleesiFrame2 = new Image(); khaleesiFrame2.src = './khaleesi2.png';
+    const kingFrame1 = new Image(); kingFrame1.src = './king1.png';
+    const kingFrame2 = new Image(); kingFrame2.src = './king2.png';
+    const queenFrame1 = new Image(); queenFrame1.src = './queen1.png';
+    const queenFrame2 = new Image(); queenFrame2.src = './queen2.png';
+    const kheadImg = new Image(); kheadImg.src = './khead.png';
+    const qheadImg = new Image(); qheadImg.src = './qhead.png';
+
+    const kingFallback1 = createFallbackCanvas(160, 160, '#2c3e50', 'KING 1');
+    const kingFallback2 = createFallbackCanvas(160, 160, '#34495e', 'KING 2');
+    const queenFallback1 = createFallbackCanvas(160, 160, '#8e44ad', 'QUEEN 1');
+    const queenFallback2 = createFallbackCanvas(160, 160, '#9b59b6', 'QUEEN 2');
+    const kheadFallback = createFallbackCanvas(160, 160, '#d35400', 'KING HEAD');
+    const qheadFallback = createFallbackCanvas(160, 160, '#c0392b', 'QUEEN HEAD');
+
+    const fullStoryText = [
+      '"My beloved Syraxx, I have been',
+      'captured by the slavers. Burn',
+      'their castle to the ground and',
+      'find me. You are my heart',
+      'and soul. BREAK THE WHEEL!"'
+    ];
+    let totalCharCount = fullStoryText.join('\n').length;
+    let typedCharIndex = 0;
+    let textTypingComplete = false;
+
+    let khaleesiBannerTimer = 0;
+    let khaleesiBannerText = "";
+
+    let currentLevel = 1;
+    let levelTimerSeconds = 0;
+    const LEVEL_DURATIONS = {
+      1: 90,
+      2: 180,
+      3: 300
+    };
+
+    let level2KhaleesiSpawned = false;
+    let level2RoyalSpawned = false;
+
+    let celebrationTimer = 0;
+    let celebrationAngle = 0;
+    let celebrationFadeAlpha = 0;
+
+    const gameStats = {
+      burnedTowers: 0,
+      villagersKilled: 0,
+      archersKilled: 0,
+      trebuchetsDestroyed: 0,
+      kingsBeheaded: 0,
+      queensBeheaded: 0,
+      khaleesiRescues: 0
+    };
+
+    function showKhaleesiBanner(text, duration = 200) {
+      khaleesiBannerText = text;
+      khaleesiBannerTimer = duration;
+    }
+
+    function updateLevelBadgeUI() {
+      const progressBarFill = document.getElementById('progressBarFill');
+      if (currentLevel > 3) {
+        levelBadge.innerText = 'VICTORY!';
+        if (progressBarFill) progressBarFill.style.width = '100%';
+        return;
+      }
+      levelBadge.innerText = `LVL ${currentLevel}`;
+      const maxSecs = LEVEL_DURATIONS[currentLevel] || 90;
+      const progressPercent = Math.min(100, Math.max(0, (levelTimerSeconds / maxSecs) * 100));
+      if (progressBarFill) {
+        progressBarFill.style.width = `${progressPercent}%`;
+      }
+    }
+
     class SoundEngine {
       constructor() {
         this.ctx = null;
         this.muted = false;
-        this.musicTimer = null;
-        this.step = 0;
-        this.lastWhooshTime = 0;
+        this.isBoostPlaying = false;
       }
       init() {
         if (!this.ctx) {
@@ -132,338 +477,128 @@
           this.ctx.resume();
         }
       }
-      playTone(freq, type, duration, startVol = 0.1, endVol = 0) {
-        if (this.muted || !this.ctx || freq === 0) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          gain.gain.setValueAtTime(startVol, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(Math.max(endVol, 0.0001), this.ctx.currentTime + duration);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch(e) {}
+
+      playSoundEffect(audioElem, volume = 0.8) {
+        if (this.muted) return;
+        if (audioElem && audioElem.src) {
+          try {
+            audioElem.currentTime = 0;
+            audioElem.volume = volume;
+            audioElem.play().catch(() => {});
+          } catch(e) {}
+        }
       }
 
-      playKick(vol = 0.2) {
-        if (this.muted || !this.ctx) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(160, this.ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.12);
-          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + 0.12);
-        } catch(e) {}
+      stopRoyalSounds() {
+        if (sfxQueenEntrance) {
+          sfxQueenEntrance.pause();
+          sfxQueenEntrance.currentTime = 0;
+        }
+        if (sfxKingEntrance) {
+          sfxKingEntrance.pause();
+          sfxKingEntrance.currentTime = 0;
+        }
       }
 
-      playSnare(pitch = 300, vol = 0.15) {
-        if (this.muted || !this.ctx) return;
-        try {
-          const bufferSize = this.ctx.sampleRate * 0.1;
-          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
-
-          const noise = this.ctx.createBufferSource();
-          noise.buffer = buffer;
-
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'highpass';
-          filter.frequency.setValueAtTime(pitch, this.ctx.currentTime);
-
-          const gain = this.ctx.createGain();
-          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.1);
-
-          noise.connect(filter);
-          filter.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          noise.start();
-          noise.stop(this.ctx.currentTime + 0.1);
-        } catch(e) {}
-      }
-
-      playTom(freq = 120, vol = 0.15) {
-        if (this.muted || !this.ctx) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const gain = this.ctx.createGain();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(freq * 0.4, this.ctx.currentTime + 0.15);
-          gain.gain.setValueAtTime(vol, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + 0.15);
-        } catch(e) {}
-      }
-
-      playHiHat(open = false) {
-        if (this.muted || !this.ctx) return;
-        try {
-          const dur = open ? 0.15 : 0.04;
-          const bufferSize = this.ctx.sampleRate * dur;
-          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
-
-          const noise = this.ctx.createBufferSource();
-          noise.buffer = buffer;
-
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'highpass';
-          filter.frequency.setValueAtTime(7000, this.ctx.currentTime);
-
-          const gain = this.ctx.createGain();
-          gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
-
-          noise.connect(filter);
-          filter.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          noise.start();
-          noise.stop(this.ctx.currentTime + dur);
-        } catch(e) {}
-      }
-
-      playTechnoSynth(freq, duration, type = 'sawtooth') {
-        if (this.muted || !this.ctx || freq === 0) return;
-        try {
-          const osc = this.ctx.createOscillator();
-          const filter = this.ctx.createBiquadFilter();
-          const gain = this.ctx.createGain();
-
-          osc.type = type;
-          osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
-
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(1200, this.ctx.currentTime);
-          filter.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + duration);
-
-          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
-
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(this.ctx.destination);
-          osc.start();
-          osc.stop(this.ctx.currentTime + duration);
-        } catch(e) {}
+      playFlapSound() {
+        if (this.muted || this.isBoostPlaying) return;
+        
+        if (sfxBoost && sfxBoost.src) {
+          this.isBoostPlaying = true;
+          sfxBoost.currentTime = 0;
+          sfxBoost.volume = 0.4;
+          
+          const handleEnded = () => {
+            this.isBoostPlaying = false;
+            sfxBoost.removeEventListener('ended', handleEnded);
+          };
+          
+          sfxBoost.addEventListener('ended', handleEnded);
+          
+          sfxBoost.play().catch(() => {
+            this.isBoostPlaying = false;
+          });
+        }
       }
 
       whoosh() {
-        if (this.muted || !this.ctx) return;
-        const now = Date.now();
-        if (now - this.lastWhooshTime < 220) return;
-        this.lastWhooshTime = now;
-
-        try {
-          const bufferSize = this.ctx.sampleRate * 0.25;
-          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
-
-          const noise = this.ctx.createBufferSource();
-          noise.buffer = buffer;
-
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'bandpass';
-          filter.frequency.setValueAtTime(200, this.ctx.currentTime);
-          filter.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.12);
-          filter.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.25);
-          filter.Q.value = 1.2;
-
-          const gain = this.ctx.createGain();
-          gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.22, this.ctx.currentTime + 0.1);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.25);
-
-          noise.connect(filter);
-          filter.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          noise.start();
-          noise.stop(this.ctx.currentTime + 0.25);
-        } catch(e) {}
-      }
-
-      fireRoar() {
-        if (this.muted || !this.ctx) return;
-        try {
-          const bufferSize = this.ctx.sampleRate * 0.35;
-          const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-          const data = buffer.getChannelData(0);
-          for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-          }
-
-          const noise = this.ctx.createBufferSource();
-          noise.buffer = buffer;
-
-          const filter = this.ctx.createBiquadFilter();
-          filter.type = 'lowpass';
-          filter.frequency.setValueAtTime(600, this.ctx.currentTime);
-          filter.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.35);
-
-          const osc = this.ctx.createOscillator();
-          osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(90, this.ctx.currentTime);
-          osc.frequency.linearRampToValueAtTime(40, this.ctx.currentTime + 0.35);
-
-          const gain = this.ctx.createGain();
-          gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-
-          noise.connect(filter);
-          filter.connect(gain);
-          osc.connect(gain);
-          gain.connect(this.ctx.destination);
-
-          noise.start();
-          osc.start();
-          noise.stop(this.ctx.currentTime + 0.35);
-          osc.stop(this.ctx.currentTime + 0.35);
-        } catch(e) {}
-      }
-
-      boulderLaunch() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(180, 'sawtooth', 0.2, 0.25);
-        setTimeout(() => this.playTone(90, 'triangle', 0.15, 0.2), 60);
+        this.playFlapSound();
       }
 
       flap() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(440, 'triangle', 0.08, 0.15);
+        this.playFlapSound();
       }
+
+      fireRoar() {
+        this.playSoundEffect(sfxFire, 0.0);
+      }
+
+      towerDestroy() {
+        this.playSoundEffect(sfxRockBreak, 0.15);
+      }
+
+      boulderLaunch() {
+        this.playSoundEffect(sfxBoulder, 0.8);
+      }
+
+      arrowLaunch() {
+        this.playSoundEffect(sfxArrow, 0.8);
+      }
+
+      fireworks() {
+        this.playSoundEffect(sfxFireworks, 0.8);
+      }
+
       score() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(523.25, 'square', 0.08, 0.1);
-        setTimeout(() => this.playTone(659.25, 'square', 0.12, 0.1), 80);
+        this.playSoundEffect(sfxScore, 0.7);
       }
       heartPickup() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(587.33, 'sine', 0.1, 0.2);
-        setTimeout(() => this.playTone(880.00, 'sine', 0.25, 0.25), 80);
+        this.playSoundEffect(sfxHeart, 0.8);
       }
       powerup() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(523.25, 'sine', 0.15, 0.2);
-        setTimeout(() => this.playTone(659.25, 'sine', 0.15, 0.2), 80);
-        setTimeout(() => this.playTone(783.99, 'sine', 0.15, 0.2), 160);
-        setTimeout(() => this.playTone(1046.50, 'sine', 0.3, 0.3), 240);
+        this.playSoundEffect(sfxPowerup, 0.8);
       }
       hit() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(110, 'sawtooth', 0.25, 0.25);
+        this.playSoundEffect(sfxHit, 0.8);
       }
       knightHit() {
-        if (this.muted || !this.ctx) return;
-        this.playTone(784, 'square', 0.1, 0.15);
+        this.playSoundEffect(sfxKnightHit, 0.8);
+      }
+      queenEntrance() {
+        this.playSoundEffect(sfxQueenEntrance, 0.85);
+      }
+      kingEntrance() {
+        this.playSoundEffect(sfxKingEntrance, 0.85);
       }
 
-      startChiptune() {
-        if (this.musicTimer) return;
-        
-        const A2 = 110.00, C3 = 130.81, D3 = 146.83, E3 = 164.81, F3 = 174.61, G3 = 196.00, Bb2 = 116.54;
-        const A3 = 220.00, C4 = 261.63, E4 = 329.63;
-        const A4 = 440.00, C5 = 523.25, D5 = 587.33, E5 = 659.25, F5 = 698.46, G5 = 783.99, A5 = 880.00, B5 = 987.77, D6 = 1174.66;
+      updateMusicState(gameState) {
+        if (this.muted) {
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
+          return;
+        }
 
-        const bassline = [
-          A2, A2, C3, A2, D3, A2, E3, G3, A2, A2, F3, A2, E3, D3, C3, G3,
-          Bb2, Bb2, D3, Bb2, E3, Bb2, F3, A2, Bb2, Bb2, G3, Bb2, A2, C3, E3, G3
-        ];
-        const lead = [
-          A4, 0, C5, 0, E5, D5, C5, 0, G5, 0, E5, D5, C5, D5, E5, 0,
-          A5, 0, G5, 0, E5, D5, C5, E5, D5, C5, A4, 0, C5, D5, A4, 0
-        ];
-
-        const partA_ArpFlourish = [0, 0, E5, G5, B5, D6, 0, 0]; 
-        const partB_OctaveBass = [A2, A3, C3, C4, D3, A2, E3, E4];
-        const partC_CounterLead = [G5, 0, F5, 0, E5, D5, C5, 0];
-
-        this.step = 0;
-        this.musicTimer = setInterval(() => {
-          if (!this.muted && this.ctx && state === 'PLAYING') {
-            const currentMeasure = Math.floor(this.step / 32) % 40; 
-            const subIndex = this.step % 8;
-
-            let isDrumBreakdown = false;
-
-            if (currentMeasure >= 10 && currentMeasure < 15) {
-              isDrumBreakdown = true;
-              if (this.step % 2 === 0) this.playHiHat(false);
-              if (this.step % 4 === 0) this.playKick(0.25);
-              if (subIndex === 2 || subIndex === 3 || subIndex === 6 || subIndex === 7) {
-                this.playSnare(500 + subIndex * 120, 0.18);
-              }
-            }
-            else if (currentMeasure >= 22 && currentMeasure < 27) {
-              isDrumBreakdown = true;
-              if (subIndex === 0 || subIndex === 4) this.playKick(0.35);
-              if (subIndex === 2 || subIndex === 6) this.playSnare(200, 0.22);
-              if (subIndex === 7) this.playHiHat(true);
-            }
-            else if (currentMeasure >= 34 && currentMeasure < 39) {
-              isDrumBreakdown = true;
-              if (subIndex === 0) this.playKick(0.25);
-              if (subIndex === 2 || subIndex === 5) this.playTom(150, 0.2);
-              if (subIndex === 3 || subIndex === 7) this.playTom(220, 0.18);
-              if (subIndex % 2 === 1) this.playHiHat(subIndex === 7);
-            }
-            else if (this.step % 4 === 0) {
-              this.playKick();
-            }
-
-            if (!isDrumBreakdown) {
-              let bNote = bassline[this.step % bassline.length];
-              let lNote = lead[this.step % lead.length];
-
-              if (currentMeasure % 6 === 2) {
-                bNote = partB_OctaveBass[subIndex];
-              }
-
-              this.playTechnoSynth(bNote, 0.12, 'sawtooth');
-
-              if (currentMeasure % 6 === 3 && partA_ArpFlourish[subIndex] > 0) {
-                this.playTechnoSynth(partA_ArpFlourish[subIndex], 0.08, 'triangle');
-              }
-
-              if (currentMeasure % 6 === 4 && partC_CounterLead[subIndex] > 0) {
-                this.playTechnoSynth(partC_CounterLead[subIndex], 0.11, 'sine');
-              } else if (lNote > 0) {
-                this.playTechnoSynth(lNote, 0.1, 'square');
-              }
-            }
-
-            this.step++;
+        if (gameState === 'PLAYING' || gameState === 'LEVEL_CELEBRATE') {
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
+          if (bgMusicAudio.paused) {
+            bgMusicAudio.play().catch(() => {});
           }
-        }, 135);
-      }
-
-      stopChiptune() {
-        if (this.musicTimer) {
-          clearInterval(this.musicTimer);
-          this.musicTimer = null;
+        } 
+        else if (gameState === 'PAUSED' || gameState === 'GAMEOVER' || gameState === 'SPLASH' || gameState === 'LEVEL_DIALOGUE') {
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
+          if (uiMusicAudio.paused) {
+            uiMusicAudio.play().catch(() => {});
+          }
+        } 
+        else if (gameState === 'CUTSCENE') {
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (cutsceneMusicAudio.paused) {
+            cutsceneMusicAudio.play().catch(() => {});
+          }
         }
       }
     }
@@ -474,23 +609,61 @@
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
 
+    const levelBadge = document.getElementById('levelBadge');
     const scoreDisplay = document.getElementById('scoreDisplay');
     const heartsDisplay = document.getElementById('heartsDisplay');
-    const soundBtn = document.getElementById('soundBtn');
-    const fireBtn = document.getElementById('fireBtn');
+    const heartsText = document.getElementById('heartsText');
+    const headsText = document.getElementById('headsText');
 
-    let state = 'START';
+    const bottomControlsBar = document.getElementById('bottomControlsBar');
+    const toggleFireModeBtn = document.getElementById('toggleFireModeBtn');
+    const manualFireBtn = document.getElementById('manualFireBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const soundBtn = document.getElementById('soundBtn');
+
+    const pauseModal = document.getElementById('pauseModal');
+    const saveCodeDisplay = document.getElementById('saveCodeDisplay');
+    const copyCodeBtn = document.getElementById('copyCodeBtn');
+    const closeSaveModalBtn = document.getElementById('closeSaveModalBtn');
+
+    const shareModal = document.getElementById('shareModal');
+    const shareCanvas = document.getElementById('shareCanvas');
+    const downloadShareBtn = document.getElementById('downloadShareBtn');
+    const closeShareModalBtn = document.getElementById('closeShareModalBtn');
+
+    const loadModal = document.getElementById('loadModal');
+    const loadCodeInput = document.getElementById('loadCodeInput');
+    const confirmLoadBtn = document.getElementById('confirmLoadBtn');
+    const cancelLoadBtn = document.getElementById('cancelLoadBtn');
+
+    let state = 'SPLASH';
+    let levelDialogueType = 'INTRO';
     let score = 0;
     let lives = 3;
+    let royalHeads = 0;
+    let royalHeadTypes = [];
     let invulnerableTimer = 0;
     let isHoldingAction = false;
+
+    let isFlapLockActive = true;
+    let isControlFlipped = false;
+
     let holdTimer = 0;
     let backgroundParallaxX = 0;
+    let lastSpawnedBattlementHeight = 0;
 
-    // --- KHALEESI INVINCIBILITY STATE ---
     let khaleesiMounted = false;
     let khaleesiTimer = 0;
-    const KHALEESI_MAX_TIME = 600; // ~10 seconds extended invincibility
+    let khaleesiCombo = 0;
+    const KHALEESI_MAX_TIME = 600;
+
+    let cutsceneTarget = 'KING';
+    let cutsceneTimer = 0;
+    let noHeadContinuePopupTimer = 0;
+    let headFadingIndex = -1;
+    let headFadeTimer = 0;
+
+    const activeTouches = new Map();
 
     let width, height;
     function resize() {
@@ -524,6 +697,9 @@
     }));
 
     let obstacles = [];
+    let battlements = [];
+    let archers = [];
+    let arrows = [];
     let particles = [];
     let flames = [];
     let knights = [];
@@ -539,12 +715,109 @@
     const stonePalette = { main: '#2c3e50', dark: '#1a252f', light: '#3e5871' };
     const charPalette = { main: '#11161d', dark: '#080b0e', light: '#222f3d' };
 
+    const peasantCostumes = [
+      { tunic: '#e67e22', pants: '#7f8c8d', hair: '#d35400' },
+      { tunic: '#2ecc71', pants: '#34495e', hair: '#f39c12' },
+      { tunic: '#9b59b6', pants: '#2c3e50', hair: '#e74c3c' },
+      { tunic: '#f1c40f', pants: '#7f8c8d', hair: '#8e44ad' },
+      { tunic: '#1abc9c', pants: '#34495e', hair: '#d35400' }
+    ];
+
+    function getLevelScrollSpeed() {
+      return 2.5;
+    }
+
+    function toggleModeSwitch() {
+      isFlapLockActive = !isFlapLockActive;
+      toggleFireModeBtn.classList.toggle('active', isFlapLockActive);
+      manualFireBtn.style.display = isFlapLockActive ? 'inline-block' : 'none';
+    }
+
+    function togglePauseGame() {
+      if (state === 'PLAYING') {
+        state = 'PAUSED';
+      } else if (state === 'PAUSED') {
+        state = 'PLAYING';
+      }
+    }
+
+    function startLevelCelebration(nextLvl, targetDialogueType) {
+      currentLevel = nextLvl;
+      levelTimerSeconds = 0;
+      levelDialogueType = targetDialogueType;
+      celebrationTimer = 0;
+      celebrationAngle = 0;
+      celebrationFadeAlpha = 0;
+      state = 'LEVEL_CELEBRATE';
+      sound.powerup();
+      updateLevelBadgeUI();
+    }
+
+    function checkLevelProgression() {
+      if (state !== 'PLAYING') return;
+
+      const targetDuration = LEVEL_DURATIONS[currentLevel] || 90;
+
+      if (levelTimerSeconds >= targetDuration) {
+        if (currentLevel === 1) {
+          startLevelCelebration(2, 'LEVEL1_CLEAR');
+        } else if (currentLevel === 2) {
+          startLevelCelebration(3, 'LEVEL2_CLEAR');
+        } else if (currentLevel === 3) {
+          startLevelCelebration(4, 'VICTORY');
+        }
+      }
+    }
+
+    function debugWarpToLevel(targetLvl) {
+      currentLevel = targetLvl;
+      levelTimerSeconds = 0;
+
+      updateLevelBadgeUI();
+
+      obstacles = [];
+      battlements = [];
+      archers = [];
+      knights = [];
+      trebuchets = [];
+      arrows = [];
+      trebuchetBoulders = [];
+
+      level2KhaleesiSpawned = false;
+      level2RoyalSpawned = false;
+
+      state = 'PLAYING';
+      sound.powerup();
+      showKhaleesiBanner(`"Warped to Level ${currentLevel}! Progress reset."`, 150);
+    }
+
     function addScore(pts) {
-      const multiplier = khaleesiMounted ? 2 : 1;
-      const totalPts = pts * multiplier;
+      let activeMultiplier = 1;
+      if (khaleesiMounted) {
+        khaleesiCombo += 2;
+        activeMultiplier = khaleesiCombo;
+      } else {
+        khaleesiCombo = 0;
+      }
+      
+      const totalPts = pts * activeMultiplier;
       score += totalPts;
       scoreDisplay.innerText = score;
-      return totalPts;
+      return { totalPts, multiplier: activeMultiplier };
+    }
+
+    function resetScoreToZero() {
+      score = 0;
+      scoreDisplay.innerText = '0';
+      showKhaleesiBanner('"Syraxx, you mustn\'t burn the royals. Take their heads. Score reset to zero."', 240);
+      floatingTexts.push({
+        x: width / 2 - 80,
+        y: height / 2 - 40,
+        text: 'ROYAL BURNED! SCORE RESET TO 0',
+        color: '#e74c3c',
+        alpha: 1.0,
+        vy: -1.0
+      });
     }
 
     function updateHeartsDisplay() {
@@ -552,7 +825,193 @@
       for (let i = 0; i < 3; i++) {
         str += i < lives ? '❤️' : '🖤';
       }
-      heartsDisplay.innerText = str;
+      heartsText.innerText = str;
+      headsText.innerText = '👑 ' + royalHeads;
+    }
+
+    const CODE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    
+    function generateSaveCode() {
+      const p = Math.min(score, 1295);
+      const k = Math.min(gameStats.kingsBeheaded, 35);
+      const q = Math.min(gameStats.queensBeheaded, 35);
+      const v = Math.min(gameStats.villagersKilled, 1295);
+      const lvl = Math.min(currentLevel, 3);
+
+      const c1 = CODE_CHARS[Math.floor(p / 36)];
+      const c2 = CODE_CHARS[p % 36];
+      const c3 = CODE_CHARS[(k % 36)];
+      const c4 = CODE_CHARS[(q % 36)];
+      const c5 = CODE_CHARS[Math.floor(v / 36)];
+      const c6 = CODE_CHARS[v % 36];
+      const c7 = CODE_CHARS[lvl % 36];
+
+      return `${c1}${c2}${c3}${c4}${c5}${c6}${c7}`;
+    }
+
+    function loadSaveCode(codeStr) {
+      if (!codeStr || (codeStr.length !== 6 && codeStr.length !== 7)) return false;
+      const clean = codeStr.toUpperCase();
+      
+      const val = (ch) => CODE_CHARS.indexOf(ch);
+
+      const v1 = val(clean[0]), v2 = val(clean[1]);
+      const v3 = val(clean[2]), v4 = val(clean[3]);
+      const v5 = val(clean[4]), v6 = val(clean[5]);
+      const v7 = clean.length === 7 ? val(clean[6]) : Math.min(3, Math.max(1, Math.floor((v1 * 36 + v2) / 1000) + 1));
+
+      if (v1 === -1 || v2 === -1 || v3 === -1 || v4 === -1 || v5 === -1 || v6 === -1 || v7 === -1) return false;
+
+      const savedScore = v1 * 36 + v2;
+      const savedKings = v3;
+      const savedQueens = v4;
+      const savedVillagers = v5 * 36 + v6;
+      const savedLvl = Math.max(1, Math.min(3, v7));
+
+      resetGame();
+      score = savedScore;
+      currentLevel = savedLvl;
+      levelTimerSeconds = 0;
+      gameStats.kingsBeheaded = savedKings;
+      gameStats.queensBeheaded = savedQueens;
+      gameStats.villagersKilled = savedVillagers;
+      gameStats.burnedTowers = Math.floor(savedScore / 25);
+
+      royalHeads = savedKings + savedQueens;
+      royalHeadTypes = [
+        ...Array(savedKings).fill('KING'),
+        ...Array(savedQueens).fill('QUEEN')
+      ];
+
+      updateLevelBadgeUI();
+      scoreDisplay.innerText = score;
+      updateHeartsDisplay();
+      return true;
+    }
+
+    function saveGame() {
+      const code = generateSaveCode();
+      localStorage.setItem('flappyFlameSaveShort', code);
+      if (typeof saveCodeDisplay !== 'undefined' && saveCodeDisplay) {
+        saveCodeDisplay.innerText = code;
+      }
+    }
+
+    function openLoadGameModal() {
+      loadCodeInput.value = '';
+      loadModal.style.display = 'flex';
+    }
+
+    function generateSharePostGraphic() {
+      if (!shareCanvas) return;
+      shareCanvas.width = 800;
+      shareCanvas.height = 800;
+
+      const sCtx = shareCanvas.getContext('2d');
+      const sw = 800;
+      const sh = 800;
+
+      sCtx.clearRect(0, 0, sw, sh);
+
+      const skyGradient = sCtx.createLinearGradient(0, 0, 0, sh);
+      skyGradient.addColorStop(0, '#0d0d26');
+      skyGradient.addColorStop(0.7, '#241738');
+      skyGradient.addColorStop(1, '#3a1c40');
+      sCtx.fillStyle = skyGradient;
+      sCtx.fillRect(0, 0, sw, sh);
+
+      sCtx.strokeStyle = '#f1c40f';
+      sCtx.lineWidth = 10;
+      sCtx.strokeRect(20, 20, sw - 40, sh - 40);
+
+      sCtx.strokeStyle = '#e74c3c';
+      sCtx.lineWidth = 4;
+      sCtx.strokeRect(30, 30, sw - 60, sh - 60);
+
+      sCtx.fillStyle = '#f1c40f';
+      sCtx.font = 'bold 36px "Proxima Nova", sans-serif';
+      sCtx.textAlign = 'center';
+      sCtx.fillText("FLAPPY DRAGON CONQUEROR", sw / 2, 85);
+
+      sCtx.fillStyle = '#ffffff';
+      sCtx.font = 'bold 24px "Proxima Nova", sans-serif';
+      sCtx.fillText(`SYRAXX'S VICTORY STATS (LEVEL ${Math.min(3, currentLevel)})`, sw / 2, 125);
+
+      const cardX = 60, cardY = 160, cardW = 680, cardH = 340;
+      sCtx.fillStyle = '#11161d';
+      sCtx.fillRect(cardX, cardY, cardW, cardH);
+      sCtx.strokeStyle = '#f1c40f';
+      sCtx.lineWidth = 3;
+      sCtx.strokeRect(cardX, cardY, cardW, cardH);
+
+      const pX = 90, pY = 190, pSize = 120;
+      const kImg = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+      sCtx.fillStyle = '#1e272e';
+      sCtx.fillRect(pX, pY, pSize, pSize);
+      if (kImg.complete && kImg.naturalWidth !== 0) {
+        sCtx.drawImage(kImg, pX, pY, pSize, pSize);
+      }
+      sCtx.strokeStyle = '#f1c40f';
+      sCtx.lineWidth = 3;
+      sCtx.strokeRect(pX, pY, pSize, pSize);
+
+      const kingsTxt = gameStats.kingsBeheaded === 1 ? '1 king' : `${gameStats.kingsBeheaded} kings`;
+      const queensTxt = gameStats.queensBeheaded === 1 ? '1 queen' : `${gameStats.queensBeheaded} queens`;
+      
+      sCtx.fillStyle = '#2ecc71';
+      sCtx.font = 'bold 22px "Proxima Nova", sans-serif';
+      sCtx.textAlign = 'left';
+      sCtx.fillText(`"I'm so proud of my Syraxx.`, 240, 215);
+      sCtx.fillText(`Syraxx earned ${score} points, burned`, 240, 248);
+      sCtx.fillText(`${gameStats.burnedTowers} towers, killed ${gameStats.villagersKilled} villagers,`, 240, 281);
+      sCtx.fillText(`and beheaded ${kingsTxt} and ${queensTxt}!"`, 240, 314);
+
+      sCtx.strokeStyle = '#e74c3c';
+      sCtx.lineWidth = 2;
+      sCtx.beginPath();
+      sCtx.moveTo(90, 345);
+      sCtx.lineTo(710, 345);
+      sCtx.stroke();
+
+      const statsY = 380;
+      sCtx.fillStyle = '#ffffff';
+      sCtx.font = 'bold 22px "Proxima Nova", sans-serif';
+
+      sCtx.fillText(`🔥 SCORE EARNED:`, 110, statsY);
+      sCtx.fillStyle = '#f1c40f';
+      sCtx.textAlign = 'right';
+      sCtx.fillText(`${score} PTS`, 690, statsY);
+
+      sCtx.fillStyle = '#ffffff';
+      sCtx.textAlign = 'left';
+      sCtx.fillText(`🏰 TOWERS BURNED:`, 110, statsY + 38);
+      sCtx.fillStyle = '#f1c40f';
+      sCtx.textAlign = 'right';
+      sCtx.fillText(`${gameStats.burnedTowers} TOWERS`, 690, statsY + 38);
+
+      sCtx.fillStyle = '#ffffff';
+      sCtx.textAlign = 'left';
+      sCtx.fillText(`⚔️ VILLAGERS SLAIN:`, 110, statsY + 76);
+      sCtx.fillStyle = '#f1c40f';
+      sCtx.textAlign = 'right';
+      sCtx.fillText(`${gameStats.villagersKilled} VILLAGERS`, 690, statsY + 76);
+
+      const ctaY = 540;
+      sCtx.fillStyle = '#161d27';
+      sCtx.fillRect(60, ctaY, 680, 180);
+      sCtx.strokeStyle = '#3498db';
+      sCtx.lineWidth = 2;
+      sCtx.strokeRect(60, ctaY, 680, 180);
+
+      sCtx.fillStyle = '#ffffff';
+      sCtx.font = 'bold 28px "Proxima Nova", sans-serif';
+      sCtx.textAlign = 'center';
+      sCtx.fillText("🐉 CAN YOU BEAT THIS RUN?", sw / 2, ctaY + 75);
+      sCtx.fillStyle = '#f1c40f';
+      sCtx.font = 'bold 20px "Proxima Nova", sans-serif';
+      sCtx.fillText("FLAPPY DRAGON CONQUEROR", sw / 2, ctaY + 120);
+
+      shareModal.style.display = 'flex';
     }
 
     function resetGame() {
@@ -564,10 +1023,36 @@
       dragon.wingState = 0;
       score = 0;
       lives = 3;
+      royalHeads = 0;
+      royalHeadTypes = [];
       invulnerableTimer = 0;
       khaleesiMounted = false;
       khaleesiTimer = 0;
+      khaleesiCombo = 0;
+      khaleesiBannerTimer = 0;
+      khaleesiBannerText = "";
+      lastSpawnedBattlementHeight = 0;
+      noHeadContinuePopupTimer = 0;
+      headFadingIndex = -1;
+      headFadeTimer = 0;
+
+      currentLevel = 1;
+      levelTimerSeconds = 0;
+      level2KhaleesiSpawned = false;
+      level2RoyalSpawned = false;
+
+      gameStats.burnedTowers = 0;
+      gameStats.villagersKilled = 0;
+      gameStats.archersKilled = 0;
+      gameStats.trebuchetsDestroyed = 0;
+      gameStats.kingsBeheaded = 0;
+      gameStats.queensBeheaded = 0;
+      gameStats.khaleesiRescues = 0;
+
       obstacles = [];
+      battlements = [];
+      archers = [];
+      arrows = [];
       particles = [];
       flames = [];
       knights = [];
@@ -582,23 +1067,36 @@
       holdTimer = 0;
       backgroundParallaxX = 0;
       scoreDisplay.innerText = '0';
+      updateLevelBadgeUI();
       updateHeartsDisplay();
     }
 
     function spawnObstacle() {
-      const lastObstacle = obstacles[obstacles.length - 1];
-      const minGapDistance = 260;
-      if (lastObstacle && (width - lastObstacle.x) < (lastObstacle.baseWidth + minGapDistance)) {
+      if (state === 'LEVEL_CELEBRATE') return;
+
+      const prevObs = obstacles[obstacles.length - 1];
+      
+      let minGapDistance = 260;
+      if (currentLevel === 1) minGapDistance = 380;
+      else if (currentLevel === 2) minGapDistance = 320;
+
+      if (prevObs && (width - prevObs.x) < (prevObs.baseWidth + minGapDistance)) {
         return;
       }
 
+      const gY = height - groundHeight;
       const minGap = 250;
       const maxGap = 310;
       const gapHeight = Math.floor(Math.random() * (maxGap - minGap + 1)) + minGap;
 
+      const minVisualTowerHeight = Math.max(30, lastSpawnedBattlementHeight);
+
       const minTop = 40;
-      const maxTop = Math.max(40, height - groundHeight - gapHeight - 40);
-      const topHeight = Math.floor(Math.random() * (maxTop - minTop + 1)) + minTop;
+      const maxTopFromGaps = Math.max(40, height - groundHeight - gapHeight - 40);
+      const maxTopFromTowerHeight = Math.max(40, gY - gapHeight - minVisualTowerHeight);
+      const finalMaxTop = Math.min(maxTopFromGaps, maxTopFromTowerHeight);
+      
+      const topHeight = Math.floor(Math.random() * (finalMaxTop - minTop + 1)) + minTop;
 
       let type = Math.random() < 0.2 ? 'mega' : (Math.random() < 0.5 ? 'wide' : 'normal');
       let obsWidth = type === 'wide' ? 140 : (type === 'mega' ? 560 : 80);
@@ -628,10 +1126,59 @@
 
       obstacles.push(newObs);
 
+      lastSpawnedBattlementHeight = 0;
+
+      let hasBattlement = false;
+      if (Math.random() < 0.50) {
+        const towerVisualHeight = gY - newObs.bottomY;
+        if (towerVisualHeight > 35) {
+          hasBattlement = true;
+          const heightMultiplier = 0.35 + Math.random() * 0.40;
+          const battlementHeight = Math.max(35, Math.min(65, towerVisualHeight * heightMultiplier));
+          lastSpawnedBattlementHeight = battlementHeight;
+          const battlementWidth = minGapDistance + 40;
+
+          const newBattlement = {
+            x: width + obsWidth,
+            width: battlementWidth,
+            height: battlementHeight,
+            topY: gY - battlementHeight,
+            surfaceFlames: [],
+            isCharred: false,
+            isCrushed: false,
+            charProgress: 0
+          };
+
+          battlements.push(newBattlement);
+
+          if (currentLevel >= 3 && Math.random() < 0.85) {
+            archers.push({
+              battlementRef: newBattlement,
+              relX: battlementWidth * (0.3 + Math.random() * 0.4),
+              state: 'HIDDEN',
+              timer: 0,
+              cycleTimer: Math.floor(Math.random() * 120),
+              isExposed: false,
+              isFiring: false,
+              hp: 1,
+              destroyed: false,
+              archerAwarded: false
+            });
+          }
+        }
+      }
+
       let hasKhaleesiOnTower = false;
 
-      // --- SPAWN GOOD KHALEESI FIGURE (5% RARE SPAWN) ---
-      if (Math.random() < 0.05 && (height - groundHeight - newObs.bottomY) > 30) {
+      let allowKhaleesi = false;
+      if (currentLevel === 2 && !level2KhaleesiSpawned && Math.random() < 0.15) {
+        allowKhaleesi = true;
+        level2KhaleesiSpawned = true;
+      } else if (currentLevel >= 3 && Math.random() < 0.05) {
+        allowKhaleesi = true;
+      }
+
+      if (allowKhaleesi && (height - groundHeight - newObs.bottomY) > 30) {
         hasKhaleesiOnTower = true;
         khaleesis.push({
           obsRef: newObs,
@@ -639,10 +1186,11 @@
           direction: Math.random() < 0.5 ? 1 : -1,
           rescued: false
         });
+        showKhaleesiBanner('"I\'M HERE SYRAXX! COME TO ME!"', 200);
       }
 
-      // --- RARE FLOATING SKY HEARTS (10% Chance) ---
-      if (Math.random() < 0.10) {
+      const heartChance = 0.10;
+      if (Math.random() < heartChance) {
         const skyY = topHeight + (gapHeight / 2) + (Math.random() - 0.5) * (gapHeight * 0.4);
         collectableHearts.push({
           x: width + (obsWidth / 2),
@@ -654,8 +1202,7 @@
         });
       }
 
-      // --- SPAWN GROUND TREBUCHET ON WHEELS (45% Chance) ---
-      if (Math.random() < 0.45) {
+      if (currentLevel >= 2 && !hasBattlement && Math.random() < 0.35) {
         trebuchets.push({
           x: width + obsWidth + 40 + Math.random() * 80,
           shootCooldown: 80 + Math.random() * 60,
@@ -664,21 +1211,63 @@
         });
       }
 
-      // --- SPAWN PATROLLING KNIGHT ON BOTTOM TOWER (NEVER IF KHALEESI IS PRESENT) ---
-      if (!hasKhaleesiOnTower && Math.random() < 0.85 && (height - groundHeight - newObs.bottomY) > 30) {
-        knights.push({
-          obsRef: newObs,
-          relX: 10 + Math.random() * Math.max(10, obsWidth - 36),
-          direction: Math.random() < 0.5 ? 1 : -1,
-          state: 'ALIVE',
-          burnTimer: 0,
-          knockbackVelocity: 0,
-          stunTimer: 0,
-          fallYOffset: 0,
-          fallVelocityY: 0,
-          rotation: 0,
-          pointAwarded: false
-        });
+      if (!hasKhaleesiOnTower && (height - groundHeight - newObs.bottomY) > 30) {
+        let allowRoyal = false;
+        if (currentLevel === 2 && !level2RoyalSpawned && Math.random() < 0.12) {
+          allowRoyal = true;
+          level2RoyalSpawned = true;
+        } else if (currentLevel >= 3 && Math.random() < 0.04) {
+          allowRoyal = true;
+        }
+
+        if (allowRoyal && !khaleesiMounted) {
+          const isKing = Math.random() < 0.5;
+          const royalType = isKing ? 'KING' : 'QUEEN';
+
+          knights.push({
+            obsRef: newObs,
+            relX: 10 + Math.random() * Math.max(10, obsWidth - 36),
+            direction: Math.random() < 0.5 ? 1 : -1,
+            state: 'ALIVE',
+            isRoyal: true,
+            royalType: royalType,
+            burnTimer: 0,
+            knockbackVelocity: 0,
+            stunTimer: 0,
+            fallYOffset: 0,
+            fallVelocityY: 0,
+            rotation: 0,
+            pointAwarded: false
+          });
+
+          if (isKing) {
+            sound.kingEntrance();
+          } else {
+            sound.queenEntrance();
+          }
+
+          showKhaleesiBanner('"Look Syraxx, a royal. Don\'t burn them, bring me their head!"', 240);
+        } else if (Math.random() < 0.85) {
+          const peasantCount = Math.floor(Math.random() * 5) + 1;
+          for (let p = 0; p < peasantCount; p++) {
+            knights.push({
+              obsRef: newObs,
+              relX: 8 + (p * 22) % Math.max(10, obsWidth - 28),
+              direction: Math.random() < 0.5 ? 1 : -1,
+              state: 'ALIVE',
+              isRoyal: false,
+              costume: peasantCostumes[Math.floor(Math.random() * peasantCostumes.length)],
+              hasPitchfork: Math.random() < 0.5,
+              burnTimer: 0,
+              knockbackVelocity: 0,
+              stunTimer: 0,
+              fallYOffset: 0,
+              fallVelocityY: 0,
+              rotation: 0,
+              pointAwarded: false
+            });
+          }
+        }
       }
     }
 
@@ -705,71 +1294,519 @@
       }
     }
 
-    function handlePressStart(e) {
-      if (e) {
-        if (e.target && (e.target.id === 'soundBtn' || e.target.id === 'fireBtn')) return;
-        if (e.cancelable) e.preventDefault();
-      }
-      sound.init();
-      sound.startChiptune();
+    function checkLevelDialogueClick(clientX, clientY) {
+      if (state !== 'LEVEL_DIALOGUE') return false;
 
-      if (state === 'START' || state === 'GAMEOVER') {
-        resetGame();
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+
+      const pSize = 140;
+      const pY = 120;
+      const isIntroStyle = (levelDialogueType === 'INTRO' || levelDialogueType === 'LEVEL1_CLEAR');
+      const statsBoxY = isIntroStyle ? (pY + pSize + 20) : (pY + pSize + 40);
+      const statsBoxH = isIntroStyle ? 90 : 175;
+
+      const btnW = 220;
+      const btnH = 46;
+      const btnX = (width - btnW) / 2;
+      const btnY = statsBoxY + statsBoxH + 20;
+
+      if (canvasX >= btnX && canvasX <= btnX + btnW && canvasY >= btnY && canvasY <= btnY + btnH) {
+        if (levelDialogueType === 'VICTORY') {
+          resetGame();
+          state = 'PLAYING';
+        } else {
+          state = 'PLAYING';
+          dragon.velocity = dragon.jump;
+          dragon.wingState = 1.0;
+          sound.flap();
+        }
+        return true;
+      }
+      return false;
+    }
+
+    function checkCutsceneReturnClick(clientX, clientY) {
+      if (state !== 'CUTSCENE') return false;
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+
+      const canvasX = (clientX - rect.left) * scaleX;
+      const canvasY = (clientY - rect.top) * scaleY;
+
+      const boxSize = 240;
+      const bY = height / 2 - 80;
+      const btnW = 200;
+      const btnH = 44;
+      const btnX = (width - btnW) / 2;
+      const btnY = bY + boxSize + 45;
+
+      if (canvasX >= btnX && canvasX <= btnX + btnW && canvasY >= btnY && canvasY <= btnY + btnH) {
         state = 'PLAYING';
         dragon.velocity = dragon.jump;
         dragon.wingState = 1.0;
         sound.flap();
-      } else if (state === 'PLAYING') {
+        return true;
+      }
+      return false;
+    }
+
+    function checkPauseScreenClick(clickX, clickY) {
+      if (state !== 'PAUSED') return false;
+
+      const btnW = 200;
+      const btnH = 40;
+      const btnX = (width - btnW) / 2;
+
+      const resumeBtnY = height / 2 - 90;
+      const saveBtnY = resumeBtnY + 48;
+      const loadBtnY = saveBtnY + 48;
+      const flipBtnY = loadBtnY + 48;
+      const shareBtnY = flipBtnY + 48;
+
+      if (clickX >= btnX && clickX <= btnX + btnW) {
+        if (clickY >= resumeBtnY && clickY <= resumeBtnY + btnH) {
+          state = 'PLAYING';
+          return true;
+        }
+
+        if (clickY >= saveBtnY && clickY <= saveBtnY + btnH) {
+          saveGame();
+          pauseModal.style.display = 'flex';
+          return true;
+        }
+
+        if (clickY >= loadBtnY && clickY <= loadBtnY + btnH) {
+          openLoadGameModal();
+          return true;
+        }
+
+        if (clickY >= flipBtnY && clickY <= flipBtnY + btnH) {
+          isControlFlipped = !isControlFlipped;
+          bottomControlsBar.classList.toggle('flipped', isControlFlipped);
+          return true;
+        }
+
+        if (clickY >= shareBtnY && clickY <= shareBtnY + btnH) {
+          generateSharePostGraphic();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function checkGameOverClick(clickX, clickY) {
+      if (state !== 'GAMEOVER') return false;
+
+      if (noHeadContinuePopupTimer > 0) {
+        noHeadContinuePopupTimer = 0;
+        return true;
+      }
+
+      const btnW = 200;
+      const btnH = 44;
+      const btnX = (width - btnW) / 2;
+
+      const continueBtnY = height / 2 - 40;
+      const restartBtnY = continueBtnY + 54;
+      const loadBtnY = restartBtnY + 54;
+
+      if (clickX >= btnX && clickX <= btnX + btnW) {
+        if (clickY >= continueBtnY && clickY <= continueBtnY + btnH) {
+          if (royalHeads > 0 && headFadingIndex < 0) {
+            headFadingIndex = royalHeads - 1;
+            headFadeTimer = 35;
+          } else if (royalHeads === 0) {
+            noHeadContinuePopupTimer = 240;
+          }
+          return true;
+        }
+
+        if (clickY >= restartBtnY && clickY <= restartBtnY + btnH) {
+          resetGame();
+          state = 'PLAYING';
+          return true;
+        }
+
+        if (clickY >= loadBtnY && clickY <= loadBtnY + btnH) {
+          openLoadGameModal();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function handleActionPress(clientX, clientY) {
+      sound.init();
+
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clickX = (clientX !== undefined) ? (clientX - rect.left) * scaleX : undefined;
+      const clickY = (clientY !== undefined) ? (clientY - rect.top) * scaleY : undefined;
+
+      if (state === 'LEVEL_DIALOGUE') {
+        if (clientX !== undefined && clientY !== undefined) {
+          checkLevelDialogueClick(clientX, clientY);
+        }
+        return;
+      }
+
+      if (state === 'CUTSCENE') {
+        if (clientX !== undefined && clientY !== undefined) {
+          checkCutsceneReturnClick(clientX, clientY);
+        }
+        return;
+      }
+
+      if (state === 'PAUSED') {
+        if (clickX !== undefined && clickY !== undefined) {
+          checkPauseScreenClick(clickX, clickY);
+        }
+        return;
+      }
+
+      if (state === 'SPLASH') {
+        if (!textTypingComplete) {
+          typedCharIndex = totalCharCount;
+          textTypingComplete = true;
+        } else {
+          state = 'START';
+        }
+        return;
+      }
+
+      const btnW = 200;
+      const btnX = (width - btnW) / 2;
+
+      if (state === 'START') {
+        const startBtnY = height / 2 - 10;
+        const loadBtnY = startBtnY + 58;
+
+        if (clickX !== undefined && clickY !== undefined && clickX >= btnX && clickX <= btnX + btnW) {
+          if (clickY >= loadBtnY && clickY <= loadBtnY + 44) {
+            openLoadGameModal();
+            return;
+          }
+          if (clickY >= startBtnY && clickY <= startBtnY + 44) {
+            resetGame();
+            levelDialogueType = 'INTRO';
+            state = 'LEVEL_DIALOGUE';
+            return;
+          }
+        }
+        resetGame();
+        levelDialogueType = 'INTRO';
+        state = 'LEVEL_DIALOGUE';
+        return;
+      }
+
+      if (state === 'GAMEOVER') {
+        if (clickX !== undefined && clickY !== undefined) {
+          checkGameOverClick(clickX, clickY);
+        }
+        return;
+      }
+
+      if (state === 'PLAYING') {
         dragon.velocity = dragon.jump;
         dragon.wingState = 1.0;
         sound.flap();
+        if (!isFlapLockActive) {
+          shootFire();
+        }
         isHoldingAction = true;
         holdTimer = 0;
       }
     }
 
-    function handlePressEnd(e) {
+    function handleActionRelease() {
       isHoldingAction = false;
       holdTimer = 0;
     }
 
-    container.addEventListener('touchstart', handlePressStart, { passive: false });
-    container.addEventListener('touchend', handlePressEnd);
-    container.addEventListener('mousedown', handlePressStart);
-    container.addEventListener('mouseup', handlePressEnd);
+    container.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        const t = e.changedTouches[i];
+        activeTouches.set(t.identifier, { x: t.clientX, y: t.clientY });
+      }
+      handleActionPress(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    container.addEventListener('touchend', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        activeTouches.delete(e.changedTouches[i].identifier);
+      }
+      if (activeTouches.size === 0) {
+        handleActionRelease();
+      }
+    });
+
+    container.addEventListener('touchcancel', (e) => {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        activeTouches.delete(e.changedTouches[i].identifier);
+      }
+      if (activeTouches.size === 0) {
+        handleActionRelease();
+      }
+    });
+
+    container.addEventListener('mousedown', (e) => {
+      if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+      handleActionPress(e.clientX, e.clientY);
+    });
+
+    container.addEventListener('mouseup', (e) => {
+      handleActionRelease();
+    });
 
     window.addEventListener('keydown', (e) => {
+      if (e.code === 'Digit1' || e.code === 'Numpad1') {
+        debugWarpToLevel(1);
+      }
+      if (e.code === 'Digit2' || e.code === 'Numpad2') {
+        debugWarpToLevel(2);
+      }
+      if (e.code === 'Digit3' || e.code === 'Numpad3') {
+        debugWarpToLevel(3);
+      }
+
+      if (e.code === 'KeyC' && !e.repeat) {
+        if (state === 'PLAYING') {
+          startLevelCelebration(currentLevel, 'LEVEL1_CLEAR');
+          showKhaleesiBanner('"CELEBRATION ANIMATION TRIGGERED!"', 180);
+        }
+      }
+
       if (e.code === 'Space' && !e.repeat) {
         e.preventDefault();
-        handlePressStart();
-      } else if (e.code === 'KeyF' && !e.repeat) {
+        handleActionPress();
+      }
+
+      if (e.code === 'KeyF' && !e.repeat) {
         e.preventDefault();
+        sound.init();
+        if (state === 'PLAYING' && isFlapLockActive) {
+          shootFire();
+        }
+      }
+
+      if (e.code === 'KeyM' && !e.repeat) {
+        e.preventDefault();
+        toggleModeSwitch();
+      }
+
+      if (e.code === 'KeyP' && !e.repeat) {
+        e.preventDefault();
+        togglePauseGame();
+      }
+    });
+
+    function isolateBtnTouch(btn, callback) {
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }, { passive: false });
+      
+      btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        callback(e);
+      }, { passive: false });
+
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        callback(e);
+      });
+    }
+
+    isolateBtnTouch(toggleFireModeBtn, () => {
+      toggleModeSwitch();
+    });
+
+    isolateBtnTouch(manualFireBtn, () => {
+      sound.init();
+      if (state === 'PLAYING') {
         shootFire();
       }
     });
 
-    window.addEventListener('keyup', (e) => {
-      if (e.code === 'Space') {
-        handlePressEnd();
+    isolateBtnTouch(pauseBtn, () => {
+      togglePauseGame();
+    });
+
+    isolateBtnTouch(closeSaveModalBtn, () => {
+      pauseModal.style.display = 'none';
+    });
+
+    isolateBtnTouch(closeShareModalBtn, () => {
+      shareModal.style.display = 'none';
+    });
+
+    isolateBtnTouch(copyCodeBtn, () => {
+      const textToCopy = saveCodeDisplay.innerText.trim();
+      if (!textToCopy || textToCopy === '-------') return;
+
+      const setCopySuccessVisual = () => {
+        const origText = copyCodeBtn.innerText;
+        copyCodeBtn.innerText = 'COPIED!';
+        copyCodeBtn.style.background = '#2ecc71';
+        setTimeout(() => {
+          copyCodeBtn.innerText = origText;
+          copyCodeBtn.style.background = '';
+        }, 1500);
+      };
+
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(textToCopy).then(setCopySuccessVisual).catch(() => {
+          fallbackCopyText(textToCopy, setCopySuccessVisual);
+        });
+      } else {
+        fallbackCopyText(textToCopy, setCopySuccessVisual);
       }
     });
 
-    soundBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      sound.muted = !sound.muted;
-      soundBtn.innerText = sound.muted ? '🔇' : '🔊';
+    function fallbackCopyText(text, successCallback) {
+      const textArea = document.createElement("textarea");
+      textArea.value = text;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        if (successCallback) successCallback();
+      } catch (err) {
+        alert("Copy failed. Please manually select and copy: " + text);
+      }
+      document.body.removeChild(textArea);
+    }
+
+    isolateBtnTouch(downloadShareBtn, () => {
+      if (!shareCanvas) return;
+
+      shareCanvas.toBlob((blob) => {
+        if (!blob) return;
+
+        const blobUrl = URL.createObjectURL(blob);
+
+        if (navigator.canShare && navigator.share) {
+          const file = new File([blob], 'conqueror.png', { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({
+              files: [file],
+              title: 'Flappy Dragon Conqueror',
+              text: `I scored ${score} pts in Flappy Dragon Conqueror!`
+            }).catch(() => {});
+          }
+        }
+
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.href = blobUrl;
+        downloadAnchor.download = 'conqueror.png';
+        downloadAnchor.target = '_blank';
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        document.body.removeChild(downloadAnchor);
+
+        setTimeout(() => {
+          window.open(blobUrl, '_blank');
+        }, 100);
+
+        setTimeout(() => {
+          URL.revokeObjectURL(blobUrl);
+        }, 10000);
+      }, 'image/png');
     });
 
-    fireBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      shootFire();
+    isolateBtnTouch(soundBtn, () => {
+      sound.muted = !sound.muted;
+      soundBtn.innerText = sound.muted ? '🔇' : '🔊';
+      sound.updateMusicState(state);
     });
+
+    isolateBtnTouch(confirmLoadBtn, () => {
+      const code = loadCodeInput.value.trim();
+      if (code && loadSaveCode(code)) {
+        loadModal.style.display = 'none';
+        pauseModal.style.display = 'none';
+        state = 'PLAYING';
+      } else {
+        alert("Invalid save code!");
+      }
+    });
+
+    isolateBtnTouch(cancelLoadBtn, () => {
+      loadModal.style.display = 'none';
+    });
+
+    pauseModal.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+    pauseModal.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
+    pauseModal.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    shareModal.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+    shareModal.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
+    shareModal.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    loadModal.addEventListener('touchstart', (e) => e.stopPropagation(), { passive: false });
+    loadModal.addEventListener('touchend', (e) => e.stopPropagation(), { passive: false });
+    loadModal.addEventListener('mousedown', (e) => e.stopPropagation());
+
+    function triggerBeheadingCutscene(royalType) {
+      sound.stopRoyalSounds();
+
+      cutsceneTarget = royalType;
+      cutsceneTimer = 0;
+      state = 'CUTSCENE';
+      
+      royalHeads++;
+      royalHeadTypes.push(royalType);
+
+      if (royalType === 'KING') gameStats.kingsBeheaded++;
+      else gameStats.queensBeheaded++;
+
+      updateHeartsDisplay();
+
+      const scoreResult = addScore(5000);
+
+      floatingTexts.push({
+        x: width / 2 - 50,
+        y: height / 2 - 60,
+        text: 'BEHEADED! +' + scoreResult.totalPts,
+        color: '#f1c40f',
+        alpha: 1.0,
+        vy: -1.5
+      });
+    }
 
     function drawNightSky() {
       const skyGradient = ctx.createLinearGradient(0, 0, 0, height);
-      skyGradient.addColorStop(0, '#0d0d26');
-      skyGradient.addColorStop(0.7, '#241738');
-      skyGradient.addColorStop(1, '#3a1c40');
+      
+      if (currentLevel === 1) {
+        skyGradient.addColorStop(0, '#0a192f');
+        skyGradient.addColorStop(0.7, '#1b3a4b');
+        skyGradient.addColorStop(1, '#274c5e');
+      } else if (currentLevel === 2) {
+        skyGradient.addColorStop(0, '#0d0d26');
+        skyGradient.addColorStop(0.7, '#241738');
+        skyGradient.addColorStop(1, '#3a1c40');
+      } else {
+        skyGradient.addColorStop(0, '#2b0910');
+        skyGradient.addColorStop(0.7, '#4a121a');
+        skyGradient.addColorStop(1, '#66221c');
+      }
+
       ctx.fillStyle = skyGradient;
       ctx.fillRect(0, 0, width, height);
 
@@ -777,7 +1814,7 @@
       stars.forEach(s => {
         ctx.globalAlpha = s.alpha;
         ctx.fillRect(s.x, s.y, s.size, s.size);
-        if (state === 'PLAYING') {
+        if (state === 'PLAYING' || state === 'LEVEL_CELEBRATE') {
           s.x -= s.speed * (khaleesiMounted ? 2.2 : 1.0);
           if (s.x < 0) s.x = width;
         }
@@ -786,29 +1823,40 @@
     }
 
     function drawMoon() {
-      const moonX = width * 0.78;
-      const moonY = height * 0.16;
+      const moonX = width * 0.72;
+      const moonY = height * 0.22;
+      const baseMoonRadius = 54;
 
-      const glow = ctx.createRadialGradient(moonX, moonY, 12, moonX, moonY, 55);
-      glow.addColorStop(0, 'rgba(255, 243, 191, 0.45)');
-      glow.addColorStop(0.5, 'rgba(255, 243, 191, 0.12)');
+      const glow = ctx.createRadialGradient(moonX, moonY, baseMoonRadius * 0.6, moonX, moonY, baseMoonRadius * 2.8);
+      glow.addColorStop(0, 'rgba(255, 243, 191, 0.55)');
+      glow.addColorStop(0.5, 'rgba(255, 243, 191, 0.15)');
       glow.addColorStop(1, 'rgba(255, 243, 191, 0)');
       ctx.fillStyle = glow;
       ctx.beginPath();
-      ctx.arc(moonX, moonY, 55, 0, Math.PI * 2);
+      ctx.arc(moonX, moonY, baseMoonRadius * 2.8, 0, Math.PI * 2);
       ctx.fill();
 
       ctx.fillStyle = '#fffae6';
       ctx.beginPath();
-      ctx.arc(moonX, moonY, 18, 0, Math.PI * 2);
+      ctx.arc(moonX, moonY, baseMoonRadius, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.fillStyle = '#e6dfc3';
-      ctx.beginPath();
-      ctx.arc(moonX - 5, moonY - 4, 4, 0, Math.PI * 2);
-      ctx.arc(moonX + 6, moonY + 3, 3, 0, Math.PI * 2);
-      ctx.arc(moonX - 2, moonY + 7, 2.5, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillStyle = '#dcd4b8';
+      const pixelCraterGrid = [
+        { x: -26, y: -20, w: 8, h: 6 },
+        { x: -18, y: -20, w: 4, h: 4 },
+        { x: -22, y: -14, w: 6, h: 3 },
+        { x: 14, y: -6, w: 10, h: 8 },
+        { x: 24, y: -4, w: 4, h: 4 },
+        { x: 18, y: 2, w: 6, h: 4 },
+        { x: -16, y: 16, w: 12, h: 9 },
+        { x: -19, y: 19, w: 3, h: 4 },
+        { x: 20, y: 24, w: 6, h: 5 }
+      ];
+
+      pixelCraterGrid.forEach(p => {
+        ctx.fillRect(moonX + p.x, moonY + p.y, p.w, p.h);
+      });
     }
 
     function drawGiantClouds() {
@@ -947,10 +1995,12 @@
 
     function drawGround() {
       const gY = height - groundHeight;
+      const scrollSpeed = getLevelScrollSpeed();
+
       ctx.fillStyle = '#181e28';
       ctx.fillRect(0, gY, width, groundHeight);
       
-      ctx.fillStyle = '#27ae60';
+      ctx.fillStyle = '#2ecc71';
       ctx.fillRect(0, gY, width, 8);
       ctx.fillStyle = '#2ecc71';
       for (let x = 0; x < width; x += 12) {
@@ -959,7 +2009,7 @@
 
       const t = Date.now() / 150;
       groundFlames.forEach((gf) => {
-        gf.x -= 2.5 * (khaleesiMounted ? 2.2 : 1.0);
+        gf.x -= scrollSpeed * (khaleesiMounted ? 2.2 : 1.0);
         gf.life--;
 
         const boostMult = gf.boostIntensity || 1.0;
@@ -978,32 +2028,302 @@
       groundFlames = groundFlames.filter(gf => gf.life > 0 && gf.x > -20);
     }
 
+    function drawBattlements() {
+      const gY = height - groundHeight;
+
+      battlements.forEach(b => {
+        const bX = b.x;
+        const bY = gY - b.height;
+        const bW = b.width;
+
+        if (bW <= 0 || bX + bW < -40 || bX > width + 40) return;
+
+        const useP = (b.isCrushed || b.isCharred) ? charPalette : stonePalette;
+
+        ctx.fillStyle = useP.main;
+        ctx.fillRect(bX, bY, bW, b.height);
+
+        ctx.fillStyle = useP.dark;
+        const bH = 12;
+        const brickW = 20;
+        for (let y = bY; y < gY; y += bH) {
+          ctx.fillRect(bX, y, bW, 2);
+          const offset = Math.floor(y / bH) % 2 * (brickW / 2);
+          for (let x = bX + offset; x < bX + bW; x += brickW) {
+            ctx.fillRect(x, y, 2, bH);
+          }
+        }
+
+        ctx.fillStyle = useP.light;
+        ctx.fillRect(bX, bY, bW, 3);
+
+        const crenelW = 28;
+        const crenelH = 20;
+        const crenelGap = 16;
+        const step = crenelW + crenelGap;
+
+        for (let relX = 4; relX <= bW - crenelW - 4; relX += step) {
+          const x = bX + relX;
+          ctx.fillStyle = useP.main;
+          ctx.fillRect(x, bY - crenelH, crenelW, crenelH);
+
+          ctx.fillStyle = useP.light;
+          ctx.fillRect(x, bY - crenelH, crenelW, 3);
+          ctx.fillRect(x, bY - crenelH, 3, crenelH);
+
+          ctx.fillStyle = useP.dark;
+          ctx.fillRect(x + crenelW - 3, bY - crenelH, 3, crenelH);
+        }
+      });
+    }
+
+    function drawArchersAndArrows() {
+      const gY = height - groundHeight;
+
+      archers.forEach(a => {
+        const b = a.battlementRef;
+        if (!b || a.destroyed) return;
+
+        const bX = b.x;
+        const bY = gY - b.height;
+        const archerX = bX + a.relX;
+
+        if (archerX < -40 || (bX + b.width) < -40) {
+          a.destroyed = true;
+          return;
+        }
+
+        if (state === 'PLAYING') {
+          a.timer++;
+          a.cycleTimer++;
+
+          switch (a.state) {
+            case 'HIDDEN':
+              a.isExposed = false;
+              if (a.cycleTimer >= 220) {
+                a.state = 'REVEALED';
+                a.timer = 0;
+                a.isExposed = true;
+              }
+              break;
+            case 'REVEALED':
+              a.isExposed = true;
+              if (a.timer >= 50) {
+                a.state = 'GLOWING';
+                a.timer = 0;
+              }
+              break;
+            case 'GLOWING':
+              a.isExposed = true;
+              if (a.timer >= 60) {
+                a.state = 'HOLDING';
+                a.timer = 0;
+              }
+              break;
+            case 'HOLDING':
+              a.isExposed = true;
+              if (a.timer >= 25 && !a.isFiring) {
+                a.isFiring = true;
+                sound.arrowLaunch();
+
+                const archerY = bY - 14;
+                const dx = dragon.x - archerX;
+                const dy = dragon.y - archerY;
+                const dist = Math.hypot(dx, dy) || 1;
+                const speed = 4.2;
+
+                arrows.push({
+                  x: archerX,
+                  y: archerY,
+                  vx: (dx / dist) * speed,
+                  vy: (dy / dist) * speed,
+                  angle: Math.atan2(dy, dx),
+                  life: 180
+                });
+              }
+              if (a.timer >= 35) {
+                a.state = 'HIDDEN';
+                a.timer = 0;
+                a.cycleTimer = 0;
+                a.isExposed = false;
+                a.isFiring = false;
+              }
+              break;
+          }
+        }
+
+        if (a.isExposed && !a.archerAwarded) {
+          const archerY = bY - 14;
+
+          flames.forEach(f => {
+            if (Math.hypot(f.x - archerX, f.y - archerY) < 24) {
+              a.destroyed = true;
+              a.archerAwarded = true;
+              gameStats.villagersKilled++;
+              gameStats.archersKilled++;
+              sound.knightHit();
+              const scoreResult = addScore(20);
+              floatingTexts.push({ x: archerX - 15, y: archerY - 20, text: 'ARCHER! +' + scoreResult.totalPts, color: '#f1c40f', alpha: 1.0, vy: -1.5 });
+              
+              for (let p = 0; p < 12; p++) {
+                particles.push({
+                  x: archerX,
+                  y: archerY,
+                  vx: (Math.random() - 0.5) * 8,
+                  vy: (Math.random() - 0.5) * 8,
+                  size: 3 + Math.random() * 3,
+                  life: 25,
+                  color: '#e74c3c'
+                });
+              }
+            }
+          });
+        }
+
+        if (a.destroyed) return;
+
+        ctx.save();
+        ctx.translate(archerX, bY - 14);
+
+        if (a.isExposed) {
+          if (a.state === 'REVEALED') {
+            ctx.fillStyle = '#f8c291';
+            ctx.fillRect(-4, -7, 8, 5);
+            ctx.fillStyle = '#2980b9';
+            ctx.fillRect(-5, -2, 10, 10);
+            ctx.fillStyle = '#27ae60';
+            ctx.fillRect(-5, -12, 10, 5);
+
+            ctx.strokeStyle = '#c0392b';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(-8, -2, 6, -Math.PI * 0.4, Math.PI * 0.4);
+            ctx.stroke();
+          } else if (a.state === 'GLOWING') {
+            const glowFactor = Math.sin(Date.now() / 30) * 0.5 + 0.5;
+            const radialGlow = ctx.createRadialGradient(0, -6, 2, 0, -6, 26);
+            radialGlow.addColorStop(0, `rgba(241, 196, 15, ${0.4 + glowFactor * 0.4})`);
+            radialGlow.addColorStop(1, 'rgba(241, 196, 15, 0)');
+            ctx.fillStyle = radialGlow;
+            ctx.beginPath();
+            ctx.arc(0, -6, 26, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f8c291';
+            ctx.fillRect(-4, -7, 8, 5);
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(-5, -2, 10, 10);
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(-5, -12, 10, 5);
+
+            ctx.strokeStyle = '#3498db';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(-6, -2, 9, -Math.PI * 0.4, Math.PI * 0.4);
+            ctx.stroke();
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-6, -9);
+            ctx.lineTo(-6, 5);
+            ctx.stroke();
+          } else if (a.state === 'HOLDING') {
+            ctx.fillStyle = '#f8c291';
+            ctx.fillRect(-4, -7, 8, 5);
+            ctx.fillStyle = '#2980b9';
+            ctx.fillRect(-5, -2, 10, 10);
+            ctx.fillStyle = '#27ae60';
+            ctx.fillRect(-5, -12, 10, 5);
+
+            ctx.strokeStyle = '#784e24';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(-6, -2, 8, -Math.PI * 0.4, Math.PI * 0.4);
+            ctx.stroke();
+
+            ctx.strokeStyle = '#ecf0f1';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(-6, -9);
+            ctx.lineTo(-6, 5);
+            ctx.stroke();
+          }
+        } else {
+          ctx.translate(0, -10);
+          ctx.fillStyle = '#27ae60';
+          ctx.fillRect(-5, 0, 10, 5);
+          ctx.fillRect(-3, -3, 6, 3);
+        }
+
+        ctx.restore();
+      });
+
+      archers = archers.filter(a => !a.destroyed);
+
+      arrows.forEach(arr => {
+        if (state === 'PLAYING') {
+          arr.x += arr.vx;
+          arr.y += arr.vy;
+          arr.life--;
+
+          const distToDragon = Math.hypot(dragon.x - arr.x, dragon.y - arr.y);
+          if (distToDragon < dragon.size / 2 + 4) {
+            if (!khaleesiMounted) {
+              triggerHit();
+            }
+            arr.life = 0;
+          }
+        }
+
+        ctx.save();
+        ctx.translate(arr.x, arr.y);
+        ctx.rotate(arr.angle);
+
+        ctx.strokeStyle = '#784e24';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(-10, 0);
+        ctx.lineTo(6, 0);
+        ctx.stroke();
+
+        ctx.fillStyle = '#bdc3c7';
+        ctx.beginPath();
+        ctx.moveTo(6, -3);
+        ctx.lineTo(12, 0);
+        ctx.lineTo(6, 3);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(-10, -2, 3, 4);
+
+        ctx.restore();
+      });
+
+      arrows = arrows.filter(arr => arr.life > 0 && arr.x > -40 && arr.x < width + 40 && arr.y > -40 && arr.y < height + 40);
+    }
+
     function drawKhaleesiSprite(kx, ky, scale = 1.0) {
       ctx.save();
       ctx.translate(kx, ky);
       ctx.scale(scale, scale);
 
-      // PLATINUM BLONDE BRAIDED HAIR
       ctx.fillStyle = '#f5f6fa';
       ctx.fillRect(-6, -16, 12, 10);
       ctx.fillRect(-8, -12, 16, 6);
       ctx.fillRect(-4, -6, 8, 12);
 
-      // FACE
       ctx.fillStyle = '#f8c291';
       ctx.fillRect(-4, -12, 8, 8);
 
-      // Eyes
       ctx.fillStyle = '#0a3d62';
       ctx.fillRect(1, -10, 2, 2);
 
-      // ICONIC BLUE DRESS
       ctx.fillStyle = '#4a69bd';
       ctx.fillRect(-5, -4, 10, 14);
       ctx.fillStyle = '#1e3799';
       ctx.fillRect(-6, 2, 12, 8);
 
-      // Gold Belt
       ctx.fillStyle = '#f6b93b';
       ctx.fillRect(-5, -1, 10, 2);
 
@@ -1021,7 +2341,6 @@
           if (k.relX < 4) { k.relX = 4; k.direction = 1; }
           if (k.relX > obs.width - 20) { k.relX = obs.width - 20; k.direction = -1; }
 
-          // TOUCH KHALEESI TO REFILL HEARTS & ADD 500 POINTS
           const kx = obs.x + k.relX;
           const ky = obs.bottomY - 14;
           const dist = Math.hypot(dragon.x - kx, dragon.y - ky);
@@ -1030,18 +2349,18 @@
             k.rescued = true;
             khaleesiMounted = true;
             khaleesiTimer = KHALEESI_MAX_TIME;
+            gameStats.khaleesiRescues++;
             
-            // Refill Hearts & Award 500 Points
             lives = 3;
             updateHeartsDisplay();
-            const earned = addScore(500);
+            const scoreResult = addScore(500);
 
             sound.powerup();
 
             floatingTexts.push({
               x: dragon.x - 30,
               y: dragon.y - 35,
-              text: 'KHALEESI! +500 ❤️❤️❤️',
+              text: 'KHALEESI! +' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x Combo!)',
               color: '#f6b93b',
               alpha: 1.0,
               vy: -1.8
@@ -1052,7 +2371,6 @@
         const kx = obs.x + k.relX;
         const ky = obs.bottomY - 14;
 
-        // Golden Protection Aura
         const glowRadius = 18 + Math.sin(Date.now() / 120) * 4;
         const radial = ctx.createRadialGradient(kx, ky - 6, 2, kx, ky - 6, glowRadius);
         radial.addColorStop(0, 'rgba(246, 185, 59, 0.7)');
@@ -1068,16 +2386,110 @@
       khaleesis = khaleesis.filter(k => !k.rescued && k.obsRef && k.obsRef.x + k.obsRef.width > -50);
     }
 
-    function drawDragon(x, y) {
+    function renderMountedKhaleesiHUD() {
+      const pSize = 64;
+      const pX = 15;
+      const pY = 15;
+
+      const renderBubbleBelow = (textString, isMountedSubtitle = false) => {
+        ctx.save();
+        ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+        
+        const rawWords = textString.replace(/"/g, '').split(' ');
+        const lines = [];
+        let currentLine = '';
+        const maxTextWidth = width * 0.76;
+
+        for (let i = 0; i < rawWords.length; i++) {
+          let testLine = currentLine ? (currentLine + ' ' + rawWords[i]) : rawWords[i];
+          if (ctx.measureText(testLine).width > maxTextWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = rawWords[i];
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        let longestLineW = 0;
+        lines.forEach(l => {
+          const w = ctx.measureText(l).width;
+          if (w > longestLineW) longestLineW = w;
+        });
+
+        const bPaddingX = 14;
+        const bPaddingY = 10;
+        const lineH = 20;
+        const bW = Math.max(160, longestLineW + (bPaddingX * 2));
+        const bH = (lines.length * lineH) + (bPaddingY * 2);
+
+        const bX = Math.min(width - bW - 15, pX);
+        const bY = pY + pSize + 14;
+
+        ctx.fillStyle = '#ffffff';
+
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(bX, bY, bW, bH, 10);
+        } else {
+          ctx.fillRect(bX, bY, bW, bH);
+        }
+        ctx.fill();
+
+        ctx.fillStyle = isMountedSubtitle ? '#d63031' : '#000000';
+        ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+
+        lines.forEach((l, idx) => {
+          ctx.fillText(l, bX + (bW / 2), bY + bPaddingY + 14 + (idx * lineH));
+        });
+
+        ctx.restore();
+      };
+
+      if (khaleesiMounted) {
+        const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+        ctx.fillStyle = '#11161d';
+        ctx.fillRect(pX, pY, pSize, pSize);
+
+        if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
+          ctx.drawImage(activeFrame, pX, pY, pSize, pSize);
+        }
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#f1c40f';
+        ctx.strokeRect(pX, pY, pSize, pSize);
+
+        renderBubbleBelow('BREAK THE WHEEL!', true);
+      } else if (khaleesiBannerTimer > 0) {
+        khaleesiBannerTimer--;
+        const activeFrame = (Math.floor(Date.now() / 300) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+        ctx.fillStyle = '#11161d';
+        ctx.fillRect(pX, pY, pSize, pSize);
+
+        if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
+          ctx.drawImage(activeFrame, pX, pY, pSize, pSize);
+        }
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#f1c40f';
+        ctx.strokeRect(pX, pY, pSize, pSize);
+
+        renderBubbleBelow(khaleesiBannerText, false);
+      }
+    }
+
+    function drawDragon(x, y, customPitch = null) {
       if (invulnerableTimer % 6 > 3) return;
 
       ctx.save();
       ctx.translate(x, y);
-      const pitch = Math.min(Math.max(dragon.velocity * 0.05, -0.4), 0.6);
+      const pitch = customPitch !== null ? customPitch : Math.min(Math.max(dragon.velocity * 0.05, -0.4), 0.6);
       ctx.rotate(pitch);
       const p = 2.6;
 
-      // RAPID RAINBOW COLOR STROBE DURING INVINCIBILITY
       const rainbowColors = ['#00d2d3', '#ff7675', '#f1c40f', '#2ecc71', '#a29bfe', '#ffffff'];
       const strobeColor = rainbowColors[Math.floor(Date.now() / 50) % rainbowColors.length];
 
@@ -1164,7 +2576,6 @@
 
       ctx.restore();
 
-      // KHALEESI RIDING ON HEAD
       if (khaleesiMounted) {
         drawKhaleesiSprite(2 * p, -18 * p, 0.85);
       }
@@ -1206,23 +2617,37 @@
         ctx.fillRect(rx + rw - 3, ry, 3, rh);
       };
 
-      const drawGreenTorch = (tx, ty) => {
+      const drawLevelTorch = (tx, ty) => {
         ctx.fillStyle = '#111';
         ctx.fillRect(tx - 3, ty + 6, 6, 8);
         ctx.fillRect(tx - 1, ty + 14, 2, 6);
 
+        let glowColor = 'rgba(46, 204, 113, 0.45)';
+        let flameMain = '#2ecc71';
+        let flameCore = '#abebc6';
+
+        if (currentLevel === 1) {
+          glowColor = 'rgba(52, 152, 219, 0.45)';
+          flameMain = '#3498db';
+          flameCore = '#a9cce3';
+        } else if (currentLevel >= 3) {
+          glowColor = 'rgba(231, 76, 60, 0.45)';
+          flameMain = '#e74c3c';
+          flameCore = '#f9e79f';
+        }
+
         const glow = ctx.createRadialGradient(tx, ty, 2, tx, ty, 26);
-        glow.addColorStop(0, 'rgba(46, 204, 113, 0.45)');
-        glow.addColorStop(1, 'rgba(46, 204, 113, 0)');
+        glow.addColorStop(0, glowColor);
+        glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
         ctx.fillStyle = glow;
         ctx.beginPath();
         ctx.arc(tx, ty, 26, 0, Math.PI * 2);
         ctx.fill();
 
         const flick = Math.sin(Date.now() / 40 + tx) * 3;
-        ctx.fillStyle = '#2ecc71';
+        ctx.fillStyle = flameMain;
         ctx.fillRect(tx - 3, ty - 2 + flick, 6, 8);
-        ctx.fillStyle = '#abebc6';
+        ctx.fillStyle = flameCore;
         ctx.fillRect(tx - 1, ty - 5 + flick, 2, 5);
       };
 
@@ -1267,18 +2692,16 @@
         ctx.fill();
       };
 
-      // TOP TOWER SECTION (DARKENED INDEPENDENTLY IF TOUCHED)
       drawStoneRect(obs.x, 0, obs.width, obs.topHeight - 12, pTop);
       drawStoneRect(obs.x - 6, obs.topHeight - 12, obs.width + 12, 12, pTop);
       if (obs.topHeight > 90) {
         drawArchedWindow(obs.x + obs.width / 2 - 16, obs.topHeight / 2 - 28);
         if (obs.width > 80) {
-          drawGreenTorch(obs.x + 10, obs.topHeight / 2);
-          drawGreenTorch(obs.x + obs.width - 10, obs.topHeight / 2);
+          drawLevelTorch(obs.x + 10, obs.topHeight / 2);
+          drawLevelTorch(obs.x + obs.width - 10, obs.topHeight / 2);
         }
       }
 
-      // Bottom Wall Tower
       const bHeight = gY - obs.bottomY;
       if (bHeight > 0) {
         drawStoneRect(obs.x - 6, obs.bottomY, obs.width + 12, 12, pBottom);
@@ -1347,8 +2770,8 @@
           if (winY + 54 < archTopY - 10) {
             drawArchedWindow(obs.x + obs.width / 2 - 16, winY);
             if (obs.width > 80) {
-              drawGreenTorch(obs.x + 10, obs.bottomY + bHeight / 2);
-              drawGreenTorch(obs.x + obs.width - 10, obs.bottomY + bHeight / 2);
+              drawLevelTorch(obs.x + 10, obs.bottomY + bHeight / 2);
+              drawLevelTorch(obs.x + obs.width - 10, obs.bottomY + bHeight / 2);
             }
           }
         }
@@ -1383,7 +2806,6 @@
 
         const t = Date.now() / 180;
         
-        // DRAW CANDLE FLAME SHAPES
         obs.surfaceFlames.forEach(sf => {
           if (sf.width < sf.maxWidth) sf.width += 0.45;
           if (sf.height < sf.maxHeight) sf.height += 0.55;
@@ -1433,10 +2855,12 @@
 
     function drawCollectableHearts() {
       const now = Date.now();
+      const scrollSpeed = getLevelScrollSpeed();
+
       collectableHearts.forEach((h) => {
         if (h.collected) return;
 
-        h.x -= 2.5 * (khaleesiMounted ? 2.2 : 1.0);
+        h.x -= scrollSpeed * (khaleesiMounted ? 2.2 : 1.0);
         h.bobPhase += 0.05;
         h.y = h.baseY + Math.sin(h.bobPhase) * 8;
 
@@ -1481,15 +2905,15 @@
 
     function drawTrebuchetsAndBoulders() {
       const gY = height - groundHeight;
+      const scrollSpeed = getLevelScrollSpeed();
 
-      // UPDATE & DRAW GROUND TREBUCHETS ON WHEELS
       trebuchets.forEach(t => {
         if (state === 'PLAYING') {
-          t.x -= 2.5 * (khaleesiMounted ? 2.2 : 1.0);
+          t.x -= scrollSpeed * (khaleesiMounted ? 2.2 : 1.0);
 
           t.shootCooldown--;
           if (t.shootCooldown <= 0 && t.x > 50 && t.x < width - 10) {
-            t.shootCooldown = 110 + Math.random() * 60;
+            t.shootCooldown = 80 + Math.random() * 50;
             t.isFiringAnim = true;
             sound.boulderLaunch();
 
@@ -1521,16 +2945,16 @@
             }
           }
 
-          // AUTOMATIC CHAIN REACTION NEAR COLLAPSING LOWER TOWERS
           obstacles.forEach(obs => {
             if (obs.isCharred || obs.charProgress > 0) {
               const obsRight = obs.x + obs.width;
               const obsLeft = obs.x;
               if (Math.abs(t.x - obsRight) < 120 || Math.abs(t.x - obsLeft) < 120) {
                 t.destroyed = true;
+                gameStats.trebuchetsDestroyed++;
                 sound.knightHit();
-                const earned = addScore(10);
-                floatingTexts.push({ x: t.x - 10, y: gY - 50, text: '+' + earned, color: '#ff9f43', alpha: 1.0, vy: -1.5 });
+                const scoreResult = addScore(10);
+                floatingTexts.push({ x: t.x - 10, y: gY - 50, text: '+' + scoreResult.totalPts + (khaleesiMounted ? ' (' + scoreResult.multiplier + 'x)' : ''), color: '#ff9f43', alpha: 1.0, vy: -1.5 });
 
                 for (let p = 0; p < 16; p++) {
                   particles.push({
@@ -1547,13 +2971,14 @@
             }
           });
 
-          // CHECK FIRE COLLISION TO DESTROY TREBUCHET
           flames.forEach(f => {
             const dist = Math.hypot(f.x - t.x, f.y - (gY - 25));
             if (dist < 34) {
               sound.knightHit();
-              const earned = addScore(10);
-              floatingTexts.push({ x: t.x - 10, y: gY - 50, text: '+' + earned, color: '#ff9f43', alpha: 1.0, vy: -1.5 });
+              t.destroyed = true;
+              gameStats.trebuchetsDestroyed++;
+              const scoreResult = addScore(10);
+              floatingTexts.push({ x: t.x - 10, y: gY - 50, text: '+' + scoreResult.totalPts + (khaleesiMounted ? ' (' + scoreResult.multiplier + 'x)' : ''), color: '#ff9f43', alpha: 1.0, vy: -1.5 });
 
               for (let p = 0; p < 16; p++) {
                 particles.push({
@@ -1566,8 +2991,6 @@
                   color: Math.random() < 0.5 ? '#5c3d1e' : '#ff7675'
                 });
               }
-
-              t.destroyed = true;
             }
           });
         }
@@ -1659,7 +3082,6 @@
 
       trebuchets = trebuchets.filter(t => !t.destroyed && t.x > -60);
 
-      // LAUNCHED TREBUCHET BOULDERS
       trebuchetBoulders.forEach(b => {
         if (state === 'PLAYING') {
           b.x += b.vx;
@@ -1728,9 +3150,10 @@
           if (currentY >= gY - 26) {
             if (!k.pointAwarded) {
               k.pointAwarded = true;
-              const earned = addScore(2);
+              gameStats.villagersKilled++;
+              const scoreResult = addScore(2);
               sound.knightHit();
-              floatingTexts.push({ x: obs.x + k.relX, y: gY - 10, text: '+' + earned, alpha: 1.0, vy: -1.2 });
+              floatingTexts.push({ x: obs.x + k.relX, y: gY - 10, text: '+' + scoreResult.totalPts + (khaleesiMounted ? ' (' + scoreResult.multiplier + 'x)' : ''), alpha: 1.0, vy: -1.2 });
             }
             k.state = 'DEAD_ON_GROUND';
           }
@@ -1755,15 +3178,28 @@
         const kx = obs.x + k.relX;
         const ky = obs.bottomY - 26 + k.fallYOffset;
 
+        if (k.state === 'ALIVE' && k.isRoyal && state === 'PLAYING') {
+          const dist = Math.hypot(dragon.x - kx, dragon.y - ky);
+          if (dist < dragon.size / 2 + 18) {
+            k.state = 'BEHEADED';
+            triggerBeheadingCutscene(k.royalType);
+            return;
+          }
+        }
+
         const hasFireOnKnight = k.state === 'ALIVE' && (obs.isCharred || obs.charProgress > 0 || obs.surfaceFlames.some(sf => Math.abs((obs.x + sf.relX) - kx) < 24));
 
         if (hasFireOnKnight) {
           k.state = 'BURNING';
-          if (!k.pointAwarded) {
+          if (k.isRoyal) {
+            sound.stopRoyalSounds();
+            resetScoreToZero();
+          } else if (!k.pointAwarded) {
             k.pointAwarded = true;
-            const earned = addScore(2);
+            gameStats.villagersKilled++;
+            const scoreResult = addScore(2);
             sound.knightHit();
-            floatingTexts.push({ x: kx + 4, y: ky - 8, text: '+' + earned, alpha: 1.0, vy: -1.2 });
+            floatingTexts.push({ x: kx + 4, y: ky - 8, text: '+' + scoreResult.totalPts + (khaleesiMounted ? ' (' + scoreResult.multiplier + 'x)' : ''), alpha: 1.0, vy: -1.2 });
           }
         }
 
@@ -1798,57 +3234,62 @@
           ctx.translate(kx, ky);
 
           const isStunned = k.stunTimer > 0;
-          const swordWave = isStunned ? 0.8 : Math.sin(time + kx * 0.05) * 0.35;
+          const isRoyal = k.isRoyal;
 
-          if (isStunned) {
-            ctx.rotate(-0.25 * k.direction);
+          if (isRoyal) {
+            const isKing = k.royalType === 'KING';
+            
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(4, -14, 14, 6);
+            ctx.fillRect(2, -16, 4, 4);
+            ctx.fillRect(9, -16, 4, 4);
+            ctx.fillRect(16, -16, 4, 4);
+
+            ctx.fillStyle = isKing ? '#8e44ad' : '#c0392b';
+            ctx.fillRect(2, -8, 18, 28);
+            ctx.fillStyle = '#f39c12';
+            ctx.fillRect(8, -8, 6, 28);
+
+            ctx.fillStyle = '#f8c291';
+            ctx.fillRect(5, -8, 12, 8);
+
+            ctx.fillStyle = '#f1c40f';
+            ctx.fillRect(20, -10, 3, 20);
+            ctx.fillRect(19, -12, 5, 4);
+          } else {
+            const costume = k.costume || peasantCostumes[0];
+
+            ctx.fillStyle = costume.hair;
+            ctx.fillRect(5, -6, 12, 5);
+
+            ctx.fillStyle = '#f8c291';
+            ctx.fillRect(6, -2, 10, 7);
+
+            ctx.fillStyle = costume.tunic;
+            ctx.fillRect(4, 5, 14, 10);
+            ctx.fillStyle = costume.pants;
+            ctx.fillRect(5, 15, 12, 7);
+
+            if (k.hasPitchfork) {
+              ctx.fillStyle = '#7f8c8d';
+              ctx.fillRect(18, -4, 2, 22);
+              ctx.fillRect(16, -6, 6, 2);
+              ctx.fillRect(16, -10, 2, 4);
+              ctx.fillRect(20, -10, 2, 4);
+            } else {
+              ctx.fillStyle = '#784e24';
+              ctx.fillRect(18, 2, 3, 14);
+              ctx.fillStyle = '#e74c3c';
+              ctx.fillRect(17, -3, 5, 5);
+              ctx.fillStyle = '#f1c40f';
+              ctx.fillRect(18, -5, 3, 3);
+            }
+
+            const legMove = isStunned ? 0 : Math.sin(time * 2 + kx) * 1.5;
+            ctx.fillStyle = '#34495e';
+            ctx.fillRect(5 + legMove, 22, 4, 4);
+            ctx.fillRect(11 - legMove, 22, 4, 4);
           }
-
-          ctx.fillStyle = '#e74c3c';
-          ctx.fillRect(8, -4, 4, 5);
-          ctx.fillRect(6, -6, 4, 3);
-
-          ctx.fillStyle = '#bdc3c7';
-          ctx.fillRect(5, 0, 10, 8);
-          ctx.fillStyle = '#7f8c8d';
-          ctx.fillRect(7, 3, 7, 2);
-
-          ctx.fillStyle = '#95a5a6';
-          ctx.fillRect(3, 8, 14, 12);
-          ctx.fillStyle = '#7f8c8d';
-          ctx.fillRect(5, 10, 10, 8);
-
-          ctx.save();
-          ctx.translate(21, 15);
-          ctx.rotate(swordWave);
-          ctx.fillStyle = '#dcdde1';
-          ctx.fillRect(-1, -17, 3, 16);
-          ctx.fillRect(-2, -1, 5, 2);
-          ctx.fillStyle = '#e67e22';
-          ctx.fillRect(-1, 1, 3, 3);
-          ctx.restore();
-
-          ctx.beginPath();
-          ctx.moveTo(-1, 6);
-          ctx.lineTo(8, 6);
-          ctx.lineTo(6, 20);
-          ctx.lineTo(3.5, 23);
-          ctx.lineTo(1, 20);
-          ctx.closePath();
-          ctx.fillStyle = '#2980b9';
-          ctx.fill();
-          ctx.lineWidth = 1.5;
-          ctx.strokeStyle = '#f1c40f';
-          ctx.stroke();
-
-          ctx.fillStyle = '#f1c40f';
-          ctx.fillRect(3, 9, 2, 9);
-          ctx.fillRect(1, 12, 6, 2);
-
-          const legMove = isStunned ? 0 : Math.sin(time * 2 + kx) * 1.5;
-          ctx.fillStyle = '#7f8c8d';
-          ctx.fillRect(5 + legMove, 20, 4, 6);
-          ctx.fillRect(11 - legMove, 20, 4, 6);
 
           ctx.restore();
         } else if (k.state === 'BURNING') {
@@ -1890,7 +3331,7 @@
         ctx.restore();
 
         if (d.y >= gY) {
-          for(let s = 0; s < 5; s++) {
+          for (let s = 0; s < 5; s++) {
              particles.push({
                 x: d.x,
                 y: gY,
@@ -1989,7 +3430,7 @@
         const ft = floatingTexts[i];
         ctx.save();
         ctx.globalAlpha = ft.alpha;
-        ctx.font = 'bold 28px Courier New';
+        ctx.font = 'bold 24px "Proxima Nova", sans-serif';
         ctx.fillStyle = ft.color || '#2ecc71';
         ctx.fillText(ft.text, ft.x, ft.y);
         ctx.restore();
@@ -2001,7 +3442,7 @@
     }
 
     function triggerHit() {
-      if (invulnerableTimer > 0 || khaleesiMounted) return;
+      if (invulnerableTimer > 0 || khaleesiMounted || state === 'LEVEL_CELEBRATE') return;
       lives--;
       updateHeartsDisplay();
       sound.hit();
@@ -2009,21 +3450,139 @@
 
       if (lives <= 0) {
         state = 'GAMEOVER';
+        showKhaleesiBanner('"DO NOT FAIL ME, SYRAXX! TRY AGAIN!"', 300);
+      }
+    }
+
+    function updateLevelCelebration() {
+      celebrationTimer++;
+      const worldSpeedMult = 1.2;
+      const scrollSpeed = getLevelScrollSpeed();
+      backgroundParallaxX += 0.4 * worldSpeedMult;
+
+      for (let i = battlements.length - 1; i >= 0; i--) {
+        battlements[i].x -= scrollSpeed * worldSpeedMult;
+        if (battlements[i].x + battlements[i].width < -100) battlements.splice(i, 1);
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].x -= scrollSpeed * worldSpeedMult;
+        if (obstacles[i].x + obstacles[i].width < -100) obstacles.splice(i, 1);
+      }
+
+      for (let i = trebuchets.length - 1; i >= 0; i--) {
+        trebuchets[i].x -= scrollSpeed * worldSpeedMult;
+        if (trebuchets[i].x < -60) trebuchets.splice(i, 1);
+      }
+
+      celebrationAngle += 0.035;
+
+      const centerX = width * 0.50;
+      const centerY = height * 0.32;
+      const loopRadiusX = 140;
+      const loopRadiusY = 90;
+
+      dragon.x = centerX + Math.cos(celebrationAngle) * loopRadiusX;
+      dragon.y = centerY + Math.sin(celebrationAngle) * loopRadiusY;
+      dragon.wingState = 0.9;
+
+      const nextX = centerX + Math.cos(celebrationAngle + 0.035) * loopRadiusX;
+      const nextY = centerY + Math.sin(celebrationAngle + 0.035) * loopRadiusY;
+
+      if (celebrationTimer % 20 === 0) {
+        sound.fireworks();
+        sound.fireRoar();
+        const fireColors = ['#f1c40f', '#e74c3c', '#2ecc71', '#3498db', '#9b59b6', '#ffffff'];
+        const burstX = dragon.x + (Math.random() - 0.5) * 50;
+        const burstY = dragon.y + (Math.random() - 0.5) * 50;
+
+        for (let f = 0; f < 20; f++) {
+          const color = fireColors[Math.floor(Math.random() * fireColors.length)];
+          const angle = Math.random() * Math.PI * 2;
+          const spd = 3.5 + Math.random() * 8.5;
+          flames.push({
+            x: burstX,
+            y: burstY,
+            vx: Math.cos(angle) * spd,
+            vy: Math.sin(angle) * spd,
+            dragX: 0.965,
+            gravity: 0.07,
+            size: 11 + Math.random() * 11,
+            life: 90,
+            maxLife: 90,
+            color: color
+          });
+        }
+      }
+
+      if (celebrationTimer > 270) {
+        celebrationFadeAlpha = Math.min(1.0, (celebrationTimer - 270) / 50.0);
+      }
+
+      if (celebrationTimer >= 330) {
+        state = 'LEVEL_DIALOGUE';
+        celebrationFadeAlpha = 0;
       }
     }
 
     function update() {
+      sound.updateMusicState(state);
+
+      if (state === 'PAUSED' || state === 'CUTSCENE' || state === 'LEVEL_DIALOGUE') return;
+
+      if (state === 'LEVEL_CELEBRATE') {
+        updateLevelCelebration();
+        return;
+      }
+
       if (invulnerableTimer > 0) invulnerableTimer--;
 
       if (khaleesiMounted) {
         khaleesiTimer--;
         if (khaleesiTimer <= 0) {
           khaleesiMounted = false;
+          khaleesiCombo = 0;
+          showKhaleesiBanner('"I LOVE YOU ALWAYS, SYRAXX!"', 240);
+        }
+      }
+
+      if (state === 'GAMEOVER') {
+        if (headFadingIndex >= 0) {
+          headFadeTimer--;
+          if (headFadeTimer <= 0) {
+            royalHeads = Math.max(0, royalHeads - 1);
+            if (royalHeadTypes.length > 0) royalHeadTypes.pop();
+            headFadingIndex = -1;
+            lives = 3;
+            updateHeartsDisplay();
+
+            dragon.velocity = dragon.jump;
+            dragon.wingState = 1.0;
+            sound.flap();
+
+            invulnerableTimer = 120;
+
+            state = 'PLAYING';
+            sound.powerup();
+          }
+        }
+      }
+
+      if (state === 'SPLASH' && !textTypingComplete) {
+        typedCharIndex += 0.45;
+        if (typedCharIndex >= totalCharCount) {
+          typedCharIndex = totalCharCount;
+          textTypingComplete = true;
         }
       }
 
       if (state === 'PLAYING') {
+        levelTimerSeconds += (1 / 60);
+        updateLevelBadgeUI();
+        checkLevelProgression();
+
         const worldSpeedMult = khaleesiMounted ? 2.2 : 1.0;
+        const scrollSpeed = getLevelScrollSpeed();
         backgroundParallaxX += 0.4 * worldSpeedMult;
 
         dragon.velocity += dragon.gravity;
@@ -2031,7 +3590,38 @@
 
         const gY = height - groundHeight;
 
-        // TREBUCHET BOULDER COLLISIONS
+        for (let i = battlements.length - 1; i >= 0; i--) {
+          const b = battlements[i];
+          b.x -= scrollSpeed * worldSpeedMult;
+          if (b.x + b.width < -100) {
+            battlements.splice(i, 1);
+          }
+        }
+
+        battlements.forEach(b => {
+          const bX = b.x;
+          const bY = gY - b.height;
+          const bW = b.width;
+
+          const padding = 6;
+          const dLeft = dragon.x - dragon.size / 2 + padding;
+          const dRight = dragon.x + dragon.size / 2 - padding;
+          const dBottom = dragon.y + dragon.size / 2 - padding;
+
+          if (dRight > bX && dLeft < bX + bW && dBottom > bY) {
+            if (khaleesiMounted) {
+              if (!b.isCrushed) {
+                b.isCrushed = true;
+                sound.towerDestroy();
+                const scoreResult = addScore(15);
+                floatingTexts.push({ x: bX + bW / 2 - 20, y: bY - 15, text: 'CRUSH! +' + scoreResult.totalPts, color: '#f1c40f', alpha: 1.0, vy: -1.5 });
+              }
+            } else {
+              triggerHit();
+            }
+          }
+        });
+
         trebuchetBoulders.forEach((boulder, idx) => {
           const dist = Math.hypot(dragon.x - boulder.x, dragon.y - boulder.y);
           if (dist < dragon.size / 2 + boulder.radius) {
@@ -2053,7 +3643,6 @@
           }
         });
 
-        // HEART PICKUP COLLISIONS
         collectableHearts.forEach(h => {
           if (!h.collected) {
             const dist = Math.hypot(dragon.x - h.x, dragon.y - h.y);
@@ -2066,7 +3655,7 @@
                 updateHeartsDisplay();
               }
 
-              const earned = addScore(20);
+              const scoreResult = addScore(20);
 
               for (let p = 0; p < 12; p++) {
                 particles.push({
@@ -2083,7 +3672,7 @@
               floatingTexts.push({
                 x: h.x - 20,
                 y: h.y - 15,
-                text: '+1 ❤️ (+' + earned + ')',
+                text: '+1 ❤️ (+' + scoreResult.totalPts + ')',
                 color: '#ff4d4d',
                 alpha: 1.0,
                 vy: -1.6
@@ -2158,15 +3747,16 @@
               if (obs.charProgress >= 1.0) {
                   obs.charProgress = 1.0;
                   obs.isCharred = true;
-                  sound.knightHit();
+                  gameStats.burnedTowers++;
+                  sound.towerDestroy();
               }
           }
         });
 
         if (isHoldingAction) {
           holdTimer++;
-          if (holdTimer > 6 && holdTimer < 45) {
-            dragon.vx += 0.45;
+          if (holdTimer > 4 && holdTimer < 45) {
+            dragon.vx += 0.95;
             dragon.wingState = 0.8;
             sound.whoosh();
 
@@ -2179,10 +3769,10 @@
               
               if (obs.isFullyIgnited && dist <= shockwaveRadius + 100 && !obs.isCharred && obs.charProgress === 0) {
                 obs.charProgress = 0.01;
-                sound.hit();
+                sound.towerDestroy();
                 
-                const earned = addScore(Math.round((obs.width / 80) * 20));
-                floatingTexts.push({ x: obs.x + obs.width / 2 - 30, y: obs.bottomY - 30, text: '+' + earned, alpha: 1.0, vy: -1.8 });
+                const scoreResult = addScore(Math.round((obs.width / 80) * 20));
+                floatingTexts.push({ x: obs.x + obs.width / 2 - 30, y: obs.bottomY - 30, text: '+' + scoreResult.totalPts + (khaleesiMounted ? ' (' + scoreResult.multiplier + 'x)' : ''), alpha: 1.0, vy: -1.8 });
               }
 
               obs.surfaceFlames.forEach(sf => {
@@ -2200,7 +3790,7 @@
             });
 
             knights.forEach(k => {
-              if (k.state === 'ALIVE') {
+              if (k.state === 'ALIVE' && !k.isRoyal) {
                 const obs = k.obsRef;
                 const kx = obs.x + k.relX;
                 const ky = obs.bottomY - 12;
@@ -2238,14 +3828,14 @@
         }
 
         dragon.x += dragon.vx;
-        dragon.vx *= 0.92;
+        dragon.vx *= 0.90;
 
-        const thirtyPercentWidth = width * 0.3;
+        const thirtyPercentWidth = width * 0.30;
         if (dragon.x > dragon.baseX) {
-          let returnSpeed = 0.7;
+          let returnSpeed = 1.2;
           if (dragon.x > thirtyPercentWidth) {
             const extraRatio = (dragon.x - thirtyPercentWidth) / (width - thirtyPercentWidth);
-            returnSpeed = 1.8 + extraRatio * 5.0;
+            returnSpeed = 3.5 + extraRatio * 9.0;
           }
           dragon.x -= returnSpeed;
           if (dragon.x < dragon.baseX) dragon.x = dragon.baseX;
@@ -2269,7 +3859,7 @@
 
         for (let i = obstacles.length - 1; i >= 0; i--) {
           const obs = obstacles[i];
-          obs.x -= 2.5 * worldSpeedMult;
+          obs.x -= scrollSpeed * worldSpeedMult;
 
           if (!obs.passed && obs.x + obs.width < dragon.x) {
             obs.passed = true;
@@ -2284,16 +3874,14 @@
           const dBottom = dragon.y + dragon.size / 2 - padding;
 
           if (dRight > obs.x && dLeft < obs.x + obs.width) {
-            // INDEPENDENT TOP TOWER COLLISION DURING KHALEESI INVINCIBILITY
             if (dTop < obs.topHeight) {
               if (khaleesiMounted) {
                 if (!obs.topIsCharred) {
                   obs.topIsCharred = true;
-                  sound.hit();
-                  const earned = addScore(15);
-                  floatingTexts.push({ x: obs.x + obs.width / 2 - 20, y: obs.topHeight + 10, text: 'CRUSH! +' + earned, color: '#f1c40f', alpha: 1.0, vy: 1.5 });
+                  sound.towerDestroy();
+                  const scoreResult = addScore(15);
+                  floatingTexts.push({ x: obs.x + obs.width / 2 - 20, y: obs.topHeight + 10, text: 'CRUSH! +' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x)', color: '#f1c40f', alpha: 1.0, vy: 1.5 });
 
-                  // ERUPTING FLAMES BURST ON TOP TOWER IMPACT
                   for (let f = 0; f < 12; f++) {
                     flames.push({
                       x: dragon.x + (Math.random() - 0.5) * 30,
@@ -2315,16 +3903,14 @@
               }
             }
 
-            // BOTTOM TOWER COLLISION
             if (dBottom > obs.bottomY) {
               if (khaleesiMounted) {
                 if (!obs.isCharred && obs.charProgress === 0) {
                   obs.charProgress = 0.01;
-                  sound.hit();
-                  const earned = addScore(15);
-                  floatingTexts.push({ x: obs.x + obs.width / 2 - 20, y: obs.bottomY - 20, text: 'CRUSH! +' + earned, color: '#f1c40f', alpha: 1.0, vy: -1.8 });
+                  sound.towerDestroy();
+                  const scoreResult = addScore(15);
+                  floatingTexts.push({ x: obs.x + obs.width / 2 - 20, y: obs.bottomY - 20, text: 'CRUSH! +' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x)', color: '#f1c40f', alpha: 1.0, vy: -1.8 });
 
-                  // ERUPTING FLAMES BURST ON BOTTOM TOWER IMPACT
                   for (let f = 0; f < 12; f++) {
                     flames.push({
                       x: dragon.x + (Math.random() - 0.5) * 30,
@@ -2354,6 +3940,480 @@
       }
     }
 
+    function renderLevelDialogue() {
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.92)';
+      ctx.fillRect(0, 0, width, height);
+
+      const pSize = 140;
+      const pX = (width - pSize) / 2;
+      const pY = 120;
+      const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+      ctx.fillStyle = '#11161d';
+      ctx.fillRect(pX, pY, pSize, pSize);
+      if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
+        ctx.drawImage(activeFrame, pX, pY, pSize, pSize);
+      }
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#f1c40f';
+      ctx.strokeRect(pX, pY, pSize, pSize);
+
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 22px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'center';
+
+      let title = "LEVEL 1: THE SIEGE BEGINS!";
+      let buttonText = "BEGIN CONQUEST";
+
+      if (levelDialogueType === 'LEVEL1_CLEAR') {
+        title = "LEVEL 1 CONQUERED!";
+        buttonText = "START LEVEL 2";
+      } else if (levelDialogueType === 'LEVEL2_CLEAR') {
+        title = "LEVEL 2 CONQUERED!";
+        buttonText = "START LEVEL 3";
+      } else if (levelDialogueType === 'VICTORY') {
+        title = "SLAVERS DEFEATED! VICTORY!";
+        buttonText = "PLAY AGAIN";
+      }
+
+      ctx.fillText(title, width / 2, pY - 25);
+
+      let statsBoxY, statsBoxH;
+
+      if (levelDialogueType === 'INTRO') {
+        const speechLines = [
+          '"My brave Syraxx, burn their',
+          'towers, slay the slavers, and bring',
+          'me to victory. I love you!"'
+        ];
+
+        const bW = width - 60;
+        bH = 90;
+        const bX = 30;
+        bY = pY + pSize + 20;
+        statsBoxY = bY;
+        statsBoxH = bH;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
+        else ctx.fillRect(bX, bY, bW, bH);
+        ctx.fill();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+
+        speechLines.forEach((l, idx) => {
+          ctx.fillText(l, width / 2, bY + 26 + (idx * 22));
+        });
+
+      } else if (levelDialogueType === 'LEVEL1_CLEAR') {
+        const speechLines = [
+          '"My beloved Syraxx, you will now',
+          'encounter the royals. DO NOT BURN',
+          'THE ROYALS! Bring me their heads to',
+          'mount on the city walls!"'
+        ];
+
+        const bW = width - 60;
+        bH = 110;
+        const bX = 30;
+        bY = pY + pSize + 20;
+        statsBoxY = bY;
+        statsBoxH = bH;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
+        else ctx.fillRect(bX, bY, bW, bH);
+        ctx.fill();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 14px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+
+        speechLines.forEach((l, idx) => {
+          ctx.fillText(l, width / 2, bY + 24 + (idx * 21));
+        });
+
+      } else {
+        ctx.fillStyle = '#2ecc71';
+        ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+        ctx.fillText('"I LOVE YOU SO MUCH SYRAXX!"', width / 2, pY + pSize + 25);
+
+        statsBoxY = pY + pSize + 40;
+        const statsBoxW = width - 60;
+        statsBoxH = 175;
+        const statsBoxX = 30;
+
+        ctx.fillStyle = '#11161d';
+        ctx.fillRect(statsBoxX, statsBoxY, statsBoxW, statsBoxH);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#f1c40f';
+        ctx.strokeRect(statsBoxX, statsBoxY, statsBoxW, statsBoxH);
+
+        const lMargin = statsBoxX + 18;
+        const rMargin = statsBoxX + statsBoxW - 18;
+
+        const lines = [
+          { label: "🏰 Towers Burned:", val: `${gameStats.burnedTowers}` },
+          { label: "⚔️ Peasants Slain:", val: `${gameStats.villagersKilled}` },
+          { label: "🏹 Archers Defeated:", val: `${gameStats.archersKilled}` },
+          { label: "💥 Trebuchets Wrecked:", val: `${gameStats.trebuchetsDestroyed}` },
+          { label: "👑 Royals Beheaded:", val: `${gameStats.kingsBeheaded + gameStats.queensBeheaded}` },
+          { label: "👸 Khaleesi Rescues:", val: `${gameStats.khaleesiRescues}` }
+        ];
+
+        lines.forEach((item, idx) => {
+          const curY = statsBoxY + 24 + (idx * 24);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 14px "Proxima Nova", sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText(item.label, lMargin, curY);
+
+          ctx.fillStyle = '#f1c40f';
+          ctx.textAlign = 'right';
+          ctx.fillText(item.val, rMargin, curY);
+        });
+      }
+
+      const btnW = 220;
+      const btnH = 46;
+      const btnX = (width - btnW) / 2;
+      const btnY = statsBoxY + statsBoxH + 20;
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(btnX, btnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(buttonText, width / 2, btnY + 28);
+    }
+
+    function renderCutscene() {
+      cutsceneTimer++;
+      
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.92)';
+      ctx.fillRect(0, 0, width, height);
+
+      const pSize = 54;
+      const pX = 15;
+      const pY = 65;
+      const khaleesiImg = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+      ctx.fillStyle = '#11161d';
+      ctx.fillRect(pX, pY, pSize, pSize);
+      if (khaleesiImg.complete && khaleesiImg.naturalWidth !== 0) {
+        ctx.drawImage(khaleesiImg, pX, pY, pSize, pSize);
+      }
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = '#f1c40f';
+      ctx.strokeRect(pX, pY, pSize, pSize);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('"Death to tyrants, gods and masters!"', pX, pY + pSize + 18);
+
+      const boxSize = 240;
+      const bX = (width - boxSize) / 2;
+      const bY = height / 2 - 80;
+
+      const isKing = cutsceneTarget === 'KING';
+      let activeAsset, fallbackAsset, headAsset, headFallbackAsset;
+
+      const animFrameIndex = Math.min(Math.floor(cutsceneTimer / 100), 1);
+
+      if (isKing) {
+        activeAsset = (animFrameIndex === 0) ? kingFrame1 : kingFrame2;
+        fallbackAsset = (animFrameIndex === 0) ? kingFallback1 : kingFallback2;
+        headAsset = kheadImg;
+        headFallbackAsset = kheadFallback;
+      } else {
+        activeAsset = (animFrameIndex === 0) ? queenFrame1 : queenFrame2;
+        fallbackAsset = (animFrameIndex === 0) ? queenFallback1 : queenFallback2;
+        headAsset = qheadImg;
+        headFallbackAsset = qheadFallback;
+      }
+
+      ctx.fillStyle = '#11161d';
+      ctx.fillRect(bX, bY, boxSize, boxSize);
+
+      if (cutsceneTimer > 200) {
+        if (headAsset.complete && headAsset.naturalWidth !== 0) {
+          ctx.drawImage(headAsset, bX, bY, boxSize, boxSize);
+        } else {
+          ctx.drawImage(headFallbackAsset, bX, bY, boxSize, boxSize);
+        }
+      } else {
+        if (activeAsset.complete && activeAsset.naturalWidth !== 0) {
+          ctx.drawImage(activeAsset, bX, bY, boxSize, boxSize);
+        } else {
+          ctx.drawImage(fallbackAsset, bX, bY, boxSize, boxSize);
+        }
+      }
+
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = '#e74c3c';
+      ctx.strokeRect(bX, bY, boxSize, boxSize);
+
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 20px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'center';
+
+      if (isKing) {
+        ctx.fillText("YOU TOOK THE KING'S HEAD!", width / 2, bY - 20);
+      } else {
+        ctx.fillText("YOU TOOK THE QUEEN'S HEAD!", width / 2, bY - 20);
+      }
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+      ctx.fillText('+5,000 POINTS!', width / 2, bY + boxSize + 25);
+
+      const btnW = 200;
+      const btnH = 44;
+      const btnX = (width - btnW) / 2;
+      const btnY = bY + boxSize + 45;
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(btnX, btnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, btnY, btnW, btnH);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('RETURN TO GAME', width / 2, btnY + 27);
+    }
+
+    function renderPauseScreen() {
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.88)';
+      ctx.fillRect(0, 0, width, height);
+
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 34px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME PAUSED', width / 2, height / 2 - 180);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('COLLECTED HEADS: ' + royalHeads, width / 2, height / 2 - 145);
+
+      const headIconSize = 48;
+      const headGap = 10;
+      const totalHeadsWidth = (royalHeads * headIconSize) + (Math.max(0, royalHeads - 1) * headGap);
+      const startHeadX = (width - Math.min(totalHeadsWidth, width - 40)) / 2;
+      const headsY = height / 2 - 130;
+
+      for (let h = 0; h < royalHeads; h++) {
+        const hx = startHeadX + (h * (headIconSize + headGap));
+        if (hx + headIconSize > width - 10) break;
+
+        ctx.save();
+        const type = royalHeadTypes[h] || 'KING';
+        const headImg = (type === 'KING') ? kheadImg : qheadImg;
+        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
+
+        if (headImg.complete && headImg.naturalWidth !== 0) {
+          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
+        } else {
+          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
+        }
+        ctx.restore();
+      }
+
+      const btnW = 200;
+      const btnH = 40;
+      const btnX = (width - btnW) / 2;
+
+      const resumeBtnY = height / 2 - 70;
+      const saveBtnY = resumeBtnY + 48;
+      const loadBtnY = saveBtnY + 48;
+      const flipBtnY = loadBtnY + 48;
+      const shareBtnY = flipBtnY + 48;
+
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(btnX, resumeBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, resumeBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('RESUME GAME', width / 2, resumeBtnY + 25);
+
+      ctx.fillStyle = '#f39c12';
+      ctx.fillRect(btnX, saveBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, saveBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('SAVE CODE', width / 2, saveBtnY + 25);
+
+      ctx.fillStyle = '#2980b9';
+      ctx.fillRect(btnX, loadBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, loadBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('LOAD GAME', width / 2, loadBtnY + 25);
+
+      ctx.fillStyle = '#8e44ad';
+      ctx.fillRect(btnX, flipBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, flipBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('CONTROL FLIP', width / 2, flipBtnY + 25);
+
+      ctx.fillStyle = '#e67e22';
+      ctx.fillRect(btnX, shareBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, shareBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('SHARE POST 📸', width / 2, shareBtnY + 25);
+    }
+
+    function renderGameOverScreen() {
+      ctx.fillStyle = 'rgba(10, 10, 20, 0.88)';
+      ctx.fillRect(0, 0, width, height);
+
+      if (noHeadContinuePopupTimer > 0) {
+        noHeadContinuePopupTimer--;
+        const portraitSize = 160;
+        const pX = (width - portraitSize) / 2;
+        const pY = height / 2 - 140;
+
+        const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+        ctx.fillStyle = '#11161d';
+        ctx.fillRect(pX, pY, portraitSize, portraitSize);
+        if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
+          ctx.drawImage(activeFrame, pX, pY, portraitSize, portraitSize);
+        }
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#f1c40f';
+        ctx.strokeRect(pX, pY, portraitSize, portraitSize);
+
+        const bMargin = 20;
+        const bX = bMargin;
+        const bY = pY + portraitSize + 20;
+        const bW = width - (bMargin * 2);
+        const bH = 110;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
+        else ctx.fillRect(bX, bY, bW, bH);
+        ctx.fill();
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 13px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+
+        const lines = [
+          '"I\'m sorry beloved, you can\'t',
+          'continue without the severed',
+          'head of a royal."'
+        ];
+        lines.forEach((l, idx) => {
+          ctx.fillText(l, width / 2, bY + 32 + (idx * 24));
+        });
+
+        ctx.fillStyle = '#e74c3c';
+        ctx.font = 'bold 12px "Proxima Nova", sans-serif';
+        ctx.fillText('(Tap anywhere to close)', width / 2, bY + bH + 25);
+        return;
+      }
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.font = 'bold 34px "Proxima Nova", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', width / 2, height / 2 - 170);
+
+      ctx.fillStyle = '#f1c40f';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('ROYAL HEADS CONTINUES: ' + royalHeads, width / 2, height / 2 - 135);
+
+      const headIconSize = 56;
+      const headGap = 12;
+      const totalHeadsWidth = (royalHeads * headIconSize) + (Math.max(0, royalHeads - 1) * headGap);
+      const startHeadX = (width - Math.min(totalHeadsWidth, width - 40)) / 2;
+      const headsY = height / 2 - 110;
+
+      for (let h = 0; h < royalHeads; h++) {
+        const hx = startHeadX + (h * (headIconSize + headGap));
+        if (hx + headIconSize > width - 10) break;
+
+        ctx.save();
+        if (h === headFadingIndex) {
+          const glow = Math.sin(Date.now() / 40) * 0.5 + 0.5;
+          ctx.globalAlpha = headFadeTimer / 35.0;
+          ctx.shadowColor = '#f1c40f';
+          ctx.shadowBlur = 20 * glow;
+        }
+
+        const type = royalHeadTypes[h] || 'KING';
+        const headImg = (type === 'KING') ? kheadImg : qheadImg;
+        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
+
+        if (headImg.complete && headImg.naturalWidth !== 0) {
+          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
+        } else {
+          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
+        }
+        ctx.restore();
+      }
+
+      const btnW = 200;
+      const btnH = 44;
+      const btnX = (width - btnW) / 2;
+
+      const continueBtnY = height / 2 - 35;
+      const restartBtnY = continueBtnY + 54;
+      const loadBtnY = restartBtnY + 54;
+
+      ctx.fillStyle = royalHeads > 0 ? '#2ecc71' : '#7f8c8d';
+      ctx.fillRect(btnX, continueBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, continueBtnY, btnW, btnH);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('CONTINUE (1 👑)', width / 2, continueBtnY + 27);
+
+      ctx.fillStyle = '#e74c3c';
+      ctx.fillRect(btnX, restartBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, restartBtnY, btnW, btnH);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+      ctx.fillText('RESTART GAME', width / 2, restartBtnY + 27);
+
+      ctx.fillStyle = '#2980b9';
+      ctx.fillRect(btnX, loadBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, loadBtnY, btnW, btnH);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+      ctx.fillText('LOAD GAME', width / 2, loadBtnY + 27);
+    }
+
     function render() {
       ctx.clearRect(0, 0, width, height);
 
@@ -2362,30 +4422,138 @@
       drawGiantClouds();
       drawParallaxCastleBackground();
       obstacles.forEach(drawCastleWalls);
+      drawBattlements();
+      drawArchersAndArrows();
       drawKhaleesis();
       drawCollectableHearts();
       drawTrebuchetsAndBoulders();
       drawKnights();
       drawGround();
       drawParticles();
-      drawDragon(dragon.x, dragon.y);
+
+      if (state === 'SPLASH') {
+        const portraitSize = 180;
+        const pX = (width - portraitSize) / 2;
+        const pY = height / 2 - 10;
+
+        const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
+
+        const bMargin = 25;
+        const bX = bMargin;
+        const bY = pY - 145;
+        const bWidth = width - (bMargin * 2);
+        const bHeight = 125;
+        const cornerRadius = 14;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(bX, bY, bWidth, bHeight, cornerRadius);
+        } else {
+          ctx.fillRect(bX, bY, bWidth, bHeight);
+        }
+        ctx.fill();
+
+        let curCharCount = Math.floor(typedCharIndex);
+        let charCounter = 0;
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 13px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+
+        const lineHeights = [18, 36, 54, 72, 90];
+        fullStoryText.forEach((line, idx) => {
+          let visibleLine = '';
+          for (let c = 0; c < line.length; c++) {
+            if (charCounter < curCharCount) {
+              visibleLine += line[c];
+              charCounter++;
+            }
+          }
+          ctx.fillText(visibleLine, width / 2, bY + lineHeights[idx]);
+          charCounter++;
+        });
+
+        ctx.fillStyle = '#11161d';
+        ctx.fillRect(pX, pY, portraitSize, portraitSize);
+
+        if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
+          ctx.drawImage(activeFrame, pX, pY, portraitSize, portraitSize);
+        }
+
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#f1c40f';
+        ctx.strokeRect(pX, pY, portraitSize, portraitSize);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+        if (textTypingComplete) {
+          ctx.fillText('TAP TO START GAME', width / 2, pY + portraitSize + 35);
+        } else {
+          ctx.fillText('TAP TO SHOW FULL MESSAGE', width / 2, pY + portraitSize + 35);
+        }
+
+      } else if (state === 'LEVEL_CELEBRATE') {
+        drawDragon(dragon.x, dragon.y);
+
+        ctx.fillStyle = '#f1c40f';
+        ctx.font = 'bold 28px "Proxima Nova", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText("LEVEL CLEARED!", width / 2, height * 0.18);
+
+        if (celebrationFadeAlpha > 0) {
+          ctx.fillStyle = `rgba(10, 10, 20, ${celebrationFadeAlpha})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+
+      } else if (state === 'LEVEL_DIALOGUE') {
+        renderLevelDialogue();
+      } else if (state === 'CUTSCENE') {
+        renderCutscene();
+      } else if (state === 'PAUSED') {
+        renderPauseScreen();
+      } else if (state === 'GAMEOVER') {
+        renderGameOverScreen();
+      } else {
+        drawDragon(dragon.x, dragon.y);
+        renderMountedKhaleesiHUD();
+      }
 
       if (state === 'START') {
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 24px Courier New';
+        ctx.font = 'bold 22px "Proxima Nova", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('TAP TO FLAP', width / 2, height / 2 - 20);
-        ctx.font = '16px Courier New';
-        ctx.fillText('Hold: Boost Forward', width / 2, height / 2 + 15);
-        ctx.fillText('Space: Flap | F Key: Fire', width / 2, height / 2 + 40);
-      } else if (state === 'GAMEOVER') {
+        ctx.fillText('TAP TO FLAP & FIRE', width / 2, height / 2 - 80);
+        
+        ctx.font = '14px "Proxima Nova", sans-serif';
+        ctx.fillText('Hold: Boost Forward', width / 2, height / 2 - 50);
+
+        const btnW = 200;
+        const btnH = 44;
+        const btnX = (width - btnW) / 2;
+        const startBtnY = height / 2 - 10;
+        const loadBtnY = startBtnY + 58;
+
         ctx.fillStyle = '#e74c3c';
-        ctx.font = 'bold 32px Courier New';
-        ctx.textAlign = 'center';
-        ctx.fillText('GAME OVER', width / 2, height / 2 - 20);
+        ctx.fillRect(btnX, startBtnY, btnW, btnH);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(btnX, startBtnY, btnW, btnH);
+
         ctx.fillStyle = '#ffffff';
-        ctx.font = '18px Courier New';
-        ctx.fillText('Tap or Space to Restart', width / 2, height / 2 + 20);
+        ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+        ctx.fillText('START GAME', width / 2, startBtnY + 27);
+
+        ctx.fillStyle = '#2980b9';
+        ctx.fillRect(btnX, loadBtnY, btnW, btnH);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(btnX, loadBtnY, btnW, btnH);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+        ctx.fillText('LOAD GAME', width / 2, loadBtnY + 27);
+
       }
 
       ctx.textAlign = 'left';
