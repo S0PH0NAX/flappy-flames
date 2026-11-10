@@ -374,11 +374,6 @@
     const sfxRockBreak = document.getElementById('sfxRockBreak');
     const sfxArrow = document.getElementById('sfxArrow');
     const sfxBoulder = document.getElementById('sfxBoulder');
-    const sfxScore = document.getElementById('sfxScore');
-    const sfxHeart = document.getElementById('sfxHeart');
-    const sfxPowerup = document.getElementById('sfxPowerup');
-    const sfxHit = document.getElementById('sfxHit');
-    const sfxKnightHit = document.getElementById('sfxKnightHit');
     const sfxQueenEntrance = document.getElementById('sfxQueenEntrance');
     const sfxKingEntrance = document.getElementById('sfxKingEntrance');
     const sfxFireworks = document.getElementById('sfxFireworks');
@@ -549,21 +544,106 @@
         this.playSoundEffect(sfxFireworks, 0.8);
       }
 
-      score() {
-        this.playSoundEffect(sfxScore, 0.7);
-      }
-      heartPickup() {
-        this.playSoundEffect(sfxHeart, 0.8);
-      }
-      powerup() {
-        this.playSoundEffect(sfxPowerup, 0.8);
-      }
-      hit() {
-        this.playSoundEffect(sfxHit, 0.8);
-      }
-      knightHit() {
-        this.playSoundEffect(sfxKnightHit, 0.8);
-      }
+     score() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // High two-note chime (D5 -> A5)
+    osc.frequency.setValueAtTime(587.33, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(880.00, this.ctx.currentTime + 0.08);
+    
+    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.2);
+}
+
+heartPickup() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // Ascending arpeggio chime (C5 -> E5 -> G5)
+    osc.frequency.setValueAtTime(523.25, this.ctx.currentTime);
+    osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.06);
+    osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.12);
+    
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.28);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.28);
+}
+
+powerup() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // Rising pitch sweep
+    osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(950, this.ctx.currentTime + 0.22);
+    
+    gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.22);
+}
+
+hit() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // Low pitch impact drop
+    osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(35, this.ctx.currentTime + 0.16);
+    
+    gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.16);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.16);
+}
+
+knightHit() {
+    if (this.muted) return;
+    this.init();
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // High metallic crunch
+    osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.12);
+    
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.12);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.12);
+}
       queenEntrance() {
         this.playSoundEffect(sfxQueenEntrance, 0.85);
       }
