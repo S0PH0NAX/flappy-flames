@@ -165,18 +165,26 @@
       border-color: #f1c40f;
       box-shadow: 0 4px 0 #8e44ad;
     }
+  /* MAIN PAUSE MENU BUTTON SIZING & TOUCH HITBOXES */
     .modal-btn {
-      min-height: 58px !important;
-      font-size: 15px !important;
+      min-height: 64px !important;
+      width: 100% !important;
+      font-size: 18px !important;
       font-weight: 800 !important;
-      padding: 14px 16px !important;
+      padding: 0 16px !important;
       border-radius: 10px !important;
       touch-action: manipulation;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100%;
+      text-align: center;
+      line-height: 64px;
+      pointer-events: auto !important;
+    }
+    /* Prevent icons/text inside the button from intercepting taps */
+    .modal-btn * {
+      pointer-events: none !important;
     }
     .fire-btn {
       background: #ff0000 !important;
