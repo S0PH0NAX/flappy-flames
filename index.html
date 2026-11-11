@@ -855,16 +855,13 @@ knightHit() {
       manualFireBtn.style.display = isFlapLockActive ? 'inline-block' : 'none';
     }
 
-  function togglePauseGame() {
+function togglePauseGame() {
   const pauseModal = document.getElementById('pauseModal');
   if (!pauseModal) return;
 
   if (state === 'PLAYING') {
     state = 'PAUSED';
     pauseModal.style.display = 'flex';
-    // Generate save code when pausing
-    const codeDisplay = document.getElementById('saveCodeDisplay');
-    if (codeDisplay) codeDisplay.innerText = generateSaveCode();
   } else if (state === 'PAUSED') {
     state = 'PLAYING';
     pauseModal.style.display = 'none';
@@ -1804,11 +1801,13 @@ isolateBtnTouch(document.getElementById('pauseBtn'), () => {
       togglePauseGame();
     });
 
+    // RETURN button in Save/Load Modal: just closes the save modal view
     isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
       const pauseModal = document.getElementById('pauseModal');
       if (pauseModal) pauseModal.style.display = 'none';
     });
 
+    // COPY SAVE CODE button
     isolateBtnTouch(document.getElementById('copyCodeBtn'), () => {
       const saveCodeDisplay = document.getElementById('saveCodeDisplay');
       const copyCodeBtn = document.getElementById('copyCodeBtn');
