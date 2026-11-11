@@ -862,7 +862,8 @@ function togglePauseGame() {
   if (state === 'PLAYING') {
     state = 'PAUSED';
     pauseModal.style.display = 'flex';
-    // Ensure the main button menu layout is visible and save view is hidden
+    
+    // Explicitly toggle views to show the main pause menu options
     const pauseMainView = document.getElementById('pauseMainView');
     const pauseSaveView = document.getElementById('pauseSaveView');
     if (pauseMainView) pauseMainView.style.display = 'flex';
@@ -1787,10 +1788,17 @@ function togglePauseGame() {
       togglePauseGame();
     });
 
-    // RETURN BUTTON in Save/Pause Modal: purely hides the modal overlay
+    // RETURN BUTTON inside Save Sub-view: returns to main pause menu buttons
     isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
-      const pauseModal = document.getElementById('pauseModal');
-      if (pauseModal) pauseModal.style.display = 'none';
+      const pauseMainView = document.getElementById('pauseMainView');
+      const pauseSaveView = document.getElementById('pauseSaveView');
+      if (pauseMainView && pauseSaveView) {
+        pauseSaveView.style.display = 'none';
+        pauseMainView.style.display = 'flex';
+      } else {
+        const pauseModal = document.getElementById('pauseModal');
+        if (pauseModal) pauseModal.style.display = 'none';
+      }
     });
 
     // COPY SAVE CODE button
