@@ -520,7 +520,7 @@
       }
 
       fireRoar() {
-        this.playSoundEffect(sfxFire, 0.0);
+        this.playSoundEffect(sfxFire, 0.1);
       }
 
       towerDestroy() {
@@ -539,7 +539,7 @@
         this.playSoundEffect(sfxFireworks, 0.8);
       }
 
-     score() {
+score() {
     if (this.muted) return;
     this.init();
     const osc = this.ctx.createOscillator();
