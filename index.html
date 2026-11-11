@@ -496,16 +496,18 @@
         }
       }
 
-      playSoundEffect(audioElem, volume = 0.8) {
-        if (this.muted) return;
-        if (audioElem && audioElem.src) {
-          try {
-            audioElem.currentTime = 0;
-            audioElem.volume = volume;
-            audioElem.play().catch(() => {});
-          } catch(e) {}
-        }
-      
+playSoundEffect(audioElem, volume = 0.8) {
+    if (this.muted) return;
+    if (audioElem && audioElem.src) {
+      try {
+        audioElem.currentTime = 0;
+        audioElem.volume = volume;
+        audioElem.play().catch(() => {});
+      } catch(e) {}
+    }
+  }
+
+  stopRoyalSounds() {
 
       stopRoyalSounds() {
         if (sfxQueenEntrance) {
