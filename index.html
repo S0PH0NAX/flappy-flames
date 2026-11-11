@@ -1478,18 +1478,19 @@ knightHit() {
       return false;
     }
 
-    function checkPauseScreenClick(clickX, clickY) {
+  function checkPauseScreenClick(clickX, clickY) {
       if (state !== 'PAUSED') return false;
 
-      const btnW = 200;
-      const btnH = 40;
+      const btnW = 240;
+      const btnH = 56;
+      const btnGap = 14;
       const btnX = (width - btnW) / 2;
 
-      const resumeBtnY = height / 2 - 90;
-      const saveBtnY = resumeBtnY + 48;
-      const loadBtnY = saveBtnY + 48;
-      const flipBtnY = loadBtnY + 48;
-      const shareBtnY = flipBtnY + 48;
+      const resumeBtnY = height / 2 - 80;
+      const saveBtnY = resumeBtnY + btnH + btnGap;
+      const loadBtnY = saveBtnY + btnH + btnGap;
+      const flipBtnY = loadBtnY + btnH + btnGap;
+      const shareBtnY = flipBtnY + btnH + btnGap;
 
       if (clickX >= btnX && clickX <= btnX + btnW) {
         if (clickY >= resumeBtnY && clickY <= resumeBtnY + btnH) {
@@ -1521,7 +1522,6 @@ knightHit() {
       }
       return false;
     }
-
     function checkGameOverClick(clickX, clickY) {
       if (state !== 'GAMEOVER') return false;
 
@@ -4313,24 +4313,24 @@ knightHit() {
       ctx.fillText('RETURN TO GAME', width / 2, btnY + 27);
     }
 
-    function renderPauseScreen() {
+   function renderPauseScreen() {
       ctx.fillStyle = 'rgba(10, 10, 20, 0.88)';
       ctx.fillRect(0, 0, width, height);
 
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 34px "Proxima Nova", sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('GAME PAUSED', width / 2, height / 2 - 180);
+      ctx.fillText('GAME PAUSED', width / 2, height / 2 - 210);
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('COLLECTED HEADS: ' + royalHeads, width / 2, height / 2 - 145);
+      ctx.fillText('COLLECTED HEADS: ' + royalHeads, width / 2, height / 2 - 175);
 
       const headIconSize = 48;
       const headGap = 10;
       const totalHeadsWidth = (royalHeads * headIconSize) + (Math.max(0, royalHeads - 1) * headGap);
       const startHeadX = (width - Math.min(totalHeadsWidth, width - 40)) / 2;
-      const headsY = height / 2 - 130;
+      const headsY = height / 2 - 160;
 
       for (let h = 0; h < royalHeads; h++) {
         const hx = startHeadX + (h * (headIconSize + headGap));
@@ -4348,6 +4348,69 @@ knightHit() {
         }
         ctx.restore();
       }
+
+      // Enlarged Canvas Buttons
+      const btnW = 240;
+      const btnH = 56;
+      const btnGap = 14;
+      const btnX = (width - btnW) / 2;
+
+      const resumeBtnY = height / 2 - 80;
+      const saveBtnY = resumeBtnY + btnH + btnGap;
+      const loadBtnY = saveBtnY + btnH + btnGap;
+      const flipBtnY = loadBtnY + btnH + btnGap;
+      const shareBtnY = flipBtnY + btnH + btnGap;
+
+      // RESUME
+      ctx.fillStyle = '#2ecc71';
+      ctx.fillRect(btnX, resumeBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, resumeBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Proxima Nova", sans-serif';
+      ctx.fillText('RESUME GAME', width / 2, resumeBtnY + 34);
+
+      // SAVE
+      ctx.fillStyle = '#f39c12';
+      ctx.fillRect(btnX, saveBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, saveBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Proxima Nova", sans-serif';
+      ctx.fillText('SAVE CODE', width / 2, saveBtnY + 34);
+
+      // LOAD
+      ctx.fillStyle = '#2980b9';
+      ctx.fillRect(btnX, loadBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, loadBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Proxima Nova", sans-serif';
+      ctx.fillText('LOAD GAME', width / 2, loadBtnY + 34);
+
+      // FLIP
+      ctx.fillStyle = '#8e44ad';
+      ctx.fillRect(btnX, flipBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, flipBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Proxima Nova", sans-serif';
+      ctx.fillText('CONTROL FLIP', width / 2, flipBtnY + 34);
+
+      // SHARE
+      ctx.fillStyle = '#e67e22';
+      ctx.fillRect(btnX, shareBtnY, btnW, btnH);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#ffffff';
+      ctx.strokeRect(btnX, shareBtnY, btnW, btnH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 18px "Proxima Nova", sans-serif';
+      ctx.fillText('SHARE POST 📸', width / 2, shareBtnY + 34);
+    }
 
       const btnW = 200;
       const btnH = 40;
