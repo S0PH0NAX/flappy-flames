@@ -1753,8 +1753,7 @@ function togglePauseGame() {
         if (typeof callback === 'function') callback(e);
       });
     }
-
-    // Modal & Control Button Registrations
+// Modal & Control Button Registrations
     isolateBtnTouch(document.getElementById('toggleFireModeBtn'), () => {
       toggleModeSwitch();
     });
@@ -1766,15 +1765,7 @@ function togglePauseGame() {
       }
     });
 
-    isolateBtnTouch(document.getElementById('pauseBtn'), () => {
-      togglePauseGame();
-    });
-
-    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
-      togglePauseGame();
-    });
-
-  isolateBtnTouch(document.getElementById('confirmLoadBtn'), () => {
+    isolateBtnTouch(document.getElementById('confirmLoadBtn'), () => {
       const codeInput = document.getElementById('loadCodeInput');
       if (codeInput && codeInput.value) {
         loadSaveCode(codeInput.value.trim());
@@ -1786,22 +1777,12 @@ function togglePauseGame() {
       if (loadModal) loadModal.style.display = 'none';
     });
 
-    isolateBtnTouch(document.getElementById('toggleFireModeBtn'), () => {
-      toggleModeSwitch();
-    });
-
-    isolateBtnTouch(document.getElementById('manualFireBtn'), () => {
-      sound.init();
-      if (state === 'PLAYING') {
-        shootFire();
-      }
-    });
-
-isolateBtnTouch(document.getElementById('pauseBtn'), () => {
+    // PAUSE BUTTON: Toggles pause menu state
+    isolateBtnTouch(document.getElementById('pauseBtn'), () => {
       togglePauseGame();
     });
 
-    // RETURN button in Save/Load Modal: just closes the save modal view
+    // RETURN BUTTON in Save/Pause Modal: purely hides the modal overlay
     isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
       const pauseModal = document.getElementById('pauseModal');
       if (pauseModal) pauseModal.style.display = 'none';
