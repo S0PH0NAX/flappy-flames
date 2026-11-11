@@ -4412,62 +4412,7 @@ knightHit() {
       ctx.fillText('SHARE POST 📸', width / 2, shareBtnY + 34);
     }
 
-      const btnW = 200;
-      const btnH = 40;
-      const btnX = (width - btnW) / 2;
-
-      const resumeBtnY = height / 2 - 70;
-      const saveBtnY = resumeBtnY + 48;
-      const loadBtnY = saveBtnY + 48;
-      const flipBtnY = loadBtnY + 48;
-      const shareBtnY = flipBtnY + 48;
-
-      ctx.fillStyle = '#2ecc71';
-      ctx.fillRect(btnX, resumeBtnY, btnW, btnH);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeRect(btnX, resumeBtnY, btnW, btnH);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('RESUME GAME', width / 2, resumeBtnY + 25);
-
-      ctx.fillStyle = '#f39c12';
-      ctx.fillRect(btnX, saveBtnY, btnW, btnH);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeRect(btnX, saveBtnY, btnW, btnH);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('SAVE CODE', width / 2, saveBtnY + 25);
-
-      ctx.fillStyle = '#2980b9';
-      ctx.fillRect(btnX, loadBtnY, btnW, btnH);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeRect(btnX, loadBtnY, btnW, btnH);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('LOAD GAME', width / 2, loadBtnY + 25);
-
-      ctx.fillStyle = '#8e44ad';
-      ctx.fillRect(btnX, flipBtnY, btnW, btnH);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeRect(btnX, flipBtnY, btnW, btnH);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('CONTROL FLIP', width / 2, flipBtnY + 25);
-
-      ctx.fillStyle = '#e67e22';
-      ctx.fillRect(btnX, shareBtnY, btnW, btnH);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = '#ffffff';
-      ctx.strokeRect(btnX, shareBtnY, btnW, btnH);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('SHARE POST 📸', width / 2, shareBtnY + 25);
-    }
-
+    
     function renderGameOverScreen() {
       ctx.fillStyle = 'rgba(10, 10, 20, 0.88)';
       ctx.fillRect(0, 0, width, height);
