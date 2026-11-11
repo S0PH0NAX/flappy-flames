@@ -165,19 +165,28 @@
       border-color: #f1c40f;
       box-shadow: 0 4px 0 #8e44ad;
     }
-    .modal-btn {
-      min-height: 58px !important;
-      font-size: 15px !important;
+.modal-btn {
+      min-height: 60px !important;
+      width: 100% !important;
+      font-size: 16px !important;
       font-weight: 800 !important;
-      padding: 14px 16px !important;
+      padding: 0 16px !important;
       border-radius: 10px !important;
       touch-action: manipulation;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      width: 100%;
+      text-align: center;
+      line-height: 60px;
+      pointer-events: auto !important; /* Button itself receives touch events */
     }
+
+    /* Target inner text/emojis inside modal buttons so they don't block taps */
+    .modal-btn * {
+      pointer-events: none !important;
+    }
+    
     .fire-btn {
       background: #ff0000 !important;
       border-color: #ffffff !important;
