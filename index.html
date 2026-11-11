@@ -855,13 +855,21 @@ knightHit() {
       manualFireBtn.style.display = isFlapLockActive ? 'inline-block' : 'none';
     }
 
-    function togglePauseGame() {
-      if (state === 'PLAYING') {
-        state = 'PAUSED';
-      } else if (state === 'PAUSED') {
-        state = 'PLAYING';
-      }
-    }
+  function togglePauseGame() {
+  const pauseModal = document.getElementById('pauseModal');
+  if (!pauseModal) return;
+
+  if (state === 'PLAYING') {
+    state = 'PAUSED';
+    pauseModal.style.display = 'flex';
+    // Generate save code when pausing
+    const codeDisplay = document.getElementById('saveCodeDisplay');
+    if (codeDisplay) codeDisplay.innerText = generateSaveCode();
+  } else if (state === 'PAUSED') {
+    state = 'PLAYING';
+    pauseModal.style.display = 'none';
+  }
+}
 
     function startLevelCelebration(nextLvl, targetDialogueType) {
       currentLevel = nextLvl;
@@ -1792,17 +1800,13 @@ knightHit() {
       }
     });
 
-    isolateBtnTouch(document.getElementById('pauseBtn'), () => {
+isolateBtnTouch(document.getElementById('pauseBtn'), (e) => {
       togglePauseGame();
     });
 
-    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
+    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), (e) => {
       const pauseModal = document.getElementById('pauseModal');
       if (pauseModal) pauseModal.style.display = 'none';
-    });
-
-    isolateBtnTouch(closeShareModalBtn, () => {
-      shareModal.style.display = 'none';
     });
 
     isolateBtnTouch(copyCodeBtn, () => {
