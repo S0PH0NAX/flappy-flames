@@ -327,16 +327,16 @@
         
         <!-- MAIN PAUSE MENU VIEW -->
         <div id="pauseMainView" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-          <button id="resumeBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">RESUME ▶️</button>
-          <button id="saveGameBtn" class="action-btn modal-btn" style="background: #3498db; border-color: #fff; box-shadow: 0 4px 0 #2980b9;">SAVE GAME 💾</button>
+          <button id="resumeBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RESUME ▶️</span></button>
+          <button id="saveGameBtn" class="action-btn modal-btn" style="background: #3498db; border-color: #fff; box-shadow: 0 4px 0 #2980b9;"><span style="pointer-events: none;">SAVE GAME 💾</span></button>
         </div>
 
         <!-- SAVE CODE SUB-VIEW -->
         <div id="pauseSaveView" style="display: none; flex-direction: column; gap: 12px; width: 100%;">
           <p style="font-size: 13px; color: #ccc; margin-bottom: 2px;">Your save code:</p>
           <div id="saveCodeDisplay" class="save-code-box" style="font-size: 22px; padding: 12px; margin-bottom: 8px;">-------</div>
-          <button id="copyCodeBtn" class="action-btn modal-btn">COPY SAVE CODE 📋</button>
-          <button id="closeSaveModalBtn" class="action-btn modal-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;">RETURN ↩️</button>
+          <button id="copyCodeBtn" class="action-btn modal-btn"><span style="pointer-events: none;">COPY SAVE CODE 📋</span></button>
+          <button id="closeSaveModalBtn" class="action-btn modal-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;"><span style="pointer-events: none;">RETURN ↩️</span></button>
         </div>
       </div>
     </div>
@@ -1789,28 +1789,38 @@ function togglePauseGame() {
       if (loadModal) loadModal.style.display = 'none';
     });
 
-    // PAUSE BUTTON: Toggles pause menu state
+  // PAUSE BUTTON: Toggles the pause menu open/closed
     isolateBtnTouch(document.getElementById('pauseBtn'), () => {
       togglePauseGame();
     });
 
- // RESUME BUTTON inside pause menu
+    // RESUME BUTTON inside main pause menu: resumes gameplay
     isolateBtnTouch(document.getElementById('resumeBtn'), () => {
       togglePauseGame();
     });
 
-    // SAVE GAME BUTTON inside pause menu
+    // SAVE GAME BUTTON: Switches inside the same modal box to the save code view
     isolateBtnTouch(document.getElementById('saveGameBtn'), () => {
       const pauseMainView = document.getElementById('pauseMainView');
       const pauseSaveView = document.getElementById('pauseSaveView');
       if (pauseMainView) pauseMainView.style.display = 'none';
       if (pauseSaveView) pauseSaveView.style.display = 'flex';
-      
+
       const saveCodeDisplay = document.getElementById('saveCodeDisplay');
       if (saveCodeDisplay) saveCodeDisplay.innerText = generateSaveCode();
     });
 
-    // COPY SAVE CODE button
+    // RETURN BUTTON in Save view: switches back to main pause menu options
+    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
+      const pauseMainView = document.getElementById('pauseMainView');
+      const pauseSaveView = document.getElementById('pauseSaveView');
+      if (pauseMainView && pauseSaveView) {
+        pauseSaveView.style.display = 'none';
+        pauseMainView.style.display = 'flex';
+      }
+    });
+
+    // COPY SAVE CODE BUTTON
     isolateBtnTouch(document.getElementById('copyCodeBtn'), () => {
       const saveCodeDisplay = document.getElementById('saveCodeDisplay');
       const copyCodeBtn = document.getElementById('copyCodeBtn');
