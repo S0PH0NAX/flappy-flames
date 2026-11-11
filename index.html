@@ -1794,17 +1794,20 @@ function togglePauseGame() {
       togglePauseGame();
     });
 
-    // RETURN BUTTON inside Save Sub-view: returns to main pause menu buttons
-    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
+ // RESUME BUTTON inside pause menu
+    isolateBtnTouch(document.getElementById('resumeBtn'), () => {
+      togglePauseGame();
+    });
+
+    // SAVE GAME BUTTON inside pause menu
+    isolateBtnTouch(document.getElementById('saveGameBtn'), () => {
       const pauseMainView = document.getElementById('pauseMainView');
       const pauseSaveView = document.getElementById('pauseSaveView');
-      if (pauseMainView && pauseSaveView) {
-        pauseSaveView.style.display = 'none';
-        pauseMainView.style.display = 'flex';
-      } else {
-        const pauseModal = document.getElementById('pauseModal');
-        if (pauseModal) pauseModal.style.display = 'none';
-      }
+      if (pauseMainView) pauseMainView.style.display = 'none';
+      if (pauseSaveView) pauseSaveView.style.display = 'flex';
+      
+      const saveCodeDisplay = document.getElementById('saveCodeDisplay');
+      if (saveCodeDisplay) saveCodeDisplay.innerText = generateSaveCode();
     });
 
     // COPY SAVE CODE button
