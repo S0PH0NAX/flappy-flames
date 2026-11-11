@@ -165,11 +165,13 @@
       border-color: #f1c40f;
       box-shadow: 0 4px 0 #8e44ad;
     }
-  /* MAIN PAUSE MENU BUTTON SIZING & TOUCH HITBOXES */
-    .modal-btn {
-      min-height: 64px !important;
+/* PAUSE SCREEN & MODAL BUTTON SIZING & TOUCH HITBOXES */
+    .modal-btn,
+    .pause-btn,
+    .pause-overlay button {
+      min-height: 60px !important;
       width: 100% !important;
-      font-size: 18px !important;
+      font-size: 16px !important;
       font-weight: 800 !important;
       padding: 0 16px !important;
       border-radius: 10px !important;
@@ -179,11 +181,14 @@
       justify-content: center;
       align-items: center;
       text-align: center;
-      line-height: 64px;
-      pointer-events: auto !important;
+      line-height: 60px;
+      pointer-events: auto !important; /* Button itself receives taps */
     }
-    /* Prevent icons/text inside the button from intercepting taps */
-    .modal-btn * {
+
+    /* Prevent icons/text inside pause buttons from blocking clicks */
+    .modal-btn *,
+    .pause-btn *,
+    .pause-overlay button * {
       pointer-events: none !important;
     }
     .fire-btn {
