@@ -1392,9 +1392,11 @@ knightHit() {
       }
     }
 
-    function shootFire() {
-      if (state !== 'PLAYING') return;
-      sound.fireRoar();
+    // ✅ CORRECT: Only return if state is NOT 'PLAYING' AND NOT 'BOSS'
+function shootFire() {
+  if (state !== 'PLAYING' && state !== 'BOSS') return;
+  sound.fireRoar();
+  
      
       const fireworkColors = ['#f1c40f', '#e74c3c', '#ff7675', '#ff9f43', '#ffffff'];
 
@@ -1635,7 +1637,7 @@ knightHit() {
         return;
       }
 
-      if (state === 'PLAYING') {
+      if (state === 'PLAYING' || state === 'BOSS'){
         dragon.velocity = dragon.jump;
         dragon.wingState = 1.0;
         sound.flap();
@@ -1689,47 +1691,52 @@ knightHit() {
       handleActionRelease();
     });
 
-    window.addEventListener('keydown', (e) => {
-      if (e.code === 'Digit1' || e.code === 'Numpad1') {
-        debugWarpToLevel(1);
-      }
-      if (e.code === 'Digit2' || e.code === 'Numpad2') {
-        debugWarpToLevel(2);
-      }
-      if (e.code === 'Digit3' || e.code === 'Numpad3') {
-        debugWarpToLevel(3);
-      }
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Digit1' || e.code === 'Numpad1') {
+    debugWarpToLevel(1);
+  }
+  if (e.code === 'Digit2' || e.code === 'Numpad2') {
+    debugWarpToLevel(2);
+  }
+  if (e.code === 'Digit3' || e.code === 'Numpad3') {
+    debugWarpToLevel(3);
+  }
+  if (e.code === 'KeyB') triggerBossBattle();
 
-      if (e.code === 'KeyC' && !e.repeat) {
-        if (state === 'PLAYING') {
-          startLevelCelebration(currentLevel, 'LEVEL1_CLEAR');
-          showKhaleesiBanner('"CELEBRATION ANIMATION TRIGGERED!"', 180);
-        }
-      }
+  if (e.code === 'KeyC' && !e.repeat) {
+    if (state === 'PLAYING' || state === 'BOSS') {
+      startLevelCelebration(currentLevel, 'LEVEL1_CLEAR');
+      showKhaleesiBanner('"CELEBRATION ANIMATION TRIGGERED!"', 180);
+    }
+  }
 
-      if (e.code === 'Space' && !e.repeat) {
-        e.preventDefault();
-        handleActionPress();
-      }
+  // Allow Flap / Boost in both PLAYING and BOSS modes
+  if (e.code === 'Space' && !e.repeat) {
+    e.preventDefault();
+    handleActionPress();
+  }
 
-      if (e.code === 'KeyF' && !e.repeat) {
-        e.preventDefault();
-        sound.init();
-        if (state === 'PLAYING' && isFlapLockActive) {
-          shootFire();
-        }
-      }
+  // Allow Manual Firing in both PLAYING and BOSS modes when Flap-Lock is active
+  if (e.code === 'KeyF' && !e.repeat) {
+    e.preventDefault();
+    sound.init();
+    if ((state === 'PLAYING' || state === 'BOSS') && isFlapLockActive) {
+      shootFire();
+    }
+  }
 
-      if (e.code === 'KeyM' && !e.repeat) {
-        e.preventDefault();
-        toggleModeSwitch();
-      }
+  // Allow Mode Toggle in PLAYING and BOSS modes
+  if (e.code === 'KeyM' && !e.repeat) {
+    e.preventDefault();
+    toggleModeSwitch();
+  }
 
-      if (e.code === 'KeyP' && !e.repeat) {
-        e.preventDefault();
-        togglePauseGame();
-      }
-    });
+  // Allow Pause in PLAYING and BOSS modes
+  if (e.code === 'KeyP' && !e.repeat) {
+    e.preventDefault();
+    togglePauseGame();
+  }
+});
 
     function isolateBtnTouch(btn, callback) {
       btn.addEventListener('touchstart', (e) => {
@@ -1756,7 +1763,7 @@ knightHit() {
 
     isolateBtnTouch(manualFireBtn, () => {
       sound.init();
-      if (state === 'PLAYING') {
+      if (state === 'PLAYING' || state === 'BOSS') {
         shootFire();
       }
     });
@@ -3426,141 +3433,143 @@ knightHit() {
     }
 
     function drawParticles() {
-      const gY = height - groundHeight;
-      
-      for (let i = blackDebris.length - 1; i >= 0; i--) {
-        const d = blackDebris[i];
-        d.x += d.vx;
-        d.y += d.vy;
-        d.vy += d.gravity;
-        d.rotation += d.rotSpeed;
+  const gY = height - groundHeight;
+  
+  for (let i = blackDebris.length - 1; i >= 0; i--) {
+    const d = blackDebris[i];
+    d.x += d.vx;
+    d.y += d.vy;
+    d.vy += d.gravity;
+    d.rotation += d.rotSpeed;
 
-        ctx.save();
-        ctx.translate(d.x, d.y);
-        ctx.rotate(d.rotation);
-        
-        ctx.fillStyle = '#11161d';
-        const halfSize = d.size / 2;
-        ctx.beginPath();
-        ctx.moveTo(0, -halfSize);
-        ctx.lineTo(halfSize, -halfSize * 0.6);
-        ctx.lineTo(halfSize * 0.8, halfSize);
-        ctx.lineTo(-halfSize * 0.8, halfSize);
-        ctx.lineTo(-halfSize, -halfSize * 0.6);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
+    ctx.save();
+    ctx.translate(d.x, d.y);
+    ctx.rotate(d.rotation);
+    
+    ctx.fillStyle = '#11161d';
+    const halfSize = d.size / 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -halfSize);
+    ctx.lineTo(halfSize, -halfSize * 0.6);
+    ctx.lineTo(halfSize * 0.8, halfSize);
+    ctx.lineTo(-halfSize * 0.8, halfSize);
+    ctx.lineTo(-halfSize, -halfSize * 0.6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
 
-        if (d.y >= gY) {
-          for (let s = 0; s < 5; s++) {
-             particles.push({
-                x: d.x,
-                y: gY,
-                vx: (Math.random() - 0.5) * 6,
-                vy: (Math.random() - 0.7) * 4,
-                size: 2 + Math.random() * 2,
-                life: 15 + Math.random() * 10,
-                color: '#e74c3c'
-              });
-          }
-          blackDebris.splice(i, 1);
-        }
-      }
-
-      for (let i = flames.length - 1; i >= 0; i--) {
-        const f = flames[i];
-        f.vx *= f.dragX;
-        f.vy += f.gravity;
-        f.x += f.vx;
-        f.y += f.vy;
-        f.life--;
-
-        const lifeRatio = f.life / f.maxLife;
-        const curSize = f.size * lifeRatio;
-
-        if (Math.random() < 0.25) {
-          particles.push({
-            x: f.x + (Math.random() - 0.5) * 6,
-            y: f.y + (Math.random() - 0.5) * 6,
-            vx: (Math.random() - 0.5) * 1.2,
-            vy: (Math.random() - 0.5) * 1.2,
+    if (d.y >= gY) {
+      for (let s = 0; s < 5; s++) {
+         particles.push({
+            x: d.x,
+            y: gY,
+            vx: (Math.random() - 0.5) * 6,
+            vy: (Math.random() - 0.7) * 4,
             size: 2 + Math.random() * 2,
-            life: 15,
-            color: f.color
+            life: 15 + Math.random() * 10,
+            color: '#e74c3c'
+          });
+      }
+      blackDebris.splice(i, 1);
+    }
+  }
+
+  for (let i = flames.length - 1; i >= 0; i--) {
+    const f = flames[i];
+
+    // Physics update runs in both PLAYING and BOSS states
+    f.vx *= f.dragX;
+    f.vy += f.gravity;
+    f.x += f.vx;
+    f.y += f.vy;
+    f.life--;
+
+    const lifeRatio = f.life / f.maxLife;
+    const curSize = f.size * lifeRatio;
+
+    if (Math.random() < 0.25) {
+      particles.push({
+        x: f.x + (Math.random() - 0.5) * 6,
+        y: f.y + (Math.random() - 0.5) * 6,
+        vx: (Math.random() - 0.5) * 1.2,
+        vy: (Math.random() - 0.5) * 1.2,
+        size: 2 + Math.random() * 2,
+        life: 15,
+        color: f.color
+      });
+    }
+
+    ctx.fillStyle = lifeRatio > 0.6 ? '#ffffff' : f.color;
+    ctx.fillRect(f.x, f.y, curSize, curSize);
+
+    if (f.y >= gY - 4) {
+      if (Math.random() < 0.35) {
+        groundFlames.push({
+          x: f.x,
+          life: 80 + Math.random() * 60,
+          boostIntensity: 1.0
+        });
+      }
+      flames.splice(i, 1);
+      continue;
+    }
+
+    obstacles.forEach(obs => {
+      if (f.x >= obs.x - 10 && f.x <= obs.x + obs.width + 10 && f.y >= obs.bottomY - 14 && f.y <= obs.bottomY + 20) {
+        if (Math.random() < 0.45) {
+          obs.surfaceFlames.push({
+            relX: f.x - obs.x,
+            width: 12,
+            maxWidth: 32 + Math.random() * 22,
+            height: 14,
+            maxHeight: 38 + Math.random() * 24,
+            spreadSpeed: (Math.random() - 0.5) * 1.4
           });
         }
-
-        ctx.fillStyle = lifeRatio > 0.6 ? '#ffffff' : f.color;
-        ctx.fillRect(f.x, f.y, curSize, curSize);
-
-        if (f.y >= gY - 4) {
-          if (Math.random() < 0.35) {
-            groundFlames.push({
-              x: f.x,
-              life: 80 + Math.random() * 60,
-              boostIntensity: 1.0
-            });
-          }
-          flames.splice(i, 1);
-          continue;
-        }
-
-        obstacles.forEach(obs => {
-          if (f.x >= obs.x - 10 && f.x <= obs.x + obs.width + 10 && f.y >= obs.bottomY - 14 && f.y <= obs.bottomY + 20) {
-            if (Math.random() < 0.45) {
-              obs.surfaceFlames.push({
-                relX: f.x - obs.x,
-                width: 12,
-                maxWidth: 32 + Math.random() * 22,
-                height: 14,
-                maxHeight: 38 + Math.random() * 24,
-                spreadSpeed: (Math.random() - 0.5) * 1.4
-              });
-            }
-          }
-        });
-
-        if (f.life <= 0) flames.splice(i, 1);
       }
+    });
 
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx;
-        p.y += p.vy;
-        p.life--;
-        
-        ctx.fillStyle = p.color;
-        
-        if (p.isSmoke) {
-          ctx.globalAlpha = p.life / 60.0;
-          ctx.beginPath();
-          const halfSize = p.size / 2;
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.arc(p.x - halfSize, p.y + halfSize * 0.7, p.size * 0.8, 0, Math.PI * 2);
-          ctx.arc(p.x + halfSize, p.y - halfSize * 0.3, p.size * 0.7, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.globalAlpha = 1.0;
-        } else {
-            ctx.fillRect(p.x, p.y, p.size, p.size);
-        }
+    if (f.life <= 0) flames.splice(i, 1);
+  }
 
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-
-      for (let i = floatingTexts.length - 1; i >= 0; i--) {
-        const ft = floatingTexts[i];
-        ctx.save();
-        ctx.globalAlpha = ft.alpha;
-        ctx.font = 'bold 24px "Proxima Nova", sans-serif';
-        ctx.fillStyle = ft.color || '#2ecc71';
-        ctx.fillText(ft.text, ft.x, ft.y);
-        ctx.restore();
-
-        ft.y += ft.vy;
-        ft.alpha -= 0.015;
-        if (ft.alpha <= 0) floatingTexts.splice(i, 1);
-      }
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life--;
+    
+    ctx.fillStyle = p.color;
+    
+    if (p.isSmoke) {
+      ctx.globalAlpha = p.life / 60.0;
+      ctx.beginPath();
+      const halfSize = p.size / 2;
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.arc(p.x - halfSize, p.y + halfSize * 0.7, p.size * 0.8, 0, Math.PI * 2);
+      ctx.arc(p.x + halfSize, p.y - halfSize * 0.3, p.size * 0.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1.0;
+    } else {
+        ctx.fillRect(p.x, p.y, p.size, p.size);
     }
+
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ctx.save();
+    ctx.globalAlpha = ft.alpha;
+    ctx.font = 'bold 24px "Proxima Nova", sans-serif';
+    ctx.fillStyle = ft.color || '#2ecc71';
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+
+    ft.y += ft.vy;
+    ft.alpha -= 0.015;
+    if (ft.alpha <= 0) floatingTexts.splice(i, 1);
+  }
+}
 
     function triggerHit() {
       if (invulnerableTimer > 0 || khaleesiMounted || state === 'LEVEL_CELEBRATE') return;
@@ -3650,6 +3659,9 @@ knightHit() {
       sound.updateMusicState(state);
 
       if (state === 'PAUSED' || state === 'CUTSCENE' || state === 'LEVEL_DIALOGUE') return;
+
+      // ADD THIS LINE:
+  if (state === 'BOSS') { updateBossLogic(); return; }
 
       if (state === 'LEVEL_CELEBRATE') {
         updateLevelCelebration();
@@ -4559,6 +4571,7 @@ knightHit() {
       drawKnights();
       drawGround();
       drawParticles();
+      if (state === 'BOSS') renderBoss();
 
       if (state === 'SPLASH') {
         const portraitSize = 180;
@@ -4643,6 +4656,9 @@ knightHit() {
         renderPauseScreen();
       } else if (state === 'GAMEOVER') {
         renderGameOverScreen();
+      } else if (state === 'BOSS') {
+        drawDragon(dragon.x, dragon.y);
+        renderMountedKhaleesiHUD();
       } else {
         drawDragon(dragon.x, dragon.y);
         renderMountedKhaleesiHUD();
@@ -4688,6 +4704,241 @@ knightHit() {
       ctx.textAlign = 'left';
     }
 
+    // ==========================================
+// SIEGE ENGINE BOSS LOGIC & RENDERING
+// ==========================================
+
+const bossState = {
+  active: false,
+  x: 0,
+  wheelAngle: 0,
+  topHp: 100,
+  midHp: 100,
+  botHp: 100,
+  topTimer: 0,
+  botTimer: 0,
+  topChainProgress: 0,
+  botChainProgress: 0,
+  topState: 'IDLE',
+  botState: 'IDLE',
+  archers: [],
+  groupShootTimer: 0,
+  speechBubbleTimer: 0,
+  ladderTimer: 0
+};
+
+function triggerBossBattle() {
+  state = 'BOSS';
+  bossState.active = true;
+  bossState.x = width;
+  bossState.topHp = 100;
+  bossState.midHp = 100;
+  bossState.botHp = 100;
+  bossState.topState = 'IDLE';
+  bossState.botState = 'IDLE';
+  bossState.topTimer = 100;
+  bossState.botTimer = 180;
+  bossState.archers = [];
+  
+  for (let i = 0; i < 6; i++) {
+    bossState.archers.push({ xRel: 20 + i * 20, yRel: height * 0.45, hp: 1 });
+  }
+
+  obstacles = [];
+  battlements = [];
+  archers = [];
+  knights = [];
+  smallKnights = [];
+  goldKnights = [];
+  trebuchets = [];
+  arrows = [];
+  trebuchetBoulders = [];
+  
+  showKhaleesiBanner('"Look Syraxx! A siege tower!"', 250);
+}
+
+function updateBossLogic() {
+  bossState.wheelAngle += 0.05;
+  bossState.x = Math.max(width - width / 3, bossState.x - 0.2);
+
+  // ----------------------------------------------------
+  // DRAGON FLIGHT, GRAVITY & SCREEN BOUNDS IN BOSS MODE
+  // ----------------------------------------------------
+  dragon.velocity += dragon.gravity;
+  dragon.y += dragon.velocity;
+
+  const gY = height - groundHeight;
+
+  // Handle dragon screen boundaries
+  if (dragon.y + dragon.size / 2 >= gY || dragon.y - dragon.size / 2 <= 0) {
+    if (!khaleesiMounted) {
+      triggerHit();
+      if (lives > 0) {
+        dragon.y = height * 0.4;
+        dragon.velocity = 0;
+      }
+    } else {
+      dragon.y = Math.max(dragon.size / 2, Math.min(gY - dragon.size / 2, dragon.y));
+    }
+  }
+
+  // Handle boost movement recovery
+  dragon.x += dragon.vx;
+  dragon.vx *= 0.90;
+
+  const thirtyPercentWidth = width * 0.30;
+  if (dragon.x > dragon.baseX) {
+    let returnSpeed = 1.2;
+    if (dragon.x > thirtyPercentWidth) {
+      const extraRatio = (dragon.x - thirtyPercentWidth) / (width - thirtyPercentWidth);
+      returnSpeed = 3.5 + extraRatio * 9.0;
+    }
+    dragon.x -= returnSpeed;
+    if (dragon.x < dragon.baseX) dragon.x = dragon.baseX;
+  }
+
+  // ----------------------------------------------------
+  // SIEGE TOWER BOSS MECHANICS
+  // ----------------------------------------------------
+  if (bossState.topHp > 0) {
+    bossState.topTimer--;
+    if (bossState.topTimer <= 0) {
+      bossState.topState = 'LAUNCHING';
+      bossState.topChainProgress += 0.02;
+      if (bossState.topChainProgress >= 1) {
+        bossState.topState = 'IDLE';
+        bossState.topChainProgress = 0;
+        bossState.topTimer = 220;
+      }
+    }
+  }
+
+  if (bossState.botHp > 0) {
+    bossState.botTimer--;
+    if (bossState.botTimer <= 0) {
+      bossState.botState = 'LAUNCHING';
+      bossState.botChainProgress += 0.02;
+      if (bossState.botChainProgress >= 1) {
+        bossState.botState = 'IDLE';
+        bossState.botChainProgress = 0;
+        bossState.botTimer = 220;
+      }
+    }
+  }
+
+  if (bossState.midHp > 0) {
+    bossState.groupShootTimer++;
+    if (bossState.groupShootTimer >= 180) {
+      bossState.groupShootTimer = 0;
+      bossState.speechBubbleTimer = 60;
+      sound.arrowLaunch();
+      
+      bossState.archers.forEach(a => {
+        arrows.push({
+          x: bossState.x + a.xRel,
+          y: a.yRel,
+          vx: -6,
+          vy: (Math.random() - 0.5) * 2,
+          angle: Math.PI,
+          life: 180
+        });
+      });
+    }
+    if (bossState.speechBubbleTimer > 0) bossState.speechBubbleTimer--;
+
+    if (bossState.archers.length < 10) {
+      bossState.ladderTimer++;
+      if (bossState.ladderTimer > 90) {
+        bossState.ladderTimer = 0;
+        bossState.archers.push({ xRel: 20 + bossState.archers.length * 12, yRel: height * 0.45, hp: 1 });
+      }
+    }
+  }
+
+  flames.forEach(f => {
+    if (f.x > bossState.x) {
+      if (f.y < height / 3 && bossState.topHp > 0) {
+        bossState.topHp = Math.max(0, bossState.topHp - 1);
+      } else if (f.y >= height / 3 && f.y < (height * 2) / 3 && bossState.midHp > 0) {
+        bossState.midHp = Math.max(0, bossState.midHp - 1);
+        if (Math.random() < 0.2) bossState.archers.pop();
+      } else if (f.y >= (height * 2) / 3 && bossState.botHp > 0) {
+        bossState.botHp = Math.max(0, bossState.botHp - 1);
+      }
+    }
+  });
+
+  if (bossState.topHp <= 0 && bossState.midHp <= 0 && bossState.botHp <= 0) {
+    startLevelCelebration(4, 'LEVEL4_CLEAR');
+  }
+}
+
+function renderBoss() {
+  const bw = width / 3;
+  const bx = bossState.x;
+
+  ctx.fillStyle = '#2c3e50';
+  ctx.fillRect(bx, 0, bw, height);
+
+  ctx.save();
+  ctx.translate(bx + bw / 2, height - 30);
+  ctx.rotate(bossState.wheelAngle);
+  ctx.fillStyle = '#7f8c8d';
+  ctx.beginPath();
+  ctx.arc(0, 0, 35, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const drawLifeBar = (y, hp) => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(bx + 10, y + 10, bw - 20, 10);
+    ctx.fillStyle = hp > 0 ? '#2ecc71' : '#e74c3c';
+    ctx.fillRect(bx + 10, y + 10, (bw - 20) * (hp / 100), 10);
+  };
+
+  ctx.fillStyle = bossState.topHp > 0 ? '#34495e' : '#11161d';
+  ctx.fillRect(bx, 0, bw, height / 3);
+  drawLifeBar(10, bossState.topHp);
+  if (bossState.topState === 'LAUNCHING') {
+    const attackX = bx - bossState.topChainProgress * width;
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    ctx.arc(attackX, height / 6, height / 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle = bossState.midHp > 0 ? '#2c3e50' : '#11161d';
+  ctx.fillRect(bx, height / 3, bw, height / 3);
+  drawLifeBar(height / 3 + 10, bossState.midHp);
+  
+  if (bossState.midHp > 0) {
+    bossState.archers.forEach(a => {
+      ctx.fillStyle = '#27ae60';
+      ctx.fillRect(bx + a.xRel, a.yRel, 10, 14);
+    });
+    if (bossState.speechBubbleTimer > 0) {
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(bx - 70, height / 3 + 30, 60, 30);
+      ctx.fillStyle = '#000';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.fillText('LOOSE!', bx - 60, height / 3 + 50);
+    }
+  }
+
+  ctx.fillStyle = bossState.botHp > 0 ? '#34495e' : '#11161d';
+  ctx.fillRect(bx, (height * 2) / 3, bw, height / 3);
+  drawLifeBar((height * 2) / 3 + 10, bossState.botHp);
+  if (bossState.botState === 'LAUNCHING') {
+    const attackX = bx - bossState.botChainProgress * width;
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    ctx.arc(attackX, (height * 5) / 6, height / 6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Draw fired arrows so they are visible during the boss fight
+  drawArchersAndArrows();
+}
     function loop() {
       update();
       render();
