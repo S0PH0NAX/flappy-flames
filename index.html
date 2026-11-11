@@ -268,7 +268,6 @@
 
   <!-- Sound Effects Preload (Only existing files) -->
   <audio id="sfxBoost" src="wings_flap_large.flac" preload="auto"></audio>
-  <audio id="sfxFire" src="Fire.aif" preload="auto"></audio>
   <audio id="sfxRockBreak" src="rock_breaking.flac" preload="auto"></audio>
   <audio id="sfxArrow" src="swish_3.wav" preload="auto"></audio>
   <audio id="sfxBoulder" src="cannon_01.ogg" preload="auto"></audio>
@@ -365,7 +364,6 @@
     const cutsceneMusicAudio = document.getElementById('cutsceneMusic');
 
     const sfxBoost = document.getElementById('sfxBoost');
-    const sfxFire = document.getElementById('sfxFire');
     const sfxRockBreak = document.getElementById('sfxRockBreak');
     const sfxArrow = document.getElementById('sfxArrow');
     const sfxBoulder = document.getElementById('sfxBoulder');
@@ -520,8 +518,28 @@
       }
 
       fireRoar() {
-        this.playSoundEffect(sfxFire, 1);
-      }
+    if (this.muted) return;
+    this.init();
+    
+    // Create a low frequency pitch sweep for the fire roar core
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    
+    // Pitch drop simulation (fire release crackle into low rumble)
+    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.35);
+    
+    // Volume envelope (quick attack, smooth decay)
+    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
+    
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.35);
+}
 
       towerDestroy() {
         this.playSoundEffect(sfxRockBreak, 0.15);
