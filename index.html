@@ -1732,7 +1732,9 @@ knightHit() {
       }
     });
 
-    function isolateBtnTouch(btn, callback) {
+   function isolateBtnTouch(btn, callback) {
+      if (!btn) return; // Safeguard against null elements
+
       btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1741,13 +1743,13 @@ knightHit() {
       btn.addEventListener('touchend', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        callback(e);
+        if (typeof callback === 'function') callback(e);
       }, { passive: false });
 
       btn.addEventListener('click', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        callback(e);
+        if (typeof callback === 'function') callback(e);
       });
     }
 
