@@ -1732,25 +1732,54 @@ knightHit() {
       }
     });
 
-   function isolateBtnTouch(btn, callback) {
+  function isolateBtnTouch(btn, callback) {
       if (!btn) return; // Safeguard against null elements
 
       btn.addEventListener('touchstart', (e) => {
-        e.preventDefault();
         e.stopPropagation();
-      }, { passive: false });
+      }, { passive: true });
       
       btn.addEventListener('touchend', (e) => {
-        e.preventDefault();
         e.stopPropagation();
-        if (typeof callback === 'function') callback(e);
-      }, { passive: false });
+      }, { passive: true });
 
       btn.addEventListener('click', (e) => {
-        e.preventDefault();
         e.stopPropagation();
         if (typeof callback === 'function') callback(e);
       });
+    }
+
+    // Modal & Control Button Registrations
+    isolateBtnTouch(document.getElementById('toggleFireModeBtn'), () => {
+      toggleModeSwitch();
+    });
+
+    isolateBtnTouch(document.getElementById('manualFireBtn'), () => {
+      sound.init();
+      if (state === 'PLAYING') {
+        shootFire();
+      }
+    });
+
+    isolateBtnTouch(document.getElementById('pauseBtn'), () => {
+      togglePauseGame();
+    });
+
+    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
+      togglePauseGame();
+    });
+
+    isolateBtnTouch(document.getElementById('confirmLoadBtn'), () => {
+      const codeInput = document.getElementById('loadCodeInput');
+      if (codeInput && codeInput.value) {
+        loadSaveCode(codeInput.value.trim());
+      }
+    });
+
+    isolateBtnTouch(document.getElementById('closeLoadModalBtn'), () => {
+      const loadModal = document.getElementById('loadModal');
+      if (loadModal) loadModal.style.display = 'none';
+    });
     }
 
     isolateBtnTouch(toggleFireModeBtn, () => {
