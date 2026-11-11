@@ -343,7 +343,7 @@
     
     <!-- Stacked full-width touch buttons -->
     <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-    <button id="downloadShareBtn" class="action-btn modal-btn" style="background: #0043a7; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">DOWNLOAD PHOTO</span>SPAN 📸</button>
+    <button id="downloadShareBtn" class="action-btn modal-btn" style="background: #005496; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">DOWNLOAD PHOTO 📸</span></button>
 <button id="closeShareModalBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RETURN</span></button>
     </div>
   </div>
@@ -359,7 +359,7 @@
     
     <!-- Stacked modal buttons -->
     <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-      <button id="confirmLoadBtn" class="action-btn modal-btn" style="background: #0043a7; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">LOAD SAVE </span></button>
+      <button id="confirmLoadBtn" class="action-btn modal-btn" style="background: #005496; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">LOAD SAVE </span></button>
 <button id="closeLoadModalBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RETURN</span></button>
     </div>
   </div>
@@ -1800,16 +1800,20 @@ knightHit() {
       }
     });
 
-isolateBtnTouch(document.getElementById('pauseBtn'), (e) => {
+isolateBtnTouch(document.getElementById('pauseBtn'), () => {
       togglePauseGame();
     });
 
-    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), (e) => {
+    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
       const pauseModal = document.getElementById('pauseModal');
       if (pauseModal) pauseModal.style.display = 'none';
     });
 
-    isolateBtnTouch(copyCodeBtn, () => {
+    isolateBtnTouch(document.getElementById('copyCodeBtn'), () => {
+      const saveCodeDisplay = document.getElementById('saveCodeDisplay');
+      const copyCodeBtn = document.getElementById('copyCodeBtn');
+      if (!saveCodeDisplay || !copyCodeBtn) return;
+
       const textToCopy = saveCodeDisplay.innerText.trim();
       if (!textToCopy || textToCopy === '-------') return;
 
