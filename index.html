@@ -165,26 +165,18 @@
       border-color: #f1c40f;
       box-shadow: 0 4px 0 #8e44ad;
     }
-.modal-btn {
-      min-height: 60px !important;
-      width: 100% !important;
-      font-size: 16px !important;
+    .modal-btn {
+      min-height: 58px !important;
+      font-size: 15px !important;
       font-weight: 800 !important;
-      padding: 0 16px !important;
+      padding: 14px 16px !important;
       border-radius: 10px !important;
       touch-action: manipulation;
       cursor: pointer;
       display: flex;
       justify-content: center;
       align-items: center;
-      text-align: center;
-      line-height: 60px;
-      pointer-events: auto !important; /* Button ITSELF receives taps */
-    }
-
-    /* Target child elements (text/emojis inside the button) */
-    .modal-btn * {
-      pointer-events: none !important; /* Text inside won't block taps */
+      width: 100%;
     }
     .fire-btn {
       background: #ff0000 !important;
@@ -322,54 +314,41 @@
     </div>
 
 <div id="pauseModal" class="modal-overlay" style="display: none;">
-      <div class="modal-box" style="max-width: 420px; padding: 24px;">
-        <div class="modal-title" style="font-size: 24px; margin-bottom: 16px;">GAME PAUSED</div>
-        
-        <!-- MAIN PAUSE MENU VIEW -->
-        <div id="pauseMainView" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-          <button id="resumeBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RESUME ▶️</span></button>
-          <button id="saveGameBtn" class="action-btn modal-btn" style="background: #3498db; border-color: #fff; box-shadow: 0 4px 0 #2980b9;"><span style="pointer-events: none;">SAVE GAME 💾</span></button>
-        </div>
+  <div class="modal-box" style="max-width: 420px; padding: 24px;">
+    <div class="modal-title" style="font-size: 24px; margin-bottom: 16px;">GAME PAUSED</div>
+    
+    <p style="font-size: 13px; color: #ccc; margin-bottom: 6px;">Your save code:</p>
+    <div id="saveCodeDisplay" class="save-code-box" style="font-size: 22px; padding: 14px; margin-bottom: 20px;">-------</div>
+    
+    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+      <button id="copyCodeBtn" class="action-btn modal-btn">COPY SAVE CODE 📋</button>
+      <button id="closeSaveModalBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">RESUME GAME ▶️</button>
+    </div>
+  </div>
+</div>
 
-        <!-- SAVE CODE SUB-VIEW -->
-        <div id="pauseSaveView" style="display: none; flex-direction: column; gap: 12px; width: 100%;">
-          <p style="font-size: 13px; color: #ccc; margin-bottom: 2px;">Your save code:</p>
-          <div id="saveCodeDisplay" class="save-code-box" style="font-size: 22px; padding: 12px; margin-bottom: 8px;">-------</div>
-          <button id="copyCodeBtn" class="action-btn modal-btn"><span style="pointer-events: none;">COPY SAVE CODE 📋</span></button>
-          <button id="closeSaveModalBtn" class="action-btn modal-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;"><span style="pointer-events: none;">RETURN ↩️</span></button>
+    <div id="shareModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">SHARE VICTORY POST</div>
+        <canvas id="shareCanvas" width="800" height="800"></canvas>
+        <div style="display: flex; gap: 8px;">
+          <button id="downloadShareBtn" class="action-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">DOWNLOAD PHOTO</button>
+          <button id="closeShareModalBtn" class="action-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;">CLOSE</button>
         </div>
       </div>
     </div>
 
-   <div id="shareModal" class="modal-overlay" style="display: none;">
-  <div class="modal-box" style="max-width: 420px; padding: 24px;">
-    <div class="modal-title" style="font-size: 24px; margin-bottom: 16px;">SHARE VICTORY POST</div>
-    
-    <canvas id="shareCanvas" width="800" height="800" style="width: 100%; height: auto; border-radius: 8px; margin-bottom: 16px; border: 2px solid #f1c40f;"></canvas>
-    
-    <!-- Stacked full-width touch buttons -->
-    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-    <button id="downloadShareBtn" class="action-btn modal-btn" style="background: #005496; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">DOWNLOAD PHOTO 📸</span></button>
-<button id="closeShareModalBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RETURN</span></button>
+    <div id="loadModal" class="modal-overlay" style="display: none;">
+      <div class="modal-box">
+        <div class="modal-title">LOAD GAME</div>
+        <p style="font-size: 12px; color: #ccc;">Enter save code:</p>
+        <input type="text" id="loadCodeInput" class="save-input-box" maxlength="7" placeholder="XXXXXXX">
+        <div style="display: flex; gap: 8px;">
+          <button id="cancelLoadBtn" class="action-btn" style="background: #e74c3c; border-color: #fff; box-shadow: 0 4px 0 #c0392b;">CANCEL</button>
+          <button id="confirmLoadBtn" class="action-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;">LOAD</button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-
-   <!-- LOAD MODAL (Matching Pause Modal styling) -->
-<div id="loadModal" class="modal-overlay" style="display: none;">
-  <div class="modal-box" style="max-width: 420px; padding: 24px;">
-    <div class="modal-title" style="font-size: 24px; margin-bottom: 16px;">LOAD GAME</div>
-    
-    <p style="font-size: 13px; color: #ccc; margin-bottom: 8px;">Enter your 7-character save code:</p>
-    <input type="text" id="loadCodeInput" maxlength="7" placeholder="e.g. 0300011" style="width: 100%; padding: 12px; font-size: 18px; text-align: center; font-family: monospace; font-weight: bold; border-radius: 8px; border: 2px solid #f1c40f; background: rgba(0,0,0,0.5); color: #fff; text-transform: uppercase; margin-bottom: 20px; box-sizing: border-box;">
-    
-    <!-- Stacked modal buttons -->
-    <div style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
-      <button id="confirmLoadBtn" class="action-btn modal-btn" style="background: #005496; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">LOAD SAVE </span></button>
-<button id="closeLoadModalBtn" class="action-btn modal-btn" style="background: #2ecc71; border-color: #fff; box-shadow: 0 4px 0 #27ae60;"><span style="pointer-events: none;">RETURN</span></button>
-    </div>
-  </div>
-</div>
   </div>
 
 <script>
@@ -502,16 +481,17 @@
         }
       }
 
-playSoundEffect(audioElem, volume = 0.8) {
-    if (this.muted) return;
-    if (audioElem && audioElem.src) {
-      try {
-        audioElem.currentTime = 0;
-        audioElem.volume = volume;
-        audioElem.play().catch(() => {});
-      } catch(e) {}
-    }
-  }
+      playSoundEffect(audioElem, volume = 0.8) {
+        if (this.muted) return;
+        if (audioElem && audioElem.src) {
+          try {
+            audioElem.currentTime = 0;
+            audioElem.volume = volume;
+            audioElem.play().catch(() => {});
+          } catch(e) {}
+        }
+      }
+
       stopRoyalSounds() {
         if (sfxQueenEntrance) {
           sfxQueenEntrance.pause();
@@ -861,24 +841,13 @@ knightHit() {
       manualFireBtn.style.display = isFlapLockActive ? 'inline-block' : 'none';
     }
 
-function togglePauseGame() {
-  const pauseModal = document.getElementById('pauseModal');
-  if (!pauseModal) return;
-
-  if (state === 'PLAYING') {
-    state = 'PAUSED';
-    pauseModal.style.display = 'flex';
-    
-    // Explicitly toggle views to show the main pause menu options
-    const pauseMainView = document.getElementById('pauseMainView');
-    const pauseSaveView = document.getElementById('pauseSaveView');
-    if (pauseMainView) pauseMainView.style.display = 'flex';
-    if (pauseSaveView) pauseSaveView.style.display = 'none';
-  } else if (state === 'PAUSED') {
-    state = 'PLAYING';
-    pauseModal.style.display = 'none';
-  }
-}
+    function togglePauseGame() {
+      if (state === 'PLAYING') {
+        state = 'PAUSED';
+      } else if (state === 'PAUSED') {
+        state = 'PLAYING';
+      }
+    }
 
     function startLevelCelebration(nextLvl, targetDialogueType) {
       currentLevel = nextLvl;
@@ -1749,83 +1718,49 @@ function togglePauseGame() {
       }
     });
 
-  function isolateBtnTouch(btn, callback) {
-      if (!btn) return; // Safeguard against null elements
-
+    function isolateBtnTouch(btn, callback) {
       btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-      }, { passive: true });
+      }, { passive: false });
       
       btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-      }, { passive: true });
+        callback(e);
+      }, { passive: false });
 
       btn.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
-        if (typeof callback === 'function') callback(e);
+        callback(e);
       });
     }
-// Modal & Control Button Registrations
-    isolateBtnTouch(document.getElementById('toggleFireModeBtn'), () => {
+
+    isolateBtnTouch(toggleFireModeBtn, () => {
       toggleModeSwitch();
     });
 
-    isolateBtnTouch(document.getElementById('manualFireBtn'), () => {
+    isolateBtnTouch(manualFireBtn, () => {
       sound.init();
       if (state === 'PLAYING') {
         shootFire();
       }
     });
 
-    isolateBtnTouch(document.getElementById('confirmLoadBtn'), () => {
-      const codeInput = document.getElementById('loadCodeInput');
-      if (codeInput && codeInput.value) {
-        loadSaveCode(codeInput.value.trim());
-      }
-    });
-
-    isolateBtnTouch(document.getElementById('closeLoadModalBtn'), () => {
-      const loadModal = document.getElementById('loadModal');
-      if (loadModal) loadModal.style.display = 'none';
-    });
-
-  // PAUSE BUTTON: Toggles the pause menu open/closed
-    isolateBtnTouch(document.getElementById('pauseBtn'), () => {
+    isolateBtnTouch(pauseBtn, () => {
       togglePauseGame();
     });
 
-    // RESUME BUTTON inside main pause menu: resumes gameplay
-    isolateBtnTouch(document.getElementById('resumeBtn'), () => {
-      togglePauseGame();
+    isolateBtnTouch(closeSaveModalBtn, () => {
+      pauseModal.style.display = 'none';
     });
 
-    // SAVE GAME BUTTON: Switches inside the same modal box to the save code view
-    isolateBtnTouch(document.getElementById('saveGameBtn'), () => {
-      const pauseMainView = document.getElementById('pauseMainView');
-      const pauseSaveView = document.getElementById('pauseSaveView');
-      if (pauseMainView) pauseMainView.style.display = 'none';
-      if (pauseSaveView) pauseSaveView.style.display = 'flex';
-
-      const saveCodeDisplay = document.getElementById('saveCodeDisplay');
-      if (saveCodeDisplay) saveCodeDisplay.innerText = generateSaveCode();
+    isolateBtnTouch(closeShareModalBtn, () => {
+      shareModal.style.display = 'none';
     });
 
-    // RETURN BUTTON in Save view: switches back to main pause menu options
-    isolateBtnTouch(document.getElementById('closeSaveModalBtn'), () => {
-      const pauseMainView = document.getElementById('pauseMainView');
-      const pauseSaveView = document.getElementById('pauseSaveView');
-      if (pauseMainView && pauseSaveView) {
-        pauseSaveView.style.display = 'none';
-        pauseMainView.style.display = 'flex';
-      }
-    });
-
-    // COPY SAVE CODE BUTTON
-    isolateBtnTouch(document.getElementById('copyCodeBtn'), () => {
-      const saveCodeDisplay = document.getElementById('saveCodeDisplay');
-      const copyCodeBtn = document.getElementById('copyCodeBtn');
-      if (!saveCodeDisplay || !copyCodeBtn) return;
-
+    isolateBtnTouch(copyCodeBtn, () => {
       const textToCopy = saveCodeDisplay.innerText.trim();
       if (!textToCopy || textToCopy === '-------') return;
 
