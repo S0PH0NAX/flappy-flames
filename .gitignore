@@ -1,0 +1,10 @@
+# macOS
+.DS_Store
+
+# Signing keys: never commit these
+*.keystore
+*.jks
+
+# Local-only folders
+archive/
+.claude/
