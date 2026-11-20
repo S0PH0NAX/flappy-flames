@@ -262,7 +262,15 @@ knightHit() {
           return;
         }
 
-        if (gameState === 'BOSS_INTRO') {
+        // the prologue keeps the opening-screen music the whole way through the capture
+        const prologueMusic = gameState === 'START' || gameState === 'CAPTURE' || gameState === 'CAPTURED_MSG' ||
+          (inPrologue() && (gameState === 'PLAYING' || gameState === 'PAUSED' || gameState === 'GAMEOVER'));
+        if (prologueMusic) {
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
+          if (uiMusicAudio.paused) uiMusicAudio.play().catch(() => {});
+        }
+        else if (gameState === 'BOSS_INTRO') {
           // silence, then the boss music kicks in when the tower smashes through the wall
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();

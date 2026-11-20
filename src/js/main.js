@@ -95,15 +95,17 @@
     function update() {
       sound.updateMusicState(state);
       sound.setRumble(currentRumbleLevel());
+      updateFireButtonLock();
+      updateSunnyAmbient();
 
       // the Khaleesi splash freezes all action until it finishes
       if (khaleesiSplash) return;
 
       if (state === 'PAUSED' || state === 'CUTSCENE' || state === 'LEVEL_DIALOGUE') return;
 
-      // ADD THIS LINE:
-  if (state === 'BOSS_INTRO') { updateBossIntro(); return; }
-  if (state === 'BOSS') { updateBossLogic(); return; }
+      if (state === 'CAPTURE') { updateCapture(); return; }
+      if (state === 'BOSS_INTRO') { updateBossIntro(); return; }
+      if (state === 'BOSS') { updateBossLogic(); return; }
 
       if (state === 'LEVEL_CELEBRATE') {
         updateLevelCelebration();
@@ -143,13 +145,15 @@
         }
       }
 
-      if (state === 'SPLASH' && !textTypingComplete) {
+      if ((state === 'SPLASH' || state === 'CAPTURED_MSG') && !textTypingComplete) {
         typedCharIndex += 0.45;
         if (typedCharIndex >= totalCharCount) {
           typedCharIndex = totalCharCount;
           textTypingComplete = true;
         }
       }
+
+      if (state === 'PLAYING' && inPrologue()) { updatePrologue(); return; }
 
       if (state === 'PLAYING') {
         levelTimerSeconds += (1 / 60);
@@ -533,85 +537,36 @@
       ctx.save();
       if (shake) ctx.translate(shake.x, shake.y);
 
-      drawNightSky();
-      drawMoon();
-      drawGiantClouds();
-      drawParallaxCastleBackground();
-      if (state === 'BOSS_INTRO') drawBossIntroScene();
-      obstacles.forEach(drawCastleWalls);
-      drawBattlements();
-      drawArchersAndArrows();
-      drawKhaleesis();
-      drawCollectableHearts();
-      drawTrebuchetsAndBoulders();
-      drawKnights();
-      drawLevelExtras();
-      drawGround();
+      if (sunnyScene()) {
+        // prologue, opening screen and start menu: sunny valley
+        drawSunnyBackdrop();
+        drawSunnyGround();
+        drawProEnts();
+      } else {
+        drawNightSky();
+        drawMoon();
+        drawGiantClouds();
+        drawParallaxCastleBackground();
+        if (state === 'BOSS_INTRO') drawBossIntroScene();
+        obstacles.forEach(drawCastleWalls);
+        drawBattlements();
+        drawArchersAndArrows();
+        drawKhaleesis();
+        drawCollectableHearts();
+        drawTrebuchetsAndBoulders();
+        drawKnights();
+        drawLevelExtras();
+        drawGround();
+      }
       drawParticles();
       if (state === 'BOSS') renderBoss();
 
       if (state === 'SPLASH') {
-        const portraitSize = 180;
-        const pX = (width - portraitSize) / 2;
-        const pY = height / 2 - 10;
-
-        const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
-
-        const bMargin = 25;
-        const bX = bMargin;
-        const bY = pY - 145;
-        const bWidth = width - (bMargin * 2);
-        const bHeight = 125;
-        const cornerRadius = 14;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        if (ctx.roundRect) {
-          ctx.roundRect(bX, bY, bWidth, bHeight, cornerRadius);
-        } else {
-          ctx.fillRect(bX, bY, bWidth, bHeight);
-        }
-        ctx.fill();
-
-        let curCharCount = Math.floor(typedCharIndex);
-        let charCounter = 0;
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-        ctx.textAlign = 'center';
-
-        const lineHeights = [18, 36, 54, 72, 90];
-        fullStoryText.forEach((line, idx) => {
-          let visibleLine = '';
-          for (let c = 0; c < line.length; c++) {
-            if (charCounter < curCharCount) {
-              visibleLine += line[c];
-              charCounter++;
-            }
-          }
-          ctx.fillText(visibleLine, width / 2, bY + lineHeights[idx]);
-          charCounter++;
-        });
-
-        ctx.fillStyle = '#11161d';
-        ctx.fillRect(pX, pY, portraitSize, portraitSize);
-
-        if (activeFrame.complete && activeFrame.naturalWidth !== 0) {
-          ctx.drawImage(activeFrame, pX, pY, portraitSize, portraitSize);
-        }
-
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = '#f1c40f';
-        ctx.strokeRect(pX, pY, portraitSize, portraitSize);
-
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px "Proxima Nova", sans-serif';
-        if (textTypingComplete) {
-          ctx.fillText('TAP TO START GAME', width / 2, pY + portraitSize + 35);
-        } else {
-          ctx.fillText('TAP TO SHOW FULL MESSAGE', width / 2, pY + portraitSize + 35);
-        }
-
+        drawStoryMessage(PRO_INVITE_TEXT, 'TAP TO START GAME');
+      } else if (state === 'CAPTURED_MSG') {
+        drawCapturedMessage();
+      } else if (state === 'CAPTURE') {
+        drawCaptureOverlay();
       } else if (state === 'LEVEL_CELEBRATE') {
         drawDragon(dragon.x, dragon.y);
         drawDragonCarried();
@@ -644,16 +599,20 @@
         renderMountedKhaleesiHUD();
         drawDragonCarried();
         drawExtrasHUD();
+        if (inPrologue()) drawProOverlay();
       }
 
       if (state === 'START') {
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 22px "Proxima Nova", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('TAP TO FLAP & FIRE', width / 2, height / 2 - 80);
-        
-        ctx.font = '14px "Proxima Nova", sans-serif';
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 6;
+        ctx.fillText('TAP TO FLAP', width / 2, height / 2 - 80);
+        ctx.font = 'bold 14px "Proxima Nova", sans-serif';
         ctx.fillText('Hold: Boost Forward', width / 2, height / 2 - 50);
+        ctx.shadowBlur = 0;
+        ctx.shadowColor = 'transparent';
 
         const btnW = 200;
         const btnH = 44;

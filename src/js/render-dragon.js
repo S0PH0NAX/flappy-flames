@@ -113,6 +113,8 @@
 
       if (khaleesiMounted) {
         drawKhaleesiSprite(2 * p, -18 * p, 0.85);
+      } else if (khaleesiRidingNow()) {
+        drawKhaleesiSprite(-2.5 * p, -6.4 * p, 0.85);   // the calm prologue ride: seated on his back
       }
 
       ctx.restore();

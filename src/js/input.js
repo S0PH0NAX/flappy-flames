@@ -137,8 +137,10 @@
         }
 
         if (clickY >= restartBtnY && clickY <= restartBtnY + btnH) {
+          const proLvl = inPrologue() ? currentLevel : null;   // dying in the prologue restarts that prologue level
           resetGame();
-          state = 'PLAYING';
+          if (proLvl !== null) startPrologueLevel(proLvl);
+          else state = 'PLAYING';
           return true;
         }
 
@@ -155,6 +157,7 @@
       sound.init();
 
       if (state === 'BOSS_INTRO') { skipBossIntro(); return; }
+      if (state === 'CAPTURE') return;   // the ballista capture plays out on its own
 
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;
@@ -193,6 +196,17 @@
         return;
       }
 
+      if (state === 'CAPTURED_MSG') {
+        if (!textTypingComplete) {
+          typedCharIndex = totalCharCount;
+          textTypingComplete = true;
+        } else {
+          levelDialogueType = 'INTRO';
+          state = 'LEVEL_DIALOGUE';
+        }
+        return;
+      }
+
       const btnW = 200;
       const btnX = (width - btnW) / 2;
 
@@ -207,14 +221,12 @@
           }
           if (clickY >= startBtnY && clickY <= startBtnY + 44) {
             resetGame();
-            levelDialogueType = 'INTRO';
-            state = 'LEVEL_DIALOGUE';
+            startPrologueLevel(PRO_MEADOW);
             return;
           }
         }
         resetGame();
-        levelDialogueType = 'INTRO';
-        state = 'LEVEL_DIALOGUE';
+        startPrologueLevel(PRO_MEADOW);
         return;
       }
 
@@ -295,6 +307,9 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Digit5' || e.code === 'Numpad5') {
     debugWarpToLevel(5);
   }
+  if ((e.code === 'Digit7' || e.code === 'Numpad7') && !e.repeat) { resetGame(); startPrologueLevel(PRO_MEADOW); }   // debug: prologue meadow
+  if ((e.code === 'Digit8' || e.code === 'Numpad8') && !e.repeat) { resetGame(); startPrologueLevel(PRO_VILLAGE); }  // debug: prologue village
+  if ((e.code === 'Digit9' || e.code === 'Numpad9') && !e.repeat) debugStartCapture();                                // debug: ballista capture
   if (e.code === 'KeyB') triggerBossBattle();
   if (e.code === 'KeyI' && !e.repeat) { currentLevel = 3; updateLevelBadgeUI(); startBossIntro(); }   // debug: boss intro cinematic
 
@@ -467,6 +482,7 @@ window.addEventListener('keydown', (e) => {
         pauseModal.style.display = 'none';
         state = 'PLAYING';
         if (saveCodeBoss) triggerBossBattle();   // a boss code drops you straight into the siege-tower fight
+        else if (inPrologue()) startPrologueLevel(currentLevel);
       } else {
         alert("Invalid save code!");
       }

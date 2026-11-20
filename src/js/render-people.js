@@ -75,6 +75,17 @@
       ctx.fillRect(6, 13, 10, 2);
       ctx.fillStyle = '#d4a017';
       ctx.fillRect(12, 13, 2, 2);
+      // long skirt (women in the prologue crowds)
+      if (k.dress) {
+        ctx.fillStyle = out;
+        ctx.beginPath(); ctx.moveTo(5, 13); ctx.lineTo(17, 13); ctx.lineTo(20, 24); ctx.lineTo(2, 24); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = c.tunic;
+        ctx.beginPath(); ctx.moveTo(6, 14); ctx.lineTo(16, 14); ctx.lineTo(19, 23); ctx.lineTo(3, 23); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = tunicDark;
+        ctx.fillRect(3, 21, 16, 2);
+        ctx.fillStyle = '#4a3020';
+        ctx.fillRect(6, 13, 10, 2);
+      }
       // neckline
       ctx.fillStyle = L.skin;
       ctx.fillRect(10, 5, 3, 2);
@@ -137,6 +148,16 @@
 
       // front arm + tool
       const handY = 12 + armSwing * 0.5;
+      if (k.wave) {
+        // arm raised, waving (prologue crowds and dancers)
+        const sway = Math.sin(Date.now() / 110 + (k.phase || 0)) * 2;
+        ctx.fillStyle = c.tunic;
+        ctx.fillRect(14, 1, 3, 7);
+        ctx.fillStyle = L.skin;
+        ctx.fillRect(15 + sway, -4, 3, 5);
+        if (k.tool && k.tool !== 'none') drawVillagerTool(k, L, handY);
+        return;
+      }
       ctx.fillStyle = c.tunic;
       ctx.fillRect(14, 7, 3, 6);
       ctx.fillStyle = L.skin;
@@ -154,6 +175,8 @@
         ctx.fillRect(21, -10, 2, 6);
         ctx.fillStyle = '#d5dde3';
         ctx.fillRect(15, -10, 1, 1); ctx.fillRect(18, -11, 1, 1); ctx.fillRect(21, -10, 1, 1);
+      } else if (k.tool) {
+        drawVillagerTool(k, L, handY);   // prologue: crook, basket, lute or nothing
       } else {
         ctx.fillStyle = '#5a3a1e';
         ctx.fillRect(18, 0, 2, 16);

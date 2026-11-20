@@ -43,7 +43,7 @@
     }
 
     function checkLevelProgression() {
-      if (state !== 'PLAYING') return;
+      if (state !== 'PLAYING' || inPrologue()) return;   // prologue.js ends its own levels
 
       const targetDuration = LEVEL_DURATIONS[currentLevel] || 90;
 
@@ -171,7 +171,8 @@
       const k = Math.min(gameStats.kingsBeheaded, 35);
       const q = Math.min(gameStats.queensBeheaded, 35);
       const v = Math.min(gameStats.villagersKilled, 36 ** 3 - 1);
-      const lvl = atBossFight() ? SAVE_CODE_BOSS : Math.min(currentLevel, FINAL_LEVEL);
+      let lvl = atBossFight() ? SAVE_CODE_BOSS : Math.min(currentLevel, FINAL_LEVEL);
+      if (inPrologue() || state === 'CAPTURE') lvl = currentLevel === PRO_MEADOW ? PRO_CODE_MEADOW : PRO_CODE_VILLAGE;
       const body = codeEncode(p, 5) + CODE_CHARS[k] + CODE_CHARS[q] + codeEncode(v, 3) + CODE_CHARS[lvl];
       const code = body + codeCheckChar(body);
       return code.slice(0, 4) + '-' + code.slice(4, 8) + '-' + code.slice(8);
@@ -202,7 +203,8 @@
       if ([savedScore, savedKings, savedQueens, savedVillagers, lvlVal].some(x => x < 0)) return false;
 
       const isBoss = lvlVal === SAVE_CODE_BOSS;
-      const savedLvl = isBoss ? 3 : Math.max(1, Math.min(FINAL_LEVEL, lvlVal));
+      let savedLvl = isBoss ? 3 : Math.max(1, Math.min(FINAL_LEVEL, lvlVal));
+      if (clean.length === 12 && isPrologueCode(lvlVal)) savedLvl = lvlVal === PRO_CODE_MEADOW ? PRO_MEADOW : PRO_VILLAGE;
 
       resetGame();
       score = savedScore;
@@ -353,6 +355,7 @@
 
     function resetGame() {
       bossIntro = null;
+      pro = null;
       gkTalkSeen = { spot: false, shield: false };
       dragon.x = 80;
       dragon.targetX = 80;

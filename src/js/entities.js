@@ -218,6 +218,7 @@ let fireShotCounter = 0;   // tags each breath so the boss can cap kills per sho
 
 function shootFire() {
   if (state !== 'PLAYING' && state !== 'BOSS') return;
+  if (fireDisabled()) return;       // no fire in the prologue
   if (chestHandlesFire()) return;   // holding a chest: FIRE means DROP
   sound.fireRoar();
   fireShotCounter++;

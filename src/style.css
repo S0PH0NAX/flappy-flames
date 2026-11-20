@@ -195,6 +195,11 @@
     .fire-btn:active {
       box-shadow: 0 2px 0 #990000 !important;
     }
+    /* no fire in the prologue */
+    .fire-btn.disabled {
+      opacity: 0.35;
+      filter: grayscale(1);
+    }
     .sound-toggle-btn {
       max-width: 48px;
       min-width: 44px;
