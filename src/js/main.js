@@ -550,6 +550,7 @@
         if (state === 'BOSS_INTRO') drawBossIntroScene();
         obstacles.forEach(drawCastleWalls);
         drawBattlements();
+        drawLevelChests();      // behind archers, peasants and knights
         drawArchersAndArrows();
         drawKhaleesis();
         drawCollectableHearts();

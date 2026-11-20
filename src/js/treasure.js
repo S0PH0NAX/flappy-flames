@@ -297,10 +297,15 @@ function updateLevelExtras(worldShift) {
   updateChests(worldShift);
 }
 
+// Chests are drawn before everyone standing near them (main.js calls this right after the battlements),
+// so a guard next to a treasure is always visible in front of it.
+function drawLevelChests() {
+  chests.forEach(c => { if (c.place !== 'CARRIED') drawChest(c); });
+}
+
 function drawLevelExtras() {
   smallKnights.forEach(drawSmallKnight);
   goldKnights.forEach(g => { if (g.state === 'ON_TOWER' || g.state === 'DEAD' || g.state === 'FALLING') drawGoldKnight(g); });
-  chests.forEach(c => { if (c.place !== 'CARRIED') drawChest(c); });
 }
 
 // things hanging from / held by the dragon, drawn after it
