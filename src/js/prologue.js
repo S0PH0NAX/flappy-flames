@@ -64,6 +64,7 @@ let pro = null;          // state of the current prologue level (null outside th
 let sunnyScroll = 0;     // foreground scroll of the sunny scenes, in px
 let sunnyBirds = [];
 let fireBtnDisabledShown = false;
+let cinematicShown = false;
 
 function inPrologue() { return currentLevel <= 0; }
 
@@ -83,11 +84,13 @@ function fireDisabled() {
 function khaleesiRidingNow() {
   if (khaleesiMounted) return false;
   if (state === 'START') return true;
-  if (state === 'CAPTURE') return !(pro && pro.cap && pro.cap.kOff);
+  if (state === 'CAPTURE') return true;   // bound in the net together
   return inPrologue() && (state === 'PLAYING' || state === 'PAUSED' || state === 'GAMEOVER');
 }
 
 function updateFireButtonLock() {
+  const cine = state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE);
+  if (cine !== cinematicShown) { cinematicShown = cine; container.classList.toggle('cinematic', cine); }
   const off = fireDisabled();
   if (off !== fireBtnDisabledShown) {
     fireBtnDisabledShown = off;
@@ -513,7 +516,23 @@ function proBaa() {
 }
 
 // ---------- the ballista capture (state CAPTURE) ----------
-const CAP_FIRE = 70, CAP_HIT = 98, CAP_PULL = 140, CAP_ARRIVE = 250, CAP_INSIDE = 285, CAP_ROAR = 300, CAP_FADE = 360, CAP_END = 410;
+// 1. aim and fire: a big square net unfolds in flight
+// 2. it wraps Syraxx and Khaleesi together; the rope drags them over the wall and they fall inside
+// 3. close-up: the two of them tumbling through the sky, bound in the net (beheading music starts)
+// 4. capture1.png (Khaleesi cut out of the net and dragged away), then capture2.png (Syraxx wakes and escapes)
+const CAP_FIRE = 70, CAP_HIT = 98, CAP_DRAG = 135, CAP_OVER = 215, CAP_CLOSE = 250;
+const CAP_FALL_FRAMES = 330;                       // close-up of the fall
+const CAP_IMG_FRAMES = 270;                        // each story image (about 4.5 s)
+const CAP_IMG1 = CAP_CLOSE + CAP_FALL_FRAMES;
+const CAP_IMG2 = CAP_IMG1 + CAP_IMG_FRAMES;
+const CAP_END = CAP_IMG2 + CAP_IMG_FRAMES;
+const CAP_FALL_LINE = '"Hold on to me, Syraxx... whatever they do to us, I will find you again."';
+const CAP_IMG_CAPTIONS = [
+  'They cut Khaleesi from the net and dragged her away...',
+  '...but Syraxx woke, and broke free.'
+];
+const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.png';
+const captureImg2 = new Image(); captureImg2.src = 'assets/images/capture2.png';
 
 function proBallista() {
   // muzzle of the ballista on top of the wall (matches drawProCastle)
@@ -523,12 +542,26 @@ function proBallista() {
 }
 function proWallHeight() { return Math.min(height * 0.42, 300); }
 
+// the beheading music plays from the close-up of the fall through the "captured" message
+function captureSadMusic() {
+  if (state === 'CAPTURED_MSG') return true;
+  return state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE);
+}
+
 function startCapture() {
   state = 'CAPTURE';
   isHoldingAction = false;
   invulnerableTimer = 0;
-  pro.cap = { t: 0, kOff: false, net: null, kx: 0, ky: 0, hoverY: Math.min(Math.max(dragon.y, height * 0.3), height * 0.5), tumble: 0 };
+  pro.cap = { t: 0, net: null, hoverY: Math.min(Math.max(dragon.y, height * 0.3), height * 0.5), tumble: 0, from: null };
   showKhaleesiBanner('"Syraxx... the knights are aiming something at us! Pull up!"', 120);
+}
+
+// taps during the story images move on to the next one
+function captureTap() {
+  const C = pro && pro.cap;
+  if (!C) return;
+  if (C.t >= CAP_IMG1 + 40 && C.t < CAP_IMG2) C.t = CAP_IMG2;
+  else if (C.t >= CAP_IMG2 + 40) C.t = CAP_END - 1;
 }
 
 function updateCapture() {
@@ -538,71 +571,58 @@ function updateCapture() {
   const B = proBallista();
   const hoverX = width * 0.3;
 
-  // Syraxx is no longer under the player's control
   if (t < CAP_HIT) {
+    // Syraxx is no longer under the player's control
     dragon.x += (hoverX - dragon.x) * 0.05;
     dragon.y += (C.hoverY + Math.sin(t / 12) * 6 - dragon.y) * 0.06;
     dragon.velocity = Math.sin(t / 12) * -1.5;
     if (t % 22 === 0) { dragon.wingState = 1; sound.flap(); }
-  } else if (t < CAP_PULL + 40) {
-    // tangled: thrashing and sinking
-    dragon.y += 0.35;
-    dragon.x += Math.sin(t * 0.9) * 1.6;
-    dragon.velocity = Math.sin(t * 0.7) * 6;
-    if (t % 5 === 0) dragon.wingState = 0.6;
-  } else {
-    // free again, climbing back up, frantic
-    C.tumble *= 0.9;
-    dragon.x += (hoverX - dragon.x) * 0.04;
-    dragon.y += (height * 0.36 - dragon.y) * 0.04;
-    dragon.velocity = -2 + Math.sin(t / 6);
-    if (t % 10 === 0) { dragon.wingState = 1; sound.flap(); }
+  } else if (t < CAP_DRAG) {
+    // tangled together: thrashing and sinking
+    dragon.y += 0.5;
+    dragon.x += Math.sin(t * 0.9) * 1.4;
+    dragon.velocity = Math.sin(t * 0.7) * 5;
+    dragon.wingState = 0.15;
+  } else if (t < CAP_OVER) {
+    // the rope drags them both up to the battlements
+    if (!C.from) C.from = { x: dragon.x, y: dragon.y };
+    const u = (t - CAP_DRAG) / (CAP_OVER - CAP_DRAG);
+    const e = u * u * (3 - 2 * u);
+    dragon.x = C.from.x + (B.x + 10 - C.from.x) * e + Math.sin(t * 0.8) * 1.5;
+    dragon.y = C.from.y + (B.wallTop - 55 - C.from.y) * e - Math.sin(e * Math.PI) * 40;
+    dragon.velocity = Math.sin(t * 0.5) * 4;
+    C.tumble = 0.4;
+  } else if (t < CAP_CLOSE) {
+    // over the wall and down inside the castle
+    const u = (t - CAP_OVER) / (CAP_CLOSE - CAP_OVER);
+    dragon.x = B.x + 10 + u * 50;
+    dragon.y = B.wallTop - 55 + u * u * 160;
+    C.tumble = 1;
   }
 
   if (t === CAP_FIRE) {
     sound.arrowLaunch();
     sound.boulderLaunch();
-    C.net = { x: B.x, y: B.y, open: 0 };
+    C.net = { x: B.x, y: B.y, open: 0, spin: 0 };
   }
   if (C.net && t < CAP_HIT) {
     const u = (t - CAP_FIRE) / (CAP_HIT - CAP_FIRE);
     C.net.x = B.x + (dragon.x - B.x) * u;
-    C.net.y = B.y + (dragon.y - 6 - B.y) * u - Math.sin(u * Math.PI) * 40;
+    C.net.y = B.y + (dragon.y - 14 - B.y) * u - Math.sin(u * Math.PI) * 40;
     C.net.open = u;
+    C.net.spin = (1 - u) * 2.5;
   }
   if (t === CAP_HIT) {
     sound.hit();
-    showKhaleesiBanner('"A net! Syraxx, we\'re caught!"', 120);
-  }
-  if (t >= CAP_HIT && t < CAP_PULL) {
-    C.net.x = dragon.x; C.net.y = dragon.y - 6; C.net.open = 1;
-    C.kx = dragon.x + 5; C.ky = dragon.y - 47;
-  }
-  if (t === CAP_PULL) {
-    C.kOff = true;
-    C.tumble = 1;
     sound.knightHit();
-    showKhaleesiBanner('"SYRAXX! SYRAXX, HELP ME!"', 150);
+    showKhaleesiBanner('"A net! Syraxx, we\'re caught!"', 110);
   }
-  if (t >= CAP_PULL && t <= CAP_ARRIVE) {
-    // Khaleesi, wrapped in the net, is reeled along the rope to the wall
-    const u = Math.min(1, (t - CAP_PULL) / (CAP_ARRIVE - CAP_PULL));
-    const e = u * u * (3 - 2 * u);
-    const fromX = dragon.x + 5, fromY = dragon.y - 40;
-    C.kx = fromX + (B.x - 6 - fromX) * e;
-    C.ky = fromY + (B.y + 6 - fromY) * e + Math.sin(e * Math.PI) * 30;
-    C.net.x = C.kx; C.net.y = C.ky + 8;
+  if (t === CAP_DRAG) { sound.boulderLaunch(); showKhaleesiBanner('"They\'re pulling us in! SYRAXX!"', 120); }
+  if (t === CAP_OVER) sound.towerDestroy();
+  if (t === CAP_CLOSE) {
+    khaleesiBannerTimer = 0;
+    cutsceneMusicAudio.currentTime = 0;
   }
-  if (t === CAP_ARRIVE - 40) showKhaleesiBanner('"Find me, Syraxx! I love you! SYRAXX!"', 170);
-  if (t > CAP_ARRIVE && t <= CAP_INSIDE) {
-    // dragged over the battlement and down inside the castle
-    const u = (t - CAP_ARRIVE) / (CAP_INSIDE - CAP_ARRIVE);
-    C.kx = B.x - 6 + u * 40;
-    C.ky = B.y + 6 + u * 60;
-    C.net.x = C.kx; C.net.y = C.ky + 8;
-  }
-  if (t === CAP_INSIDE) sound.towerDestroy();
-  if (t === CAP_ROAR) { sound.fireRoar(); dragon.wingState = 1; }
   if (t >= CAP_END) startCapturedMessage();
 }
 

@@ -195,6 +195,13 @@
     .fire-btn:active {
       box-shadow: 0 2px 0 #990000 !important;
     }
+    /* the capture close-up and story images fill the screen */
+    #game-container.cinematic .level-progress-badge,
+    #game-container.cinematic .score-display,
+    #game-container.cinematic .hearts-display,
+    #game-container.cinematic .bottom-controls-bar {
+      visibility: hidden;
+    }
     /* no fire in the prologue */
     .fire-btn.disabled {
       opacity: 0.35;

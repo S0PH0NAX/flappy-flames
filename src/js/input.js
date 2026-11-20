@@ -157,7 +157,7 @@
       sound.init();
 
       if (state === 'BOSS_INTRO') { skipBossIntro(); return; }
-      if (state === 'CAPTURE') return;   // the ballista capture plays out on its own
+      if (state === 'CAPTURE') { captureTap(); return; }   // no control during the capture; taps only move through the story images
 
       const rect = canvas.getBoundingClientRect();
       const scaleX = canvas.width / rect.width;

@@ -684,7 +684,7 @@ function drawProBallista(x, wallTop) {
   ctx.fillRect(bx - 12, by + 4, 4, 18); ctx.fillRect(bx + 8, by + 4, 4, 18);
   ctx.fillRect(bx - 14, by + 18, 28, 4);
   // winch drum
-  const spin = C && t >= CAP_PULL && t < CAP_INSIDE ? t * 0.4 : 0;
+  const spin = C && t >= CAP_DRAG && t < CAP_OVER ? t * 0.4 : 0;
   ctx.fillStyle = '#7a5230';
   ctx.beginPath(); ctx.arc(bx + 18, by + 10, 7, 0, Math.PI * 2); ctx.fill();
   ctx.strokeStyle = '#3d2a1a'; ctx.lineWidth = 2;
@@ -798,108 +798,245 @@ function drawProOverlay() {
 }
 
 // ---------- the capture ----------
-function drawProNetMesh(cx, cy, rx, ry, rot) {
+// A big square net: a rope grid with a thick border and stone weights at the corners.
+// (cx, cy) is the centre, s the side length; `drape` bends the edges down around whatever is inside.
+function drawSquareNet(cx, cy, s, rot, drape, thin) {
+  const lw = thin || 1;   // rope thickness multiplier (the close-up is drawn scaled up, so it uses thinner ropes)
+  const h = s / 2;
+  const d = drape || 0;
+  const N = 8;
+  // a point on the net: u, v in -1..1; the sides sag downward when draped
+  const pt = (u, v) => {
+    let x = u * h, y = v * h;
+    if (d) {
+      const edge = Math.max(Math.abs(u), Math.abs(v));
+      y += d * edge * edge * h * 0.55;          // the edges hang down
+      x *= 1 - d * 0.12 * (1 - Math.abs(v));     // and pull in a little at the middle
+    }
+    return [x, y];
+  };
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(rot || 0);
-  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(120,110,90,0.18)';
+  ctx.fillStyle = 'rgba(110,100,80,0.14)';
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) { const p = pt(-1 + 2 * i / N, -1); i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]); }
+  for (let i = 0; i <= N; i++) { const p = pt(1, -1 + 2 * i / N); ctx.lineTo(p[0], p[1]); }
+  for (let i = N; i >= 0; i--) { const p = pt(-1 + 2 * i / N, 1); ctx.lineTo(p[0], p[1]); }
+  for (let i = N; i >= 0; i--) { const p = pt(-1, -1 + 2 * i / N); ctx.lineTo(p[0], p[1]); }
   ctx.fill();
-  ctx.save();
-  ctx.clip();
-  ctx.strokeStyle = '#6e6553';
-  ctx.lineWidth = 1.4;
-  for (let i = -rx - ry; i < rx + ry; i += 8) {
-    ctx.beginPath(); ctx.moveTo(i, -ry); ctx.lineTo(i + ry * 2, ry); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(i, ry); ctx.lineTo(i + ry * 2, -ry); ctx.stroke();
+  const line = (fixed, horiz) => {
+    ctx.beginPath();
+    for (let i = 0; i <= 16; i++) {
+      const k = -1 + 2 * i / 16;
+      const p = horiz ? pt(k, fixed) : pt(fixed, k);
+      i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]);
+    }
+    ctx.stroke();
+  };
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = '#2e2a22';
+  ctx.lineWidth = (Math.max(1.6, s / 70) + 1.2) * lw;
+  for (let i = 0; i <= N; i++) { line(-1 + 2 * i / N, true); line(-1 + 2 * i / N, false); }
+  ctx.strokeStyle = '#7d735c';
+  ctx.lineWidth = Math.max(1, s / 70) * lw;
+  for (let i = 0; i <= N; i++) { line(-1 + 2 * i / N, true); line(-1 + 2 * i / N, false); }
+  // heavy border rope
+  ctx.strokeStyle = '#4a4232';
+  ctx.lineWidth = Math.max(2.5, s / 40) * lw;
+  line(-1, true); line(1, true); line(-1, false); line(1, false);
+  // knots
+  ctx.fillStyle = '#5a5141';
+  const kr = Math.max(1.2, s / 90) * lw;
+  for (let i = 0; i <= N; i++) for (let j = 0; j <= N; j++) {
+    const p = pt(-1 + 2 * i / N, -1 + 2 * j / N);
+    ctx.fillRect(p[0] - kr, p[1] - kr, kr * 2, kr * 2);
   }
+  // stone weights on the corners
+  [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(c => {
+    const p = pt(c[0], c[1]);
+    const r = Math.max(3, s / 26) * Math.max(0.7, lw);
+    ctx.fillStyle = '#6d7277';
+    ctx.beginPath(); ctx.arc(p[0], p[1] + r * 0.6, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#9aa0a6';
+    ctx.beginPath(); ctx.arc(p[0] - r * 0.3, p[1] + r * 0.3, r * 0.4, 0, Math.PI * 2); ctx.fill();
+  });
   ctx.restore();
-  ctx.strokeStyle = '#4e4738';
-  ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2); ctx.stroke();
-  ctx.restore();
+  ctx.lineCap = 'butt';
 }
 
 function drawCaptureOverlay() {
   const C = pro && pro.cap;
   if (!C) return;
   const t = C.t;
+  if (t >= CAP_IMG1) { drawCaptureImages(t); return; }
+  if (t >= CAP_CLOSE) { drawCaptureFall(t - CAP_CLOSE); return; }
   const B = proBallista();
 
-  // the rope from the ballista to the net
-  if (C.net && t >= CAP_FIRE && t < CAP_INSIDE + 10) {
-    const sag = t < CAP_PULL ? 40 : 10;
+  // the rope from the ballista winch to the net
+  if (C.net && t >= CAP_FIRE) {
+    const nx = t < CAP_HIT ? C.net.x : dragon.x, ny = t < CAP_HIT ? C.net.y : dragon.y - 20;
+    const sag = t < CAP_DRAG ? 40 : 6;
     ctx.strokeStyle = '#d8cfb4';
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(B.x + 18, B.y + 10);
-    ctx.quadraticCurveTo((B.x + C.net.x) / 2, Math.max(B.y, C.net.y) + sag, C.net.x, C.net.y);
+    ctx.quadraticCurveTo((B.x + nx) / 2, Math.max(B.y, ny) + sag, nx, ny);
     ctx.stroke();
   }
 
-  drawDragon(dragon.x, dragon.y, C.tumble ? Math.sin(t * 0.5) * C.tumble * 1.4 : null);
-
-  // the net in flight, opening up
+  // once they go over the battlements, only the part above the wall shows
+  ctx.save();
+  if (t >= CAP_OVER) { ctx.beginPath(); ctx.rect(-50, -50, width + 100, B.wallTop - 14 + 50); ctx.clip(); }
+  const pitch = t >= CAP_HIT ? Math.sin(t * 0.35) * (0.25 + C.tumble * 0.6) : null;
+  drawDragon(dragon.x, dragon.y, pitch);
   if (C.net && t >= CAP_FIRE && t < CAP_HIT) {
-    const r = 6 + C.net.open * 36;
-    drawProNetMesh(C.net.x, C.net.y, r, r * 0.8, t * 0.2);
+    // flying open, spinning
+    drawSquareNet(C.net.x, C.net.y, 10 + C.net.open * 104, C.net.spin, 0);
+  } else if (t >= CAP_HIT) {
+    // draped over both of them
+    const wrap = Math.min(1, (t - CAP_HIT) / 10);
+    drawSquareNet(dragon.x + 4, dragon.y - 18, 114 - wrap * 6, (pitch || 0) * 0.8, 0.35 + wrap * 0.45);
   }
-  // wrapped around Syraxx and Khaleesi
-  if (t >= CAP_HIT && t < CAP_PULL) {
-    drawProNetMesh(dragon.x, dragon.y - 14, 48, 40, Math.sin(t * 0.6) * 0.1);
-  }
-  // Khaleesi bundled in the net, reeled to the castle
-  if (C.kOff && t <= CAP_INSIDE + 2) {
-    ctx.save();
-    if (t > CAP_ARRIVE) { ctx.beginPath(); ctx.rect(-50, -50, width + 100, B.wallTop - 14 + 50); ctx.clip(); }
-    const wob = Math.sin(t * 0.5) * 0.3;
-    ctx.save();
-    ctx.translate(C.kx, C.ky);
-    ctx.rotate(wob);
-    drawKhaleesiSprite(0, 0, 0.9);
-    ctx.restore();
-    drawProNetMesh(C.kx, C.ky - 2, 13, 16, wob);
-    ctx.restore();
-    // her cry
-    if (t < CAP_ARRIVE + 20) {
-      const a = Math.min(1, (t - CAP_PULL) / 8);
-      const txt = t < CAP_PULL + 60 ? 'SYRAXX!' : (t < CAP_ARRIVE - 20 ? 'HELP ME!' : 'SYRAXX!!');
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-      const tw = ctx.measureText(txt).width + 16;
-      const bx = Math.min(width - tw - 6, C.kx - tw / 2), by = C.ky - 52;
-      ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
-      ctx.beginPath();
-      if (ctx.roundRect) ctx.roundRect(bx, by, tw, 24, 8); else ctx.rect(bx, by, tw, 24);
-      ctx.fill(); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(C.kx - 5, by + 23); ctx.lineTo(C.kx, by + 32); ctx.lineTo(C.kx + 5, by + 23); ctx.fill();
-      ctx.fillStyle = '#c0392b';
-      ctx.textAlign = 'center';
-      ctx.fillText(txt, bx + tw / 2, by + 16);
-      ctx.restore();
-    }
-  }
-  // Syraxx's roar
-  if (t >= CAP_ROAR && t < CAP_ROAR + 50) {
-    const a = (t - CAP_ROAR) / 50;
-    ctx.strokeStyle = 'rgba(255,255,255,' + (0.8 * (1 - a)) + ')';
-    ctx.lineWidth = 3;
-    for (let i = 0; i < 3; i++) {
-      ctx.beginPath(); ctx.arc(dragon.x + 30, dragon.y - 6, 20 + a * 120 + i * 18, -0.7, 0.7); ctx.stroke();
-    }
-  }
+  ctx.restore();
 
-  // letterbox, Khaleesi's lines, then the fade to black
+  // letterbox, Khaleesi's lines, then a flash into the close-up
   const barH = height * 0.07 * Math.min(1, t / 25);
   ctx.fillStyle = '#000';
   ctx.fillRect(-20, -20, width + 40, barH + 20);
   ctx.fillRect(-20, height - barH, width + 40, barH + 20);
   renderMountedKhaleesiHUD();
-  if (t >= CAP_FADE) {
-    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, (t - CAP_FADE) / (CAP_END - CAP_FADE - 10)) + ')';
+  if (t >= CAP_CLOSE - 18) {
+    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, (t - (CAP_CLOSE - 18)) / 16) + ')';
     ctx.fillRect(-20, -20, width + 40, height + 40);
   }
+}
+
+// Close-up: Syraxx and Khaleesi bound together in the net, tumbling through the dusk sky.
+function drawCaptureFall(f) {
+  const t = f / 60;
+  const g = ctx.createLinearGradient(0, 0, 0, height);
+  g.addColorStop(0, '#120c24');
+  g.addColorStop(0.55, '#3b1f45');
+  g.addColorStop(1, '#7a3a3a');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, width, height);
+  // clouds and wind streaks rushing up past them
+  for (let i = 0; i < 7; i++) {
+    const y = height + 120 - ((f * (2.2 + (i % 3) * 0.8) + i * 170) % (height + 260));
+    const x = hash2(i, 3) * width;
+    ctx.fillStyle = 'rgba(200,170,210,' + (0.06 + (i % 3) * 0.03) + ')';
+    ctx.beginPath(); ctx.ellipse(x, y, 90 + (i % 3) * 40, 26 + (i % 2) * 12, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < 26; i++) {
+    const x = hash2(i, 9) * width;
+    const len = 40 + hash2(i, 10) * 90;
+    const y = height + len - ((f * (9 + hash2(i, 11) * 10) + hash2(i, 12) * 900) % (height + len * 2));
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + len); ctx.stroke();
+  }
+  // the two of them, slowly turning
+  const s = Math.min(width, height) / 175;
+  const cx = width / 2 + Math.sin(t * 0.9) * 10;
+  const cy = height * 0.44 + Math.sin(t * 1.3) * 8;
+  const rot = Math.sin(t * 0.7) * 0.32 + 0.12;
+  const glow = ctx.createRadialGradient(cx, cy - 10 * s, 5, cx, cy - 10 * s, 60 * s);
+  glow.addColorStop(0, 'rgba(255,200,150,0.30)');
+  glow.addColorStop(1, 'rgba(255,200,150,0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rot);
+  ctx.scale(s, s);
+  dragon.wingState = 0.12 + Math.abs(Math.sin(f * 0.07)) * 0.08;   // wings pinned, barely moving
+  drawDragon(0, 0, -0.15);
+  // Khaleesi reaches down to him: a small hand on his neck
+  ctx.fillStyle = '#f8c291';
+  ctx.fillRect(4, -14 + Math.sin(f * 0.05) * 0.6, 3, 2);
+  drawSquareNet(0, -8, 98, 0, 0.5, 0.42);
+  ctx.restore();
+  // a tear-shaped heart rising between them
+  if (f > 70) {
+    const k = ((f - 70) % 150) / 150;
+    const hx = cx + 6 * s, hy = cy - 34 * s - k * 50;
+    ctx.save();
+    ctx.globalAlpha = Math.sin(k * Math.PI) * 0.85;
+    ctx.fillStyle = '#ff6b8a';
+    ctx.translate(hx, hy);
+    ctx.scale(1.4, 1.4);
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.bezierCurveTo(-7, -2, -4, -8, 0, -4);
+    ctx.bezierCurveTo(4, -8, 7, -2, 0, 4);
+    ctx.fill();
+    ctx.restore();
+  }
+  // her words, typed slowly
+  if (f > 40) {
+    ctx.font = 'italic bold 15px "Proxima Nova", sans-serif';
+    ctx.textAlign = 'center';
+    const shown = CAP_FALL_LINE.slice(0, Math.floor((f - 40) * 0.55));
+    const lines = biWrap(CAP_FALL_LINE, width - 60);
+    let left = shown.length;
+    lines.forEach((ln, i) => {
+      const part = ln.slice(0, Math.max(0, left));
+      left -= ln.length + 1;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillText(part, width / 2 + 1, height * 0.78 + i * 21 + 1);
+      ctx.fillStyle = '#ffe9f0';
+      ctx.fillText(part, width / 2, height * 0.78 + i * 21);
+    });
+    ctx.textAlign = 'left';
+  }
+  // letterbox and fades
+  const barH = height * 0.07;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, width, barH);
+  ctx.fillRect(0, height - barH, width, barH);
+  let fade = 0;
+  if (f < 30) fade = 1 - f / 30;
+  if (f > CAP_FALL_FRAMES - 45) fade = Math.min(1, (f - (CAP_FALL_FRAMES - 45)) / 40);
+  if (fade > 0) { ctx.fillStyle = 'rgba(0,0,0,' + fade + ')'; ctx.fillRect(0, 0, width, height); }
+}
+
+// The two story paintings, each fading in and out with a slow push-in and a caption.
+function drawCaptureImages(t) {
+  const second = t >= CAP_IMG2;
+  const f = t - (second ? CAP_IMG2 : CAP_IMG1);
+  const img = second ? captureImg2 : captureImg1;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, width, height);
+  if (img.complete && img.naturalWidth) {
+    const zoom = 1 + (f / CAP_IMG_FRAMES) * 0.06;
+    const sc = Math.min(width / img.naturalWidth, height / img.naturalHeight) * zoom;
+    const w = img.naturalWidth * sc, h = img.naturalHeight * sc;
+    ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
+  }
+  // caption on a dark band at the bottom
+  const cap = CAP_IMG_CAPTIONS[second ? 1 : 0];
+  const ca = Math.max(0, Math.min(1, (f - 30) / 25));
+  if (ca > 0) {
+    const bandH = 54;
+    const gr = ctx.createLinearGradient(0, height - bandH - 30, 0, height);
+    gr.addColorStop(0, 'rgba(0,0,0,0)');
+    gr.addColorStop(0.4, 'rgba(0,0,0,' + 0.75 * ca + ')');
+    gr.addColorStop(1, 'rgba(0,0,0,' + 0.85 * ca + ')');
+    ctx.fillStyle = gr;
+    ctx.fillRect(0, height - bandH - 30, width, bandH + 30);
+    ctx.globalAlpha = ca;
+    ctx.fillStyle = '#f3e6d0';
+    ctx.font = 'italic bold 15px "Proxima Nova", sans-serif';
+    ctx.textAlign = 'center';
+    biWrap(cap, width - 40).forEach((ln, i) => ctx.fillText(ln, width / 2, height - bandH + 14 + i * 19));
+    ctx.textAlign = 'left';
+    ctx.globalAlpha = 1;
+  }
+  let fade = 0;
+  if (f < 25) fade = 1 - f / 25;
+  if (f > CAP_IMG_FRAMES - 25) fade = (f - (CAP_IMG_FRAMES - 25)) / 25;
+  if (fade > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, fade) + ')'; ctx.fillRect(0, 0, width, height); }
 }
 
 // ---------- story message screens (opening invitation and the capture letter) ----------

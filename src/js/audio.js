@@ -262,10 +262,17 @@ knightHit() {
           return;
         }
 
-        // the prologue keeps the opening-screen music the whole way through the capture
-        const prologueMusic = gameState === 'START' || gameState === 'CAPTURE' || gameState === 'CAPTURED_MSG' ||
-          (inPrologue() && (gameState === 'PLAYING' || gameState === 'PAUSED' || gameState === 'GAMEOVER'));
-        if (prologueMusic) {
+        // the beheading music: the capture's fall, story images and "captured" message, and levels 2 and 5
+        const sadMusic = captureSadMusic() || (gameState === 'PLAYING' && (currentLevel === 2 || currentLevel === 5));
+        // the prologue keeps the opening-screen music until the net drags them over the wall
+        const prologueMusic = !sadMusic && (gameState === 'START' || gameState === 'CAPTURE' ||
+          (inPrologue() && (gameState === 'PLAYING' || gameState === 'PAUSED' || gameState === 'GAMEOVER')));
+        if (sadMusic) {
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (cutsceneMusicAudio.paused) cutsceneMusicAudio.play().catch(() => {});
+        }
+        else if (prologueMusic) {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
           if (uiMusicAudio.paused) uiMusicAudio.play().catch(() => {});
