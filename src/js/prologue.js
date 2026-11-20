@@ -50,6 +50,16 @@ PRO_SCRIPT[PRO_VILLAGE] = [
   { at: 85, dur: 300, text: '"What\'s that up ahead? A castle... I don\'t like the look of those walls."' }
 ];
 
+// Rolling ground: height above the flat ground line at world position wx (screen x + sunnyScroll).
+const PRO_TERRAIN_MAX = 100;
+function proTerrainH(wx) {
+  const v = 0.55 * Math.sin(wx * 0.0038 + 1.3) + 0.3 * Math.sin(wx * 0.009 + 0.4) + 0.15 * Math.sin(wx * 0.022 + 2.2);
+  const amp = (currentLevel === PRO_VILLAGE && state !== 'SPLASH' && state !== 'START') ? 0.65 : 1;
+  return PRO_TERRAIN_MAX * amp * (0.5 + 0.5 * v);
+}
+// screen y of the ground surface at screen x
+function proGroundY(sx) { return height - groundHeight - proTerrainH(sunnyScroll + sx); }
+
 let pro = null;          // state of the current prologue level (null outside the prologue)
 let sunnyScroll = 0;     // foreground scroll of the sunny scenes, in px
 let sunnyBirds = [];
@@ -281,7 +291,8 @@ function updatePrologue() {
   // no overhead obstacles: the top of the screen just stops you
   if (dragon.y - dragon.size / 2 < 4) { dragon.y = dragon.size / 2 + 4; dragon.velocity = Math.max(0, dragon.velocity); }
   // the ground still hurts
-  if (dragon.y + dragon.size / 2 >= gY && P.ending === 0) {
+  const groundHere = Math.min(proGroundY(dragon.x - 10), proGroundY(dragon.x + 12));
+  if (dragon.y + dragon.size / 2 - 4 >= groundHere && P.ending === 0) {
     triggerHit();
     if (lives > 0) { dragon.y = height * 0.4; dragon.velocity = 0; }
     if (state !== 'PLAYING') return;
@@ -302,7 +313,7 @@ function updatePrologue() {
   if (currentLevel === PRO_VILLAGE) {
     P.ents.forEach(e => {
       if (e.type !== 'hut') return;
-      const top = gY - e.wallH - e.roofH * 0.55;
+      const top = proGroundY(e.x + e.w / 2) - e.wallH - e.roofH * 0.55;
       if (dragon.x + dragon.size / 2 - 8 > e.x + 6 && dragon.x - dragon.size / 2 + 8 < e.x + e.w - 6 && dragon.y + dragon.size / 2 - 6 > top) triggerHit();
     });
   }
@@ -377,7 +388,7 @@ function proUpdateSheep(gY) {
     const feet = dragon.y + dragon.size / 2;
     for (const e of P.ents) {
       if (e.type !== 'sheep' || e.gone) continue;
-      if (Math.abs(dragon.x + 6 - e.x) < PRO_SNATCH_DX && feet > gY - PRO_SNATCH_DY) {
+      if (Math.abs(dragon.x + 6 - e.x) < PRO_SNATCH_DX && feet > proGroundY(e.x) - PRO_SNATCH_DY) {
         e.gone = true;
         P.hungry = false;
         P.carried = { t: 0, lamb: e.lamb };
@@ -418,7 +429,7 @@ function proUpdateSheep(gY) {
     const tgt = pch.shepherd && !pch.shepherd.gone ? pch.shepherd.x + 10 : pch.tx;
     if (!pch.shepherd) pch.tx -= PRO_SPEED;
     const u = Math.min(1, pch.t / PRO_POUCH_FRAMES);
-    const ty = gY - 18;
+    const ty = proGroundY(tgt) - 18;
     pch.x = pch.sx + (tgt - pch.sx) * u;
     pch.y = pch.sy + (ty - pch.sy) * u - Math.sin(u * Math.PI) * 70;
     if (pch.t % 3 === 0) P.coins.push({ x: pch.x, y: pch.y, life: 20 });
@@ -458,12 +469,12 @@ function proUpdateNotes(shift) {
   const gY = height - groundHeight;
   P.ents.forEach(e => {
     let sx = null, sy = null, chance = 0;
-    if (e.type === 'shepherd' && e.sitting) { sx = e.x + 14; sy = gY - 26; chance = 0.04; }
-    if (e.type === 'maypole') { sx = e.x + proRand(-30, 30); sy = gY - 40; chance = 0.08; }
+    if (e.type === 'shepherd' && e.sitting) { sx = e.x + 14; sy = proGroundY(sx) - 26; chance = 0.04; }
+    if (e.type === 'maypole') { sx = e.x + proRand(-30, 30); sy = proGroundY(e.x) - 40; chance = 0.08; }
     if (e.type === 'crowd') {
       const lute = e.people.find(p => p.act === 'lute');
-      if (lute) { sx = e.x + lute.dx + 12; sy = gY - 30; chance = 0.04; }
-      else if (Math.random() < 0.3) { sx = e.x + proRand(0, e.w); sy = gY - 36; chance = 0.04; }
+      if (lute) { sx = e.x + lute.dx + 12; sy = proGroundY(sx) - 30; chance = 0.04; }
+      else if (Math.random() < 0.3) { sx = e.x + proRand(0, e.w); sy = proGroundY(sx) - 36; chance = 0.04; }
     }
     if (sx !== null && sx > -10 && sx < width + 10 && Math.random() < chance) {
       P.notes.push({ x: sx, y: sy, vx: proRand(-0.3, 0.3), vy: -proRand(0.4, 0.8), life: 90, glyph: proPick(['♪', '♫', '♩']),

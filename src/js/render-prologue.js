@@ -198,37 +198,24 @@ function drawSunnyBirds() {
   ctx.lineCap = 'butt';
 }
 
-// ---------- ground: wildflower meadow (and a dirt lane in the village) ----------
+// ---------- ground: rolling wildflower meadow (and a dirt lane in the village) ----------
 function drawSunnyGround() {
   const gY = height - groundHeight;
   const village = currentLevel === PRO_VILLAGE && state !== 'SPLASH' && state !== 'START';
   const TW = 640;
-  const tile = bgLayer('sunground|' + groundHeight + '|' + (village ? 'v' : 'm'), TW, groundHeight + 8, (c, w, h) => {
+  const tileH = groundHeight + PRO_TERRAIN_MAX + 20;
+  const top = gY - PRO_TERRAIN_MAX - 12;
+  const tile = bgLayer('sunground|' + tileH + '|' + (village ? 'v' : 'm'), TW, tileH, (c, w, h) => {
     const g = c.createLinearGradient(0, 0, 0, h);
-    g.addColorStop(0, '#62b84c');
-    g.addColorStop(1, '#3f8f37');
+    g.addColorStop(0, '#3f9a35');
+    g.addColorStop(0.4, '#358a2e');
+    g.addColorStop(1, '#2a7426');
     c.fillStyle = g;
-    c.fillRect(0, 8, w, h - 8);
-    if (village) {
-      c.fillStyle = '#c9a66b';
-      c.fillRect(0, 30, w, 22);
-      c.fillStyle = '#b28f57';
-      for (let i = 0; i < 60; i++) c.fillRect(hash2(i, 41) * w, 31 + hash2(i, 42) * 20, 3, 2);
-      c.fillStyle = '#ddbf86';
-      c.fillRect(0, 30, w, 2);
-    }
-    // grass blades along the top edge
-    for (let x = 0; x < w; x += 3) {
-      const bh = 5 + hash2(x, 43) * 7;
-      c.fillStyle = hash2(x, 44) < 0.5 ? '#6cc453' : '#57ad44';
-      c.fillRect(x, 9 - bh, 2, bh + 1);
-    }
-    // flowers
-    const n = village ? 220 : 520;
+    c.fillRect(0, 0, w, h);
+    const n = village ? 380 : 900;
     for (let i = 0; i < n; i++) {
       const x = hash2(i, 45) * w;
-      let y = 6 + hash2(i, 46) * (h - 10);
-      if (village && y > 26 && y < 54) continue;
+      const y = hash2(i, 46) * (h - 4);
       const col = FLOWER_COLORS[Math.floor(hash2(i, 47) * FLOWER_COLORS.length)];
       c.fillStyle = '#2f7a2c';
       c.fillRect(x + 1, y + 2, 1, 4);
@@ -238,8 +225,62 @@ function drawSunnyGround() {
       c.fillRect(x + 1, y + 1, 1, 1);
     }
   });
+  // the surface line across the screen
+  const pts = [];
+  for (let x = -6; x <= width + 12; x += 6) pts.push([x, proGroundY(x)]);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(-6, height + 10);
+  pts.forEach(p => ctx.lineTo(p[0], p[1]));
+  ctx.lineTo(width + 12, height + 10);
+  ctx.closePath();
+  ctx.clip();
   const startX = -(sunnyScroll % TW);
-  for (let x = startX; x < width; x += TW) ctx.drawImage(tile, Math.round(x), gY - 8);
+  for (let x = startX; x < width; x += TW) ctx.drawImage(tile, Math.round(x), top);
+  // soft shading: crests catch the sun, hollows sit in shade
+  for (let i = 0; i < pts.length - 1; i++) {
+    const slope = (pts[i + 1][1] - pts[i][1]) / 6;
+    if (Math.abs(slope) < 0.05) continue;
+    ctx.fillStyle = slope > 0 ? 'rgba(20,60,20,' + Math.min(0.18, slope * 0.4) + ')' : 'rgba(255,255,200,' + Math.min(0.12, -slope * 0.3) + ')';
+    ctx.fillRect(pts[i][0], pts[i][1], 6, 46);
+  }
+  // the village lane follows the hills
+  if (village) {
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#b28f57';
+    ctx.lineWidth = 24;
+    ctx.beginPath();
+    pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1] + 34); else ctx.lineTo(p[0], p[1] + 34); });
+    ctx.stroke();
+    ctx.strokeStyle = '#c9a66b';
+    ctx.lineWidth = 19;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(221,191,134,0.8)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1] + 25); else ctx.lineTo(p[0], p[1] + 25); });
+    ctx.stroke();
+  }
+  ctx.restore();
+  // a soft shadow line under the crest separates the ground from the hills behind
+  ctx.strokeStyle = 'rgba(25,70,20,0.55)';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1] - 1); else ctx.lineTo(p[0], p[1] - 1); });
+  ctx.stroke();
+  // sunlit rim and grass blades along the surface
+  ctx.strokeStyle = 'rgba(190,240,140,0.8)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  pts.forEach((p, i) => { if (i === 0) ctx.moveTo(p[0], p[1] + 1); else ctx.lineTo(p[0], p[1] + 1); });
+  ctx.stroke();
+  const off = sunnyScroll % 3;
+  for (let x = -off; x < width; x += 3) {
+    const wx = Math.round((x + sunnyScroll) / 3);
+    const bh = 4 + hash2(wx, 43) * 7;
+    ctx.fillStyle = hash2(wx, 44) < 0.5 ? '#6cc453' : '#57ad44';
+    ctx.fillRect(x, proGroundY(x) - bh + 2, 2, bh);
+  }
 }
 
 // ---------- villager extras used by render-people.js ----------
@@ -392,7 +433,7 @@ function drawMaypole(e, gY) {
     d.wave = true;
     const sc = 0.88 + q.depth * 0.1;
     d.scale = sc;
-    const fy = gY - 2 + q.depth * 4 - hop;
+    const fy = proGroundY(q.x) - 2 + q.depth * 4 - hop;
     drawProPerson(d, q.x, fy, Math.sin(t * 12 + q.i) * 2, 0);
     d.wave = false;
     // ribbon to the top of the pole
@@ -419,6 +460,14 @@ function drawMaypole(e, gY) {
 
 function drawHut(e, gY) {
   const x = e.x, w = e.w, wy = gY - e.wallH;
+  // stone footing down to the lower side of the slope
+  const low = Math.max(proGroundY(x), proGroundY(x + w));
+  if (low > gY) {
+    ctx.fillStyle = '#8f9499';
+    ctx.fillRect(x - 2, gY - 2, w + 4, low - gY + 6);
+    ctx.fillStyle = '#a9aeb3';
+    for (let sx = x; sx < x + w; sx += 9) ctx.fillRect(sx, gY + 1, 7, Math.max(2, low - gY));
+  }
   ctx.fillStyle = 'rgba(0,0,0,0.2)';
   ctx.fillRect(x - 4, gY - 3, w + 8, 4);
   // wattle-and-daub walls with a timber frame
@@ -532,7 +581,7 @@ function drawCrowd(e, gY) {
   e.hens.forEach(h => {
     h.dx += h.dir * 0.08;
     if (Math.random() < 0.005) h.dir *= -1;
-    drawHen(h, e.x + h.dx, gY);
+    drawHen(h, e.x + h.dx, proGroundY(e.x + h.dx));
   });
   e.people.forEach(p => {
     let legMove = 0, arm = 0, bob = 0;
@@ -560,7 +609,7 @@ function drawCrowd(e, gY) {
     const near = Math.abs(dragon.x - px) < 200;
     p.wave = (p.act === 'wave' && near) || p.act === 'dance' || (p.act === 'run' && near && Math.sin(t + p.phase) > 0);
     if (p.act === 'wave' && near) p.dir = dragon.x < px ? -1 : 1;
-    drawProPerson(p, px, gY - bob, legMove, arm);
+    drawProPerson(p, px, proGroundY(px) - bob, legMove, arm);
     p.wave = false;
   });
 }
@@ -573,6 +622,9 @@ function drawProCastle(e, gY) {
   const wallTop = gY - wallH;
   const wallW = Math.ceil(width * 0.5 + 260);
   if (!W.owner) W.owner = { brickStyle: 2, brickSeed: 77 };
+  // foundation down past the rolling ground
+  ctx.fillStyle = stonePalette.dark;
+  ctx.fillRect(x, gY, wallW, groundHeight);
   drawMasonry(x, wallTop, wallW, wallH, stonePalette, W.owner);
   // shade + crenellations
   ctx.fillStyle = 'rgba(0,0,0,0.25)';
@@ -671,11 +723,11 @@ function drawProEnts() {
   const ents = pro.ents.slice().sort((a, b) => (order[a.type] - order[b.type]));
   ents.forEach(e => {
     if (e.type !== 'castle' && (e.x < -140 || e.x > width + 160)) return;
-    if (e.type === 'sheep') drawSheep(e, gY);
-    else if (e.type === 'shepherd') drawShepherd(e, gY);
-    else if (e.type === 'maypole') drawMaypole(e, gY);
-    else if (e.type === 'hut') drawHut(e, gY);
-    else if (e.type === 'well') drawWell(e, gY);
+    if (e.type === 'sheep') drawSheep(e, proGroundY(e.x));
+    else if (e.type === 'shepherd') drawShepherd(e, proGroundY(e.x + 10));
+    else if (e.type === 'maypole') drawMaypole(e, proGroundY(e.x));
+    else if (e.type === 'hut') drawHut(e, proGroundY(e.x + e.w / 2));
+    else if (e.type === 'well') drawWell(e, proGroundY(e.x));
     else if (e.type === 'crowd') drawCrowd(e, gY);
     else if (e.type === 'castle') drawProCastle(e, gY);
   });
