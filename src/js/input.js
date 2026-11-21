@@ -333,6 +333,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyF' && !e.repeat) {
     e.preventDefault();
     sound.init();
+    if (festCanSing()) { festSing(); return; }
     if ((state === 'PLAYING' || state === 'BOSS') && isFlapLockActive) {
       shootFire();
     }
@@ -376,6 +377,7 @@ window.addEventListener('keydown', (e) => {
 
     isolateBtnTouch(manualFireBtn, () => {
       sound.init();
+      if (festCanSing()) { festSing(); return; }   // on the festival roof the button sings
       if (state === 'PLAYING' || state === 'BOSS') {
         shootFire();
       }

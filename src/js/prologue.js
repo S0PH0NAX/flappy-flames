@@ -101,7 +101,8 @@ function khaleesiRidingNow() {
 function updateFireButtonLock() {
   const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory();
   if (cine !== cinematicShown) { cinematicShown = cine; container.classList.toggle('cinematic', cine); }
-  const off = fireDisabled();
+  updateSingButton();
+  const off = fireDisabled() && !singBtnShown;
   if (off !== fireBtnDisabledShown) {
     fireBtnDisabledShown = off;
     manualFireBtn.classList.toggle('disabled', off);
@@ -626,6 +627,9 @@ function festApproach() {
 function updateFestival() {
   const F = pro.fest, e = F.ent;
   F.t++;
+  if (F.singCool > 0) F.singCool--;
+  if (F.singT > 0) F.singT--;
+  if (e.crowd.cheer > 0) e.crowd.cheer--;
   // glide the view so the hall and the whole square fit on screen while they rest
   const want = Math.max(8, Math.min(40, width - FEST_W - 8));
   if (e.x > want + 0.3) {
@@ -653,6 +657,7 @@ function updateFestival() {
     // perched on the ridge, bobbing to the music and flapping happily
     dragon.x = perchX;
     dragon.y = perchY - Math.abs(Math.sin(F.t * 0.12)) * 4;
+    if (F.singT > 0) dragon.y -= Math.sin((F.singT / 30) * Math.PI) * 12;   // the SING hop
     if (F.t % 36 === 0) { dragon.wingState = 1; sound.flap(); }
     if (Math.random() < 0.16) {
       pro.notes.push({ x: dragon.x + proRand(-10, 30), y: dragon.y - 40, vx: proRand(-0.5, 0.5), vy: -proRand(0.6, 1.1), life: 90,
@@ -679,6 +684,69 @@ function updateFestival() {
     }
   }
   proUpdateNotes(0);
+}
+
+// ---------- singing on the festival roof ----------
+// While Syraxx is perched (before the storybook), the FIRE button becomes a blue SING button.
+let singBtnShown = false;
+const SING_SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];   // C major pentatonic, two octaves
+
+function festCanSing() {
+  const F = pro && pro.fest;
+  return state === 'PLAYING' && !!F && (F.phase === 'land' || F.phase === 'sing');
+}
+
+function updateSingButton() {
+  const on = festCanSing();
+  if (on === singBtnShown) return;
+  singBtnShown = on;
+  manualFireBtn.classList.toggle('sing-btn', on);
+  manualFireBtn.innerHTML = on ? 'SING <span class="btn-symbol">🎵</span>' : FIRE_BTN_HTML;
+  manualFireBtn.style.display = (on || isFlapLockActive) ? 'inline-block' : 'none';
+}
+
+// a short, bright three-note chime, a little different every time
+function playSingChime() {
+  if (sound.muted) return;
+  sound.init();
+  const c = sound.ctx;
+  if (!c) return;
+  const start = Math.floor(Math.random() * 3);
+  const step = Math.random() < 0.5 ? 1 : 2;
+  const now = c.currentTime;
+  [0, 1, 2].forEach(i => {
+    const f = SING_SCALE[Math.min(SING_SCALE.length - 1, start + i * step)];
+    const t0 = now + i * 0.09;
+    ['sine', 'triangle'].forEach((type, j) => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(f * (j ? 2 : 1), t0);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(j ? 0.035 : 0.12, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+      o.connect(g); g.connect(c.destination);
+      o.start(t0); o.stop(t0 + 0.6);
+    });
+  });
+}
+
+// press SING: a happy hop and wing flap, a burst of notes and hearts, the crowd cheers
+function festSing() {
+  const F = pro.fest;
+  if (F.singCool > 0) return;
+  F.singCool = 14;
+  F.singT = 30;
+  playSingChime();
+  dragon.wingState = 1;
+  F.ent.crowd.cheer = 40;
+  for (let i = 0; i < 9; i++) {
+    const a = -Math.PI / 2 + (i - 4) * 0.28;
+    const sp = 1.2 + Math.random() * 1.2;
+    pro.notes.push({ x: dragon.x + 18, y: dragon.y - 30, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 80,
+                     glyph: i % 4 === 2 ? '♥' : proPick(['♪', '♫', '♩']),
+                     color: i % 4 === 2 ? '#ff6b8a' : proPick(['#ffffff', '#fff3a0', '#bfe6ff', '#ffd1e8']) });
+  }
 }
 
 // ---------- the ballista capture (state CAPTURE) ----------

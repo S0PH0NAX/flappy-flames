@@ -578,6 +578,7 @@ function drawHen(h, x, gY) {
 
 function drawCrowd(e, gY) {
   const t = Date.now() / 1000;
+  const cheer = e.cheer > 0 ? e.cheer / 40 : 0;   // the crowd jumps when Syraxx sings
   e.hens.forEach(h => {
     h.dx += h.dir * 0.08;
     if (Math.random() < 0.005) h.dir *= -1;
@@ -609,6 +610,7 @@ function drawCrowd(e, gY) {
     const near = Math.abs(dragon.x - px) < 200;
     p.wave = (p.act === 'wave' && near) || p.act === 'dance' || (p.act === 'run' && near && Math.sin(t + p.phase) > 0);
     if (p.act === 'wave' && near) p.dir = dragon.x < px ? -1 : 1;
+    if (cheer) { bob += Math.abs(Math.sin(t * 14 + p.phase)) * 7 * cheer; p.wave = true; }
     drawProPerson(p, px, proGroundY(px) - bob, legMove, arm);
     p.wave = false;
   });

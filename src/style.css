@@ -202,6 +202,14 @@
     #game-container.cinematic .bottom-controls-bar {
       visibility: hidden;
     }
+    /* the festival roof: FIRE becomes a blue SING button */
+    .fire-btn.sing-btn {
+      background: #2f80ed !important;
+      box-shadow: 0 4px 0 #1b4f9c !important;
+    }
+    .fire-btn.sing-btn:active {
+      box-shadow: 0 2px 0 #1b4f9c !important;
+    }
     /* no fire in the prologue */
     .fire-btn.disabled {
       opacity: 0.35;
