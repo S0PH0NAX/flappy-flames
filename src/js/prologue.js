@@ -44,6 +44,7 @@ PRO_SCRIPT[PRO_VILLAGE] = [
   { at: 2,  dur: 260, text: '"Look down there, Syraxx... the village! Fly gently, let\'s not frighten anyone."' },
   { at: 14, dur: 320, text: '"See how everything fits together? The farmer grows the wheat, the miller grinds it, the baker feeds them all."' },
   { at: 28, dur: 280, text: '"The smith, the weaver, the shepherd... each one needs the others. Like you and me."' },
+  { at: 32, fn: () => { pro.forceNext = 'festival'; pro.spawnGap = Math.min(pro.spawnGap, 60); } },
   { at: 42, dur: 260, text: '"Hear that? Their songs, their laughter... the music of their lives."' },
   { at: 56, dur: 300, text: '"Children chasing hens, grandmothers telling stories by the door. I could watch them forever."' },
   { at: 70, dur: 260, text: '"This is why we fly, Syraxx. Not for glory. For them."' },
@@ -53,6 +54,15 @@ PRO_SCRIPT[PRO_VILLAGE] = [
 // Rolling ground: height above the flat ground line at world position wx (screen x + sunnyScroll).
 const PRO_TERRAIN_MAX = 100;
 function proTerrainH(wx) {
+  let h = proTerrainBase(wx);
+  // level ground under the festival hall and square
+  for (const f of proFlats) {
+    const d = wx < f.a ? f.a - wx : (wx > f.b ? wx - f.b : 0);
+    if (d < 160) { const k = 1 - d / 160; h += (f.h - h) * k * k * (3 - 2 * k); }
+  }
+  return h;
+}
+function proTerrainBase(wx) {
   const v = 0.55 * Math.sin(wx * 0.0038 + 1.3) + 0.3 * Math.sin(wx * 0.009 + 0.4) + 0.15 * Math.sin(wx * 0.022 + 2.2);
   const amp = (currentLevel === PRO_VILLAGE && state !== 'SPLASH' && state !== 'START') ? 0.65 : 1;
   return PRO_TERRAIN_MAX * amp * (0.5 + 0.5 * v);
@@ -89,7 +99,7 @@ function khaleesiRidingNow() {
 }
 
 function updateFireButtonLock() {
-  const cine = state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE);
+  const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory();
   if (cine !== cinematicShown) { cinematicShown = cine; container.classList.toggle('cinematic', cine); }
   const off = fireDisabled();
   if (off !== fireBtnDisabledShown) {
@@ -109,6 +119,7 @@ function startPrologueLevel(lvl) {
   if (bossState) bossState.active = false;
   khaleesiMounted = false;
   floatingTexts = []; particles = [];
+  proFlats = [];
   khaleesiBannerTimer = 0;
   pro = {
     t: 0, line: 0, ents: [], notes: [], coins: [],
@@ -204,6 +215,7 @@ function proSpawn(kind, x) {
     ents.push({ type: 'crowd', x: x, people: people, hens: hens, w: dx + 30 });
     return dx + 30;
   }
+  if (kind === 'festival') return proSpawnFestival(x);
   if (kind === 'well') {
     ents.push({ type: 'well', x: x });
     return 40;
@@ -229,7 +241,7 @@ function proNextKind() {
 // Ambient motion on every sunny screen: birds, foreground scroll, the dragon bobbing on the start screen.
 function updateSunnyAmbient() {
   if (!sunnyScene()) return;
-  const moving = state === 'SPLASH' || state === 'START' || (state === 'PLAYING' && inPrologue() && !(pro && pro.wall && pro.wall.stopped));
+  const moving = state === 'SPLASH' || state === 'START' || (state === 'PLAYING' && inPrologue() && !(pro && pro.wall && pro.wall.stopped) && !festBusy());
   if (moving) {
     const s = (state === 'PLAYING') ? PRO_SPEED : 1.2;
     sunnyScroll += s;
@@ -264,8 +276,9 @@ function updatePrologue() {
   P.t++;
   if (P.fadeIn > 0) P.fadeIn--;
   if (P.title > 0) P.title--;
-  levelTimerSeconds += 1 / 60;
+  if (!(P.fest && !P.fest.done)) levelTimerSeconds += 1 / 60;   // the clock waits while the festival is on
   updateLevelBadgeUI();
+  if (P.fest && P.fest.halted) { updateFestival(); return; }
 
   const gY = height - groundHeight;
   const stopped = P.wall && P.wall.stopped;
@@ -303,7 +316,7 @@ function updatePrologue() {
 
   // scroll and spawn the ground scenery
   P.ents.forEach(e => { e.x -= shift; });
-  P.ents = P.ents.filter(e => e.x > -260 && !e.gone);
+  P.ents = P.ents.filter(e => e.x + (e.w || 0) > -260 && !e.gone);
   if (!P.wall) {
     P.spawnGap -= shift;
     if (P.spawnGap <= 0) {
@@ -320,6 +333,8 @@ function updatePrologue() {
       if (dragon.x + dragon.size / 2 - 8 > e.x + 6 && dragon.x - dragon.size / 2 + 8 < e.x + e.w - 6 && dragon.y + dragon.size / 2 - 6 > top) triggerHit();
     });
   }
+
+  if (P.fest && P.fest.phase === 'approach') festApproach();
 
   proUpdateScript();
   proUpdateSheep(gY);
@@ -419,6 +434,12 @@ function proUpdateSheep(gY) {
       }
       floatingTexts.push({ x: dragon.x + 10, y: dragon.y - 30, text: 'CHOMP!', color: '#ffffff', alpha: 1.0, vy: -1.4 });
       sound.knightHit();
+      if (lives < 3) {   // a good meal heals Syraxx
+        lives = 3;
+        updateHeartsDisplay();
+        sound.heartPickup();
+        floatingTexts.push({ x: dragon.x - 10, y: dragon.y - 52, text: 'HEARTS REFILLED!', color: '#ff6b8a', alpha: 1.0, vy: -1.1 });
+      }
       P.carried = null;
       P.sheepEaten = true;
       P.eatenAt = P.t;
@@ -473,6 +494,7 @@ function proUpdateNotes(shift) {
   P.ents.forEach(e => {
     let sx = null, sy = null, chance = 0;
     if (e.type === 'shepherd' && e.sitting) { sx = e.x + 14; sy = proGroundY(sx) - 26; chance = 0.04; }
+    if (e.type === 'festival') { sx = e.x + FEST_HALL_W + FEST_GAP + proRand(0, FEST_SQUARE_W); sy = proGroundY(sx) - 44; chance = 0.14; }
     if (e.type === 'maypole') { sx = e.x + proRand(-30, 30); sy = proGroundY(e.x) - 40; chance = 0.08; }
     if (e.type === 'crowd') {
       const lute = e.people.find(p => p.act === 'lute');
@@ -515,6 +537,150 @@ function proBaa() {
   osc.stop(now + 0.52); vib.stop(now + 0.52);
 }
 
+// ---------- the spring festival (village) ----------
+// A great thatched hall beside the town square, where the village dances round the maypole.
+// Khaleesi suggests landing on the hall's roof; touching the hall lands Syraxx there (no damage).
+// The world stops, they sing with the townsfolk, then a storybook (dance1, dance2), then they fly on.
+// (it appears 32 s into the village; see PRO_SCRIPT)
+const FEST_HALL_W = 206, FEST_WALL_H = 48, FEST_ROOF_H = 58, FEST_SQUARE_W = 244, FEST_GAP = 18;
+const FEST_POLE_DX = 112;           // maypole position within the square
+const FEST_W = FEST_HALL_W + FEST_GAP + FEST_SQUARE_W;
+const FEST_LAND_FRAMES = 40, FEST_SING_FRAMES = 480, FEST_IMG_FRAMES = 270, FEST_AFTER_FRAMES = 230;
+const FEST_CAPTIONS = [
+  'The whole village sang together, and Khaleesi sang loudest of all...',
+  '...while Syraxx spread his great wings and flapped along to the music.'
+];
+const danceImg1 = new Image(); danceImg1.src = 'assets/images/dance1.jpg';
+const danceImg2 = new Image(); danceImg2.src = 'assets/images/dance2.jpg';
+
+// stretches of flattened ground (world x) so the hall and square sit level
+let proFlats = [];
+
+function proSpawnFestival(x) {
+  const wx = sunnyScroll + x;
+  const mid = wx + FEST_W / 2;
+  proFlats = proFlats.filter(f => f.b > sunnyScroll - 400);
+  proFlats.push({ a: wx - 30, b: wx + FEST_W + 30, h: proTerrainBase(mid) });
+  const dancers = [];
+  for (let i = 0; i < 8; i++) dancers.push(proPerson({ phase: (i / 8) * Math.PI * 2 }));
+  // townsfolk on both sides of the maypole ring, with two lute players
+  const people = [];
+  const spots = [6, 26, 46, 66, 160, 178, 196, 214, 232];
+  spots.forEach((dx, i) => {
+    const child = Math.random() < 0.2;
+    const lute = i === 1 || i === 7;
+    people.push(proPerson({ dx: dx, act: lute ? 'lute' : proPick(['dance', 'dance', 'wave', 'talk']),
+                            tool: lute ? 'lute' : 'none', dress: lute ? false : undefined, scale: child && !lute ? 0.7 : 1 }));
+  });
+  people.forEach(p => { if (p.dress === undefined) p.dress = Math.random() < 0.5; });
+  const dx = 240;
+  const e = {
+    type: 'festival', x: x, w: FEST_W, seed: Math.floor(Math.random() * 1000),
+    pole: { x: 0, dancers: dancers, ribbon: ['#e74c3c', '#f1c40f', '#3498db', '#9b59b6', '#2ecc71', '#ff7fbf', '#ffffff', '#ff9f43'] },
+    crowd: { x: 0, people: people, hens: [{ dx: 20, phase: 1, dir: 1 }, { dx: 200, phase: 4, dir: -1 }], w: dx }
+  };
+  pro.ents.push(e);
+  pro.fest = { phase: 'approach', t: 0, ent: e, announced: false, halted: false, done: false };
+  return FEST_W;
+}
+
+function festHallTop(e) {        // the roof ridge, where Syraxx perches
+  return proGroundY(e.x + FEST_HALL_W / 2) - FEST_WALL_H - FEST_ROOF_H;
+}
+
+function festBusy() { return !!(pro && pro.fest && pro.fest.halted); }
+function festStory() { return !!(pro && pro.fest && pro.fest.phase === 'story'); }
+
+function festTap() {
+  const F = pro.fest;
+  if (F.phase !== 'story') return;
+  if (F.t >= 40 && F.t < FEST_IMG_FRAMES) F.t = FEST_IMG_FRAMES;
+  else if (F.t >= FEST_IMG_FRAMES + 40) F.t = FEST_IMG_FRAMES * 2 - 1;
+}
+
+// while flying toward the hall: announce it, land on touch, or go round again if missed
+function festApproach() {
+  const F = pro.fest, e = F.ent;
+  if (!F.announced && e.x < width - 40) {
+    F.announced = true;
+    showKhaleesiBanner('"Syraxx, look! The spring festival! Let\'s land on that big roof and join them!"', 300);
+  }
+  const top = festHallTop(e) + 6;
+  const L = dragon.x - dragon.size / 2 + 6, R = dragon.x + dragon.size / 2 - 6;
+  if (R > e.x + 8 && L < e.x + FEST_HALL_W - 8 && dragon.y + dragon.size / 2 > top) {
+    F.phase = 'land'; F.t = 0; F.halted = true;
+    F.from = { x: dragon.x, y: dragon.y };
+    isHoldingAction = false; dragon.vx = 0;
+    sound.powerup();
+    return;
+  }
+  if (e.x + FEST_HALL_W < dragon.x - dragon.size) {
+    // flew past: the next village festival comes round again
+    showKhaleesiBanner('"Oh! We flew right past it! Let\'s circle round and try again!"', 220);
+    pro.fest = null;
+    pro.forceNext = 'festival';
+    pro.spawnGap = 420;
+  }
+}
+
+function updateFestival() {
+  const F = pro.fest, e = F.ent;
+  F.t++;
+  // glide the view so the hall and the whole square fit on screen while they rest
+  const want = Math.max(8, Math.min(40, width - FEST_W - 8));
+  if (e.x > want + 0.3) {
+    const s = Math.min(PRO_SPEED * 1.6, (e.x - want) * 0.06 + 0.3);
+    pro.ents.forEach(o => { o.x -= s; });
+    pro.notes.forEach(n => { n.x -= s; });
+    sunnyScroll += s;
+    backgroundParallaxX += s * 0.16;
+  }
+  const perchX = e.x + FEST_HALL_W * 0.42;
+  const perchY = festHallTop(e) - 16;
+  dragon.velocity = 0;
+  if (F.phase === 'land') {
+    const u = Math.min(1, F.t / FEST_LAND_FRAMES);
+    const k = u * u * (3 - 2 * u);
+    dragon.x = F.from.x + (perchX - F.from.x) * k;
+    dragon.y = F.from.y + (perchY - F.from.y) * k - Math.sin(k * Math.PI) * 18;
+    if (F.t % 8 === 0) { dragon.wingState = 1; sound.flap(); }
+    if (u >= 1) {
+      F.phase = 'sing'; F.t = 0;
+      showKhaleesiBanner('"Ha! Sing with us, Syraxx! Everyone, sing!"', 200);
+      e.crowd.people.forEach(p => { if (p.act !== 'lute') p.act = Math.random() < 0.7 ? 'dance' : 'wave'; });
+    }
+  } else if (F.phase === 'sing') {
+    // perched on the ridge, bobbing to the music and flapping happily
+    dragon.x = perchX;
+    dragon.y = perchY - Math.abs(Math.sin(F.t * 0.12)) * 4;
+    if (F.t % 36 === 0) { dragon.wingState = 1; sound.flap(); }
+    if (Math.random() < 0.16) {
+      pro.notes.push({ x: dragon.x + proRand(-10, 30), y: dragon.y - 40, vx: proRand(-0.5, 0.5), vy: -proRand(0.6, 1.1), life: 90,
+                       glyph: proPick(['♪', '♫', '♩']), color: proPick(['#ffffff', '#fff3a0', '#ffd1e8']) });
+    }
+    if (F.t === 210) showKhaleesiBanner('"♪ The frost is gone, the swallows sing, come dance with us, it\'s spring, it\'s spring! ♪"', 250);
+    if (F.t >= FEST_SING_FRAMES) { F.phase = 'story'; F.t = 0; khaleesiBannerTimer = 0; }
+  } else if (F.phase === 'story') {
+    dragon.x = perchX; dragon.y = perchY;
+    if (F.t >= FEST_IMG_FRAMES * 2) {
+      F.phase = 'after'; F.t = 0;
+      showKhaleesiBanner('"We should journey on, my love, and leave the townsfolk to their revels."', FEST_AFTER_FRAMES);
+    }
+  } else if (F.phase === 'after') {
+    dragon.x = perchX;
+    dragon.y = perchY - Math.abs(Math.sin(F.t * 0.08)) * 2;
+    if (F.t >= FEST_AFTER_FRAMES) {
+      // take off and fly on
+      F.phase = 'done'; F.halted = false; F.done = true;
+      dragon.velocity = dragon.jump * 1.3;
+      dragon.wingState = 1;
+      sound.flap();
+      e.crowd.people.forEach(p => { if (p.act !== 'lute') p.act = 'wave'; });
+    }
+  }
+  proUpdateNotes(0);
+}
+
 // ---------- the ballista capture (state CAPTURE) ----------
 // 1. aim and fire: a big square net unfolds in flight
 // 2. it wraps Syraxx and Khaleesi together; the rope drags them over the wall and they fall inside
@@ -531,8 +697,8 @@ const CAP_IMG_CAPTIONS = [
   'They cut Khaleesi from the net and dragged her away...',
   '...but Syraxx woke, and broke free.'
 ];
-const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.png';
-const captureImg2 = new Image(); captureImg2.src = 'assets/images/capture2.png';
+const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.jpg';
+const captureImg2 = new Image(); captureImg2.src = 'assets/images/capture2.jpg';
 
 function proBallista() {
   // muzzle of the ballista on top of the wall (matches drawProCastle)
@@ -638,6 +804,15 @@ function startCapturedMessage() {
   dragon.x = dragon.baseX; dragon.y = height * 0.4; dragon.velocity = 0; dragon.vx = 0;
   state = 'CAPTURED_MSG';
   updateLevelBadgeUI();
+}
+
+// debug key 6: the village, just before the spring festival
+function debugStartFestival() {
+  resetGame();
+  startPrologueLevel(PRO_VILLAGE);
+  pro.title = 0; pro.fadeIn = 0;
+  pro.line = 3;
+  levelTimerSeconds = 31.9;
 }
 
 // debug key 9: jump to the end of the village and watch the capture

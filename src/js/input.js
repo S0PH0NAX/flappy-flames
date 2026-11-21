@@ -237,6 +237,8 @@
         return;
       }
 
+      if (state === 'PLAYING' && festBusy()) { festTap(); return; }   // resting on the festival roof
+
       if (state === 'PLAYING' || state === 'BOSS'){
         dragon.velocity = dragon.jump;
         dragon.wingState = 1.0;
@@ -307,6 +309,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Digit5' || e.code === 'Numpad5') {
     debugWarpToLevel(5);
   }
+  if ((e.code === 'Digit6' || e.code === 'Numpad6') && !e.repeat) debugStartFestival();                               // debug: spring festival
   if ((e.code === 'Digit7' || e.code === 'Numpad7') && !e.repeat) { resetGame(); startPrologueLevel(PRO_MEADOW); }   // debug: prologue meadow
   if ((e.code === 'Digit8' || e.code === 'Numpad8') && !e.repeat) { resetGame(); startPrologueLevel(PRO_VILLAGE); }  // debug: prologue village
   if ((e.code === 'Digit9' || e.code === 'Numpad9') && !e.repeat) debugStartCapture();                                // debug: ballista capture

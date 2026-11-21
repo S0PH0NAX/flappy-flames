@@ -41,12 +41,12 @@
 
     const khaleesiFrame1 = new Image(); khaleesiFrame1.src = 'assets/images/khaleesi1.png';
     const khaleesiFrame2 = new Image(); khaleesiFrame2.src = 'assets/images/khaleesi2.png';
-    const kingFrame1 = new Image(); kingFrame1.src = 'assets/images/king1.png';
-    const kingFrame2 = new Image(); kingFrame2.src = 'assets/images/king2.png';
-    const queenFrame1 = new Image(); queenFrame1.src = 'assets/images/queen1.png';
-    const queenFrame2 = new Image(); queenFrame2.src = 'assets/images/queen2.png';
-    const kheadImg = new Image(); kheadImg.src = 'assets/images/khead.png';
-    const qheadImg = new Image(); qheadImg.src = 'assets/images/qhead.png';
+    const kingFrame1 = new Image(); kingFrame1.src = 'assets/images/king1.jpg';
+    const kingFrame2 = new Image(); kingFrame2.src = 'assets/images/king2.jpg';
+    const queenFrame1 = new Image(); queenFrame1.src = 'assets/images/queen1.jpg';
+    const queenFrame2 = new Image(); queenFrame2.src = 'assets/images/queen2.jpg';
+    const kheadImg = new Image(); kheadImg.src = 'assets/images/khead.jpg';
+    const qheadImg = new Image(); qheadImg.src = 'assets/images/qhead.jpg';
 
     const kingFallback1 = createFallbackCanvas(160, 160, '#2c3e50', 'KING 1');
     const kingFallback2 = createFallbackCanvas(160, 160, '#34495e', 'KING 2');

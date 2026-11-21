@@ -719,10 +719,10 @@ function drawProBallista(x, wallTop) {
 function drawProEnts() {
   if (!pro || !(state === 'PLAYING' || state === 'PAUSED' || state === 'GAMEOVER' || state === 'CAPTURE')) return;
   const gY = height - groundHeight;
-  const order = { castle: 0, hut: 1, well: 2, maypole: 3, sheep: 4, shepherd: 5, crowd: 6 };
+  const order = { castle: 0, hut: 1, festival: 1, well: 2, maypole: 3, sheep: 4, shepherd: 5, crowd: 6 };
   const ents = pro.ents.slice().sort((a, b) => (order[a.type] - order[b.type]));
   ents.forEach(e => {
-    if (e.type !== 'castle' && (e.x < -140 || e.x > width + 160)) return;
+    if (e.type !== 'castle' && (e.x + (e.w || 0) < -140 || e.x > width + 160)) return;
     if (e.type === 'sheep') drawSheep(e, proGroundY(e.x));
     else if (e.type === 'shepherd') drawShepherd(e, proGroundY(e.x + 10));
     else if (e.type === 'maypole') drawMaypole(e, proGroundY(e.x));
@@ -730,6 +730,7 @@ function drawProEnts() {
     else if (e.type === 'well') drawWell(e, proGroundY(e.x));
     else if (e.type === 'crowd') drawCrowd(e, gY);
     else if (e.type === 'castle') drawProCastle(e, gY);
+    else if (e.type === 'festival') drawFestival(e);
   });
   // music notes
   ctx.font = 'bold 14px "Proxima Nova", sans-serif';
@@ -768,6 +769,7 @@ function drawProEnts() {
 // title card and fades during the prologue levels
 function drawProOverlay() {
   if (!pro) return;
+  if (festStory()) { drawFestStory(); return; }
   if (pro.title > 0) {
     const t = PRO_TITLE_FRAMES - pro.title;
     const a = Math.min(1, t / 30, pro.title / 40);
@@ -1004,18 +1006,20 @@ function drawCaptureFall(f) {
 // The two story paintings, each fading in and out with a slow push-in and a caption.
 function drawCaptureImages(t) {
   const second = t >= CAP_IMG2;
-  const f = t - (second ? CAP_IMG2 : CAP_IMG1);
-  const img = second ? captureImg2 : captureImg1;
+  drawStoryPicture(second ? captureImg2 : captureImg1, CAP_IMG_CAPTIONS[second ? 1 : 0], t - (second ? CAP_IMG2 : CAP_IMG1), CAP_IMG_FRAMES);
+}
+
+// One full-screen storybook picture: fade in, slow push-in, caption, fade out. f = frame within it.
+function drawStoryPicture(img, cap, f, frames) {
   ctx.fillStyle = '#000';
   ctx.fillRect(0, 0, width, height);
   if (img.complete && img.naturalWidth) {
-    const zoom = 1 + (f / CAP_IMG_FRAMES) * 0.06;
+    const zoom = 1 + (f / frames) * 0.06;
     const sc = Math.min(width / img.naturalWidth, height / img.naturalHeight) * zoom;
     const w = img.naturalWidth * sc, h = img.naturalHeight * sc;
     ctx.drawImage(img, (width - w) / 2, (height - h) / 2, w, h);
   }
   // caption on a dark band at the bottom
-  const cap = CAP_IMG_CAPTIONS[second ? 1 : 0];
   const ca = Math.max(0, Math.min(1, (f - 30) / 25));
   if (ca > 0) {
     const bandH = 54;
@@ -1035,8 +1039,153 @@ function drawCaptureImages(t) {
   }
   let fade = 0;
   if (f < 25) fade = 1 - f / 25;
-  if (f > CAP_IMG_FRAMES - 25) fade = (f - (CAP_IMG_FRAMES - 25)) / 25;
+  if (f > frames - 25) fade = (f - (frames - 25)) / 25;
   if (fade > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, fade) + ')'; ctx.fillRect(0, 0, width, height); }
+}
+
+// ---------- the spring festival ----------
+// the great hall: plank walls, flower garlands, a big thatched roof with crossed gable timbers
+function drawFestHall(x, base, seed) {
+  const w = FEST_HALL_W, wy = base - FEST_WALL_H, rTop = wy - FEST_ROOF_H;
+  ctx.fillStyle = 'rgba(0,0,0,0.22)';
+  ctx.fillRect(x - 6, base - 3, w + 12, 5);
+  // plank walls
+  ctx.fillStyle = '#9a6a3c';
+  ctx.fillRect(x, wy, w, FEST_WALL_H);
+  for (let px = x; px < x + w; px += 9) {
+    ctx.fillStyle = hash2(seed, px) < 0.5 ? '#8a5c32' : '#a8774a';
+    ctx.fillRect(px, wy, 8, FEST_WALL_H);
+    ctx.fillStyle = '#6b4423';
+    ctx.fillRect(px + 8, wy, 1, FEST_WALL_H);
+  }
+  ctx.fillStyle = '#5a3a1e';
+  ctx.fillRect(x, wy, 5, FEST_WALL_H); ctx.fillRect(x + w - 5, wy, 5, FEST_WALL_H);
+  ctx.fillRect(x, wy + FEST_WALL_H * 0.45, w, 3);
+  // big double doors, open, with warm light inside
+  const dx = x + w * 0.62, dw = 40;
+  ctx.fillStyle = '#ffcf7a';
+  ctx.fillRect(dx, base - 38, dw, 38);
+  ctx.fillStyle = '#e8a64a';
+  ctx.fillRect(dx, base - 12, dw, 12);
+  ctx.fillStyle = '#5a3a1e';
+  ctx.fillRect(dx - 4, base - 42, dw + 8, 4);
+  ctx.fillRect(dx - 10, base - 38, 8, 38); ctx.fillRect(dx + dw + 2, base - 38, 8, 38);
+  // windows
+  [x + w * 0.12, x + w * 0.34].forEach(wx => {
+    ctx.fillStyle = '#3a2410'; ctx.fillRect(wx, wy + 9, 16, 13);
+    ctx.fillStyle = '#ffd98a'; ctx.fillRect(wx + 2, wy + 11, 12, 9);
+    ctx.fillStyle = '#5a3a1e'; ctx.fillRect(wx + 7, wy + 9, 2, 13);
+  });
+  // thatched roof
+  ctx.fillStyle = '#a77e34';
+  ctx.beginPath();
+  ctx.moveTo(x - 16, wy + 8);
+  ctx.quadraticCurveTo(x + w * 0.06, rTop + 10, x + w * 0.2, rTop);
+  ctx.lineTo(x + w * 0.8, rTop);
+  ctx.quadraticCurveTo(x + w * 0.94, rTop + 10, x + w + 16, wy + 8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.save();
+  ctx.clip();
+  ctx.fillStyle = '#d4ad55';
+  ctx.fillRect(x - 20, rTop, w + 40, FEST_ROOF_H + 10);
+  for (let r = 0; r < 5; r++) {
+    const ry = rTop + 8 + r * (FEST_ROOF_H / 5);
+    ctx.fillStyle = '#b08636'; ctx.fillRect(x - 20, ry + FEST_ROOF_H / 5 - 3, w + 40, 2);
+    ctx.fillStyle = '#e6c46e'; ctx.fillRect(x - 20, ry, w + 40, 1);
+  }
+  ctx.strokeStyle = 'rgba(120,85,30,0.5)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i < w + 40; i += 4) {
+    const sx = x - 20 + i, sy = rTop + hash2(seed, i) * FEST_ROOF_H, len = 4 + hash2(seed + i, 3) * 7;
+    ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(sx + 1, sy + len); ctx.stroke();
+  }
+  // flower petals scattered on the thatch
+  for (let i = 0; i < 40; i++) {
+    ctx.fillStyle = FLOWER_COLORS[Math.floor(hash2(seed + i, 9) * FLOWER_COLORS.length)];
+    ctx.fillRect(x + hash2(seed, i + 70) * w, rTop + 6 + hash2(seed, i + 140) * (FEST_ROOF_H - 10), 2, 2);
+  }
+  ctx.restore();
+  // ridge and crossed gable timbers
+  ctx.fillStyle = '#8f6a2a';
+  ctx.fillRect(x + w * 0.2, rTop - 3, w * 0.6, 5);
+  [[x + w * 0.2, -1], [x + w * 0.8, 1]].forEach(g => {
+    ctx.strokeStyle = '#6b4423'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(g[0] - 10, rTop + 6); ctx.lineTo(g[0] + 10, rTop - 16); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(g[0] + 10, rTop + 6); ctx.lineTo(g[0] - 10, rTop - 16); ctx.stroke();
+    ctx.lineCap = 'butt';
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = FLOWER_COLORS[(i + (g[1] > 0 ? 2 : 0)) % FLOWER_COLORS.length];
+      ctx.beginPath(); ctx.arc(g[0] - 8 + i * 4, rTop - 1 + (i % 2) * 2, 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+  });
+  // ragged eave and a flower garland under it
+  ctx.fillStyle = '#b58c3c';
+  for (let i = -16; i < w + 16; i += 4) ctx.fillRect(x + i, wy + 5 + hash2(seed, i + 300) * 5, 3, 4);
+  for (let s = 0; s < 4; s++) {
+    const gx = x + 6 + s * (w - 12) / 4, gw = (w - 12) / 4;
+    for (let i = 0; i <= 8; i++) {
+      const px = gx + gw * i / 8, py = wy + 14 + Math.sin(Math.PI * i / 8) * 9;
+      ctx.fillStyle = i % 2 ? '#3f8a3a' : FLOWER_COLORS[(i + s) % FLOWER_COLORS.length];
+      ctx.beginPath(); ctx.arc(px, py, 2.6, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+function drawFestival(e) {
+  const hallBase = proGroundY(e.x + FEST_HALL_W / 2);
+  const sqX = e.x + FEST_HALL_W + FEST_GAP;
+  // packed-earth square
+  const sqY = proGroundY(sqX + FEST_SQUARE_W / 2);
+  ctx.fillStyle = 'rgba(201,166,107,0.85)';
+  ctx.beginPath(); ctx.ellipse(sqX + FEST_SQUARE_W / 2, sqY + 6, FEST_SQUARE_W / 2 + 10, 12, 0, 0, Math.PI * 2); ctx.fill();
+  drawFestHall(e.x, hallBase, e.seed);
+  // bunting from the hall roof to the maypole and on to a post
+  const poleX = sqX + FEST_POLE_DX;
+  const topY = proGroundY(poleX) - 86;
+  const post = { x: sqX + FEST_SQUARE_W - 6, y: proGroundY(sqX + FEST_SQUARE_W - 6) - 52 };
+  ctx.fillStyle = '#7a5230'; ctx.fillRect(post.x - 2, post.y, 4, 52);
+  const hang = (ax, ay, bx, by) => {
+    ctx.strokeStyle = '#efe3c8'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo((ax + bx) / 2, Math.max(ay, by) + 20, bx, by); ctx.stroke();
+    for (let i = 1; i < 12; i++) {
+      const u = i / 12;
+      const px = ax + (bx - ax) * u;
+      const py = (1 - u) * (1 - u) * ay + 2 * u * (1 - u) * (Math.max(ay, by) + 20) + u * u * by;
+      ctx.fillStyle = ['#e74c3c', '#f1c40f', '#3498db', '#2ecc71', '#ff7fbf', '#9b59b6'][i % 6];
+      ctx.beginPath(); ctx.moveTo(px - 4, py); ctx.lineTo(px + 4, py); ctx.lineTo(px, py + 8); ctx.fill();
+    }
+  };
+  hang(e.x + FEST_HALL_W * 0.8 + 8, hallBase - FEST_WALL_H - FEST_ROOF_H + 4, poleX, topY + 6);
+  hang(poleX, topY + 6, post.x, post.y);
+  // the maypole ring and the crowd
+  e.pole.x = poleX;
+  drawMaypole(e.pole, proGroundY(poleX));
+  e.crowd.x = sqX;
+  drawCrowd(e.crowd);
+  // "land here" marker while flying in
+  const F = pro.fest;
+  if (F && F.ent === e && F.phase === 'approach' && F.announced) {
+    const ax = e.x + FEST_HALL_W * 0.45;
+    const ay = hallBase - FEST_WALL_H - FEST_ROOF_H - 40 - Math.abs(Math.sin(Date.now() / 220)) * 10;
+    ctx.save();
+    ctx.fillStyle = '#ffe14d'; ctx.strokeStyle = '#5a3a00'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(ax - 12, ay); ctx.lineTo(ax + 12, ay); ctx.lineTo(ax + 12, ay + 10); ctx.lineTo(ax + 20, ay + 10);
+    ctx.lineTo(ax, ay + 28); ctx.lineTo(ax - 20, ay + 10); ctx.lineTo(ax - 12, ay + 10); ctx.closePath();
+    ctx.fill(); ctx.stroke();
+    ctx.font = 'bold 13px "Proxima Nova", sans-serif'; ctx.textAlign = 'center';
+    ctx.lineWidth = 3; ctx.strokeText('LAND HERE', ax, ay - 6); ctx.fillText('LAND HERE', ax, ay - 6);
+    ctx.textAlign = 'left';
+    ctx.restore();
+  }
+}
+
+// the festival storybook (dance1, dance2), drawn over everything
+function drawFestStory() {
+  const F = pro && pro.fest;
+  if (!F || F.phase !== 'story') return;
+  const second = F.t >= FEST_IMG_FRAMES;
+  drawStoryPicture(second ? danceImg2 : danceImg1, FEST_CAPTIONS[second ? 1 : 0], F.t - (second ? FEST_IMG_FRAMES : 0), FEST_IMG_FRAMES);
 }
 
 // ---------- story message screens (opening invitation and the capture letter) ----------
