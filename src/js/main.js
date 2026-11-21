@@ -34,6 +34,7 @@
         trebuchets[i].x -= scrollSpeed * worldSpeedMult;
         if (trebuchets[i].x < -60) trebuchets.splice(i, 1);
       }
+      chestsFollowWorld(scrollSpeed * worldSpeedMult);
 
       celebrationAngle += 0.035;
 

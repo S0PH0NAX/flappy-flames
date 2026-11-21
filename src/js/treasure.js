@@ -290,6 +290,22 @@ function drawChest(c) {
 // ---------------------------------------------------------------------
 // hooks called from main.js
 // ---------------------------------------------------------------------
+// During the level-clear celebration only the positions are kept in step with the scrolling world
+// (no payouts or knight kills): chests stay on their towers and battlements, a carried one stays with the dragon.
+function chestsFollowWorld(shift) {
+  const gY = height - groundHeight;
+  chests.forEach(c => {
+    if (c.place === 'TOWER' && c.obsRef) { c.x = c.obsRef.x + c.relX; c.y = c.obsRef.bottomY; }
+    else if (c.place === 'BATTLEMENT' && c.battRef) { c.x = c.battRef.x + c.relX; c.y = gY - c.battRef.height; }
+    else if (c.place === 'CARRIED') { c.x = dragon.x + 2; c.y = dragon.y + 64; }
+    else if (c.place === 'FALLING') {
+      c.x -= shift; c.vy += 0.38; c.y += c.vy;
+      if (c.y >= gY) { c.y = gY; c.vy = 0; c.place = 'GROUND'; }
+    }
+    else c.x -= shift;
+  });
+}
+
 function updateLevelExtras(worldShift) {
   if (treasureMultTimer > 0) treasureMultTimer--;
   updateSmallKnights();
