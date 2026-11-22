@@ -7,7 +7,7 @@ Single-page canvas game. Open `index.html` directly (double-click / `file:///` w
 - `index.html` — HTML shell: `<audio>` tags, HUD, buttons, modals; loads the CSS and JS below.
 - `src/style.css` — all styles. Reference images from here as `../assets/images/<file>`.
 - `src/js/` — game code (see below).
-- `assets/images/` — only the images the game loads, plus `icon.png`. Big paintings and portraits are JPEGs: storybook pictures (`capture1/2`, `dance1/2`) at 848×1264, king/queen portraits and heads at 512×512, quality 82–85, made with macOS `sips` (e.g. `sips -Z 512 -s format jpeg -s formatOptions 85 in.png --out out.jpg`). The original PNGs are in `archive/source-art/`.
+- `assets/images/` — only the images the game loads, plus `icon.png`. Big paintings and portraits are JPEGs: storybook pictures (`capture1/2`, `dance1/2`) at 848×1264, noble portraits (`noble1`–`noble7`) at 720px on the long side, quality 82–85, made with macOS `sips` (e.g. `sips -Z 512 -s format jpeg -s formatOptions 85 in.png --out out.jpg`). The original PNGs are in `archive/source-art/`.
 - `assets/audio/` — only the music/SFX the game loads (MP3/WAV/OGG/FLAC), plus the CC0 license note for the wing flap.
 - `khaleesi0900.html` — untouched pre-refactor backup.
 - `khaleesi0900-bundle.html` — generated single-file build. Don't edit it by hand.
@@ -16,7 +16,7 @@ Single-page canvas game. Open `index.html` directly (double-click / `file:///` w
   - `google-play-package/` — the old Android build (.aab/.apk), **including `signing.keystore`**. Keep it: you need that key to publish updates.
   - `store-listing/` — store screenshots.
   - `source-packs/` — downloaded SFX packs, extracted folders, source art (.psd).
-  - `source-art/` — full-size original PNGs of the storybook pictures and royal portraits.
+  - `source-art/` — full-size originals of the storybook pictures and noble portraits (the old king/queen portraits are in `unused-assets/`).
   - `unused-assets/` — images and sounds the game doesn't reference. Move one back into `assets/` if you start using it.
 
 ## JS files (load order = `<script>` order in index.html)
@@ -84,6 +84,7 @@ This inlines `src/style.css` and `src/js/*.js` (in `index.html` order) into `kha
 - **Invincible (Khaleesi riding):** reaching her plays `showKhaleesiSplash()` (render-characters.js), a one-second splash that freezes the game on a snapshot of the last frame. Touching villagers, small knights or gold knights kills them.
 - **Hearts refill** to 3 whenever a level is cleared (`startLevelCelebration()`, ui.js, which also covers the boss) and when the meadow ends.
 - **Background:** switching to another app or tab (`visibilitychange`/`pagehide`, end of audio.js) pauses all music and sound (`sound.hidden`, AudioContext suspended) and pauses PLAYING or BOSS. Coming back leaves the game on the pause menu, which is silent (`updateMusicState()` stops all music while PAUSED); resuming picks the music up where it stopped.
+- **Beheading (noble heads):** beheading a king or queen shows a random noble portrait (`NOBLES` and `drawNoble()` in config.js; each entry has a `face` crop and a `full` square crop), which zooms in to the head, with "YOU'VE TAKEN A NOBLE!". Each collected head remembers its portrait (`royalHeadNobles`, parallel to `royalHeadTypes`), shown on the pause and game-over screens ("NOBLE HEAD CONTINUES"). Heads loaded from a save code get random portraits.
 - **Resume:** `resumeFromPause()` (ui.js) restores PLAYING or BOSS and gives a free flap.
 - **Pause menu:** the save-code modal's RETURN button goes back to the pause menu. The beheading cutscene's RETURN TO GAME button appears only after the animation finishes (`CUTSCENE_BUTTON_FRAME`).
 - **Save codes:** 12 characters shown as `XXXX-XXXX-XXXX` (ui.js): score (5 chars, up to 60,466,175), kings (1), queens (1), villagers (3), level (1), check character (1, catches typos). Dashes, spaces and lowercase are ignored when loading, and old 6- and 7-character codes still load. While in the boss fight (or paused in it) the level character is `B` (`SAVE_CODE_BOSS`), and loading that code starts the boss fight. In the prologue the level character is `M` (meadow) or `V` (village). Continues come from the beheaded kings and queens stored in the code.

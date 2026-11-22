@@ -255,6 +255,8 @@ function shootFire() {
       
       royalHeads++;
       royalHeadTypes.push(royalType);
+      cutsceneNoble = randomNoble();
+      royalHeadNobles.push(cutsceneNoble);
 
       if (royalType === 'KING') gameStats.kingsBeheaded++;
       else gameStats.queensBeheaded++;

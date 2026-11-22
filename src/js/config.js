@@ -41,19 +41,32 @@
 
     const khaleesiFrame1 = new Image(); khaleesiFrame1.src = 'assets/images/khaleesi1.png';
     const khaleesiFrame2 = new Image(); khaleesiFrame2.src = 'assets/images/khaleesi2.png';
-    const kingFrame1 = new Image(); kingFrame1.src = 'assets/images/king1.jpg';
-    const kingFrame2 = new Image(); kingFrame2.src = 'assets/images/king2.jpg';
-    const queenFrame1 = new Image(); queenFrame1.src = 'assets/images/queen1.jpg';
-    const queenFrame2 = new Image(); queenFrame2.src = 'assets/images/queen2.jpg';
-    const kheadImg = new Image(); kheadImg.src = 'assets/images/khead.jpg';
-    const qheadImg = new Image(); qheadImg.src = 'assets/images/qhead.jpg';
+    // Noble portraits for the beheading screen and the severed-head inventory.
+    // face = [centerX, centerY, size] of the head crop; full = [x, y, size] of the square portrait crop (720px images).
+    const NOBLES = [
+      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535] },
+      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501] },
+      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580] },
+      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573] },
+      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720] },
+      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550] },
+      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378] }
+    ];
+    const nobleImgs = NOBLES.map(n => { const im = new Image(); im.src = 'assets/images/' + n.src; return im; });
+    function randomNoble() { return Math.floor(Math.random() * NOBLES.length); }
+    // Draw noble i into the square (x, y, s). zoom 0 = the whole portrait, 1 = just the head.
+    function drawNoble(i, x, y, s, zoom = 1) {
+      const n = NOBLES[i] || NOBLES[0], im = nobleImgs[i] || nobleImgs[0];
+      if (!im.complete || !im.naturalWidth) {
+        ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x, y, s, s);
+        return;
+      }
+      const f = n.face, p = n.full;
+      const fx = f[0] - f[2] / 2, fy = f[1] - f[2] / 2;
+      const sx = p[0] + (fx - p[0]) * zoom, sy = p[1] + (fy - p[1]) * zoom, ss = p[2] + (f[2] - p[2]) * zoom;
+      ctx.drawImage(im, sx, sy, ss, ss, x, y, s, s);
+    }
 
-    const kingFallback1 = createFallbackCanvas(160, 160, '#2c3e50', 'KING 1');
-    const kingFallback2 = createFallbackCanvas(160, 160, '#34495e', 'KING 2');
-    const queenFallback1 = createFallbackCanvas(160, 160, '#8e44ad', 'QUEEN 1');
-    const queenFallback2 = createFallbackCanvas(160, 160, '#9b59b6', 'QUEEN 2');
-    const kheadFallback = createFallbackCanvas(160, 160, '#d35400', 'KING HEAD');
-    const qheadFallback = createFallbackCanvas(160, 160, '#c0392b', 'QUEEN HEAD');
 
     const fullStoryText = [
       '"My beloved Syraxx, I have been',
@@ -161,6 +174,8 @@
     let lives = 3;
     let royalHeads = 0;
     let royalHeadTypes = [];
+    let royalHeadNobles = [];   // which noble portrait (NOBLES index) each collected head shows
+    let cutsceneNoble = 0;      // the noble shown on the beheading screen
     let invulnerableTimer = 0;
     let isHoldingAction = false;
 

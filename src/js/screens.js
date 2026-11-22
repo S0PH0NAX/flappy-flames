@@ -193,39 +193,13 @@
       const bX = (width - boxSize) / 2;
       const bY = height / 2 - 80;
 
-      const isKing = cutsceneTarget === 'KING';
-      let activeAsset, fallbackAsset, headAsset, headFallbackAsset;
-
-      const animFrameIndex = Math.min(Math.floor(cutsceneTimer / 100), 1);
-
-      if (isKing) {
-        activeAsset = (animFrameIndex === 0) ? kingFrame1 : kingFrame2;
-        fallbackAsset = (animFrameIndex === 0) ? kingFallback1 : kingFallback2;
-        headAsset = kheadImg;
-        headFallbackAsset = kheadFallback;
-      } else {
-        activeAsset = (animFrameIndex === 0) ? queenFrame1 : queenFrame2;
-        fallbackAsset = (animFrameIndex === 0) ? queenFallback1 : queenFallback2;
-        headAsset = qheadImg;
-        headFallbackAsset = qheadFallback;
-      }
-
-      ctx.fillStyle = '#11161d';
-      ctx.fillRect(bX, bY, boxSize, boxSize);
-
-      if (cutsceneTimer > 200) {
-        if (headAsset.complete && headAsset.naturalWidth !== 0) {
-          ctx.drawImage(headAsset, bX, bY, boxSize, boxSize);
-        } else {
-          ctx.drawImage(headFallbackAsset, bX, bY, boxSize, boxSize);
-        }
-      } else {
-        if (activeAsset.complete && activeAsset.naturalWidth !== 0) {
-          ctx.drawImage(activeAsset, bX, bY, boxSize, boxSize);
-        } else {
-          ctx.drawImage(fallbackAsset, bX, bY, boxSize, boxSize);
-        }
-      }
+      // a random noble's portrait, which slowly closes in on the head
+      const zt = Math.max(0, Math.min(1, (cutsceneTimer - 110) / 90));
+      const zoom = zt * zt * (3 - 2 * zt);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(bX, bY, boxSize, boxSize); ctx.clip();
+      drawNoble(cutsceneNoble, bX, bY, boxSize, zoom);
+      ctx.restore();
 
       ctx.lineWidth = 4;
       ctx.strokeStyle = '#e74c3c';
@@ -234,12 +208,7 @@
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 20px "Proxima Nova", sans-serif';
       ctx.textAlign = 'center';
-
-      if (isKing) {
-        ctx.fillText("YOU TOOK THE KING'S HEAD!", width / 2, bY - 20);
-      } else {
-        ctx.fillText("YOU TOOK THE QUEEN'S HEAD!", width / 2, bY - 20);
-      }
+      ctx.fillText("YOU'VE TAKEN A NOBLE!", width / 2, bY - 20);
 
       ctx.fillStyle = '#2ecc71';
       ctx.font = 'bold 16px "Proxima Nova", sans-serif';
@@ -276,7 +245,7 @@
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('COLLECTED HEADS: ' + royalHeads, width / 2, height / 2 - 175);
+      ctx.fillText("NOBLE HEADS: " + royalHeads, width / 2, height / 2 - 175);
 
       const headIconSize = 48;
       const headGap = 10;
@@ -289,15 +258,8 @@
         if (hx + headIconSize > width - 10) break;
 
         ctx.save();
-        const type = royalHeadTypes[h] || 'KING';
-        const headImg = (type === 'KING') ? kheadImg : qheadImg;
-        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
-
-        if (headImg.complete && headImg.naturalWidth !== 0) {
-          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
-        } else {
-          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
-        }
+        drawNoble(royalHeadNobles[h] || 0, hx, headsY, headIconSize);
+        ctx.lineWidth = 2; ctx.strokeStyle = "#8a1a1a"; ctx.strokeRect(hx, headsY, headIconSize, headIconSize);
         ctx.restore();
       }
 
@@ -424,7 +386,7 @@
 
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('ROYAL HEADS CONTINUES: ' + royalHeads, width / 2, height / 2 - 135);
+      ctx.fillText("NOBLE HEAD CONTINUES: " + royalHeads, width / 2, height / 2 - 135);
 
       const headIconSize = 56;
       const headGap = 12;
@@ -444,15 +406,8 @@
           ctx.shadowBlur = 20 * glow;
         }
 
-        const type = royalHeadTypes[h] || 'KING';
-        const headImg = (type === 'KING') ? kheadImg : qheadImg;
-        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
-
-        if (headImg.complete && headImg.naturalWidth !== 0) {
-          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
-        } else {
-          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
-        }
+        drawNoble(royalHeadNobles[h] || 0, hx, headsY, headIconSize);
+        ctx.lineWidth = 2; ctx.strokeStyle = "#8a1a1a"; ctx.strokeRect(hx, headsY, headIconSize, headIconSize);
         ctx.restore();
       }
 
@@ -472,7 +427,7 @@
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('CONTINUE (1 👑)', width / 2, continueBtnY + 27);
+      ctx.fillText("CONTINUE (1 NOBLE HEAD)", width / 2, continueBtnY + 27);
 
       ctx.fillStyle = '#e74c3c';
       ctx.fillRect(btnX, restartBtnY, btnW, btnH);

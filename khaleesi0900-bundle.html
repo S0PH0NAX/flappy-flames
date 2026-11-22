@@ -429,19 +429,32 @@
 
     const khaleesiFrame1 = new Image(); khaleesiFrame1.src = 'assets/images/khaleesi1.png';
     const khaleesiFrame2 = new Image(); khaleesiFrame2.src = 'assets/images/khaleesi2.png';
-    const kingFrame1 = new Image(); kingFrame1.src = 'assets/images/king1.jpg';
-    const kingFrame2 = new Image(); kingFrame2.src = 'assets/images/king2.jpg';
-    const queenFrame1 = new Image(); queenFrame1.src = 'assets/images/queen1.jpg';
-    const queenFrame2 = new Image(); queenFrame2.src = 'assets/images/queen2.jpg';
-    const kheadImg = new Image(); kheadImg.src = 'assets/images/khead.jpg';
-    const qheadImg = new Image(); qheadImg.src = 'assets/images/qhead.jpg';
+    // Noble portraits for the beheading screen and the severed-head inventory.
+    // face = [centerX, centerY, size] of the head crop; full = [x, y, size] of the square portrait crop (720px images).
+    const NOBLES = [
+      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535] },
+      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501] },
+      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580] },
+      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573] },
+      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720] },
+      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550] },
+      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378] }
+    ];
+    const nobleImgs = NOBLES.map(n => { const im = new Image(); im.src = 'assets/images/' + n.src; return im; });
+    function randomNoble() { return Math.floor(Math.random() * NOBLES.length); }
+    // Draw noble i into the square (x, y, s). zoom 0 = the whole portrait, 1 = just the head.
+    function drawNoble(i, x, y, s, zoom = 1) {
+      const n = NOBLES[i] || NOBLES[0], im = nobleImgs[i] || nobleImgs[0];
+      if (!im.complete || !im.naturalWidth) {
+        ctx.fillStyle = '#3a2a1a'; ctx.fillRect(x, y, s, s);
+        return;
+      }
+      const f = n.face, p = n.full;
+      const fx = f[0] - f[2] / 2, fy = f[1] - f[2] / 2;
+      const sx = p[0] + (fx - p[0]) * zoom, sy = p[1] + (fy - p[1]) * zoom, ss = p[2] + (f[2] - p[2]) * zoom;
+      ctx.drawImage(im, sx, sy, ss, ss, x, y, s, s);
+    }
 
-    const kingFallback1 = createFallbackCanvas(160, 160, '#2c3e50', 'KING 1');
-    const kingFallback2 = createFallbackCanvas(160, 160, '#34495e', 'KING 2');
-    const queenFallback1 = createFallbackCanvas(160, 160, '#8e44ad', 'QUEEN 1');
-    const queenFallback2 = createFallbackCanvas(160, 160, '#9b59b6', 'QUEEN 2');
-    const kheadFallback = createFallbackCanvas(160, 160, '#d35400', 'KING HEAD');
-    const qheadFallback = createFallbackCanvas(160, 160, '#c0392b', 'QUEEN HEAD');
 
     const fullStoryText = [
       '"My beloved Syraxx, I have been',
@@ -549,6 +562,8 @@
     let lives = 3;
     let royalHeads = 0;
     let royalHeadTypes = [];
+    let royalHeadNobles = [];   // which noble portrait (NOBLES index) each collected head shows
+    let cutsceneNoble = 0;      // the noble shown on the beheading screen
     let invulnerableTimer = 0;
     let isHoldingAction = false;
 
@@ -1187,6 +1202,7 @@ knightHit() {
         ...Array(savedKings).fill('KING'),
         ...Array(savedQueens).fill('QUEEN')
       ];
+      royalHeadNobles = royalHeadTypes.map(() => randomNoble());
 
       updateLevelBadgeUI();
       scoreDisplay.innerText = score;
@@ -1334,6 +1350,7 @@ knightHit() {
       lives = 3;
       royalHeads = 0;
       royalHeadTypes = [];
+      royalHeadNobles = [];
       invulnerableTimer = 0;
       khaleesiMounted = false;
       khaleesiTimer = 0;
@@ -1641,6 +1658,8 @@ function shootFire() {
       
       royalHeads++;
       royalHeadTypes.push(royalType);
+      cutsceneNoble = randomNoble();
+      royalHeadNobles.push(cutsceneNoble);
 
       if (royalType === 'KING') gameStats.kingsBeheaded++;
       else gameStats.queensBeheaded++;
@@ -5323,39 +5342,13 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
       const bX = (width - boxSize) / 2;
       const bY = height / 2 - 80;
 
-      const isKing = cutsceneTarget === 'KING';
-      let activeAsset, fallbackAsset, headAsset, headFallbackAsset;
-
-      const animFrameIndex = Math.min(Math.floor(cutsceneTimer / 100), 1);
-
-      if (isKing) {
-        activeAsset = (animFrameIndex === 0) ? kingFrame1 : kingFrame2;
-        fallbackAsset = (animFrameIndex === 0) ? kingFallback1 : kingFallback2;
-        headAsset = kheadImg;
-        headFallbackAsset = kheadFallback;
-      } else {
-        activeAsset = (animFrameIndex === 0) ? queenFrame1 : queenFrame2;
-        fallbackAsset = (animFrameIndex === 0) ? queenFallback1 : queenFallback2;
-        headAsset = qheadImg;
-        headFallbackAsset = qheadFallback;
-      }
-
-      ctx.fillStyle = '#11161d';
-      ctx.fillRect(bX, bY, boxSize, boxSize);
-
-      if (cutsceneTimer > 200) {
-        if (headAsset.complete && headAsset.naturalWidth !== 0) {
-          ctx.drawImage(headAsset, bX, bY, boxSize, boxSize);
-        } else {
-          ctx.drawImage(headFallbackAsset, bX, bY, boxSize, boxSize);
-        }
-      } else {
-        if (activeAsset.complete && activeAsset.naturalWidth !== 0) {
-          ctx.drawImage(activeAsset, bX, bY, boxSize, boxSize);
-        } else {
-          ctx.drawImage(fallbackAsset, bX, bY, boxSize, boxSize);
-        }
-      }
+      // a random noble's portrait, which slowly closes in on the head
+      const zt = Math.max(0, Math.min(1, (cutsceneTimer - 110) / 90));
+      const zoom = zt * zt * (3 - 2 * zt);
+      ctx.save();
+      ctx.beginPath(); ctx.rect(bX, bY, boxSize, boxSize); ctx.clip();
+      drawNoble(cutsceneNoble, bX, bY, boxSize, zoom);
+      ctx.restore();
 
       ctx.lineWidth = 4;
       ctx.strokeStyle = '#e74c3c';
@@ -5364,12 +5357,7 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 20px "Proxima Nova", sans-serif';
       ctx.textAlign = 'center';
-
-      if (isKing) {
-        ctx.fillText("YOU TOOK THE KING'S HEAD!", width / 2, bY - 20);
-      } else {
-        ctx.fillText("YOU TOOK THE QUEEN'S HEAD!", width / 2, bY - 20);
-      }
+      ctx.fillText("YOU'VE TAKEN A NOBLE!", width / 2, bY - 20);
 
       ctx.fillStyle = '#2ecc71';
       ctx.font = 'bold 16px "Proxima Nova", sans-serif';
@@ -5406,7 +5394,7 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('COLLECTED HEADS: ' + royalHeads, width / 2, height / 2 - 175);
+      ctx.fillText("NOBLE HEADS: " + royalHeads, width / 2, height / 2 - 175);
 
       const headIconSize = 48;
       const headGap = 10;
@@ -5419,15 +5407,8 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
         if (hx + headIconSize > width - 10) break;
 
         ctx.save();
-        const type = royalHeadTypes[h] || 'KING';
-        const headImg = (type === 'KING') ? kheadImg : qheadImg;
-        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
-
-        if (headImg.complete && headImg.naturalWidth !== 0) {
-          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
-        } else {
-          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
-        }
+        drawNoble(royalHeadNobles[h] || 0, hx, headsY, headIconSize);
+        ctx.lineWidth = 2; ctx.strokeStyle = "#8a1a1a"; ctx.strokeRect(hx, headsY, headIconSize, headIconSize);
         ctx.restore();
       }
 
@@ -5554,7 +5535,7 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
 
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('ROYAL HEADS CONTINUES: ' + royalHeads, width / 2, height / 2 - 135);
+      ctx.fillText("NOBLE HEAD CONTINUES: " + royalHeads, width / 2, height / 2 - 135);
 
       const headIconSize = 56;
       const headGap = 12;
@@ -5574,15 +5555,8 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
           ctx.shadowBlur = 20 * glow;
         }
 
-        const type = royalHeadTypes[h] || 'KING';
-        const headImg = (type === 'KING') ? kheadImg : qheadImg;
-        const fallbackImg = (type === 'KING') ? kheadFallback : qheadFallback;
-
-        if (headImg.complete && headImg.naturalWidth !== 0) {
-          ctx.drawImage(headImg, hx, headsY, headIconSize, headIconSize);
-        } else {
-          ctx.drawImage(fallbackImg, hx, headsY, headIconSize, headIconSize);
-        }
+        drawNoble(royalHeadNobles[h] || 0, hx, headsY, headIconSize);
+        ctx.lineWidth = 2; ctx.strokeStyle = "#8a1a1a"; ctx.strokeRect(hx, headsY, headIconSize, headIconSize);
         ctx.restore();
       }
 
@@ -5602,7 +5576,7 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
 
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-      ctx.fillText('CONTINUE (1 👑)', width / 2, continueBtnY + 27);
+      ctx.fillText("CONTINUE (1 NOBLE HEAD)", width / 2, continueBtnY + 27);
 
       ctx.fillStyle = '#e74c3c';
       ctx.fillRect(btnX, restartBtnY, btnW, btnH);
@@ -11038,6 +11012,7 @@ function drawCapturedMessage() {
           if (headFadeTimer <= 0) {
             royalHeads = Math.max(0, royalHeads - 1);
             if (royalHeadTypes.length > 0) royalHeadTypes.pop();
+            if (royalHeadNobles.length > 0) royalHeadNobles.pop();
             headFadingIndex = -1;
             lives = 3;
             updateHeartsDisplay();

@@ -222,6 +222,7 @@
         ...Array(savedKings).fill('KING'),
         ...Array(savedQueens).fill('QUEEN')
       ];
+      royalHeadNobles = royalHeadTypes.map(() => randomNoble());
 
       updateLevelBadgeUI();
       scoreDisplay.innerText = score;
@@ -369,6 +370,7 @@
       lives = 3;
       royalHeads = 0;
       royalHeadTypes = [];
+      royalHeadNobles = [];
       invulnerableTimer = 0;
       khaleesiMounted = false;
       khaleesiTimer = 0;

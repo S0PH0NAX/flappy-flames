@@ -130,6 +130,7 @@
           if (headFadeTimer <= 0) {
             royalHeads = Math.max(0, royalHeads - 1);
             if (royalHeadTypes.length > 0) royalHeadTypes.pop();
+            if (royalHeadNobles.length > 0) royalHeadNobles.pop();
             headFadingIndex = -1;
             lives = 3;
             updateHeartsDisplay();
