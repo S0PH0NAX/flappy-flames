@@ -10553,6 +10553,48 @@ function drawCaptureOverlay() {
 }
 
 // Close-up: Syraxx and Khaleesi bound together in the net, tumbling through the dusk sky.
+// The slavers' wall seen from inside the fall: stone courses scrolling up the right side of the screen,
+// with its battlements rushing past at the start. f = frame of the fall.
+function drawFallWall(f) {
+  const wx = Math.round(width * 0.74);
+  const top = Math.round(height * 0.3 - f * 5);      // top of the wall (battlements above it)
+  const y0 = Math.max(top, 0);
+  ctx.fillStyle = '#4a3f45';
+  ctx.fillRect(wx, y0, width - wx, height - y0);
+  const rowH = 18, brickW = 34;
+  const first = Math.floor((y0 - top) / rowH);
+  for (let r = first; top + r * rowH < height; r++) {
+    const y = top + r * rowH;
+    const off = (r % 2) * (brickW / 2);
+    for (let x = wx - off; x < width; x += brickW) {
+      const n = hash2(Math.floor((x - wx + off) / brickW) + 7, r);
+      ctx.fillStyle = n < 0.33 ? '#564a50' : (n < 0.66 ? '#4f444a' : '#5c4f53');
+      ctx.fillRect(Math.max(x, wx) + 1, y + 1, Math.min(brickW - 2, x + brickW - 1 - Math.max(x, wx)), rowH - 2);
+    }
+    // a lit arrow slit now and then
+    if (r > 2 && hash2(r, 41) < 0.12) {
+      const sx = wx + 14 + Math.floor(hash2(r, 42) * Math.max(1, width - wx - 34));
+      ctx.fillStyle = '#1a1014'; ctx.fillRect(sx, y + 2, 6, rowH * 2 - 4);
+      ctx.fillStyle = 'rgba(255,170,90,0.55)'; ctx.fillRect(sx + 2, y + 4, 2, rowH * 2 - 8);
+    }
+  }
+  // battlements on top
+  if (top > -30) {
+    ctx.fillStyle = '#4a3f45';
+    for (let x = wx; x < width; x += 28) ctx.fillRect(x, top - 16, 16, 16);
+    ctx.fillStyle = '#6a5c60';
+    for (let x = wx; x < width; x += 28) ctx.fillRect(x, top - 16, 16, 3);
+  }
+  // shadow along the wall's edge, so it reads as a face turned away from the light
+  const sh = ctx.createLinearGradient(wx, 0, wx + 26, 0);
+  sh.addColorStop(0, 'rgba(0,0,0,0.45)');
+  sh.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = sh;
+  ctx.fillRect(wx, y0, 26, height - y0);
+  ctx.fillStyle = 'rgba(20,10,30,0.25)';   // dusk haze over the stone
+  ctx.fillRect(wx, y0, width - wx, height - y0);
+}
+
 function drawCaptureFall(f) {
   const t = f / 60;
   const g = ctx.createLinearGradient(0, 0, 0, height);
@@ -10576,31 +10618,31 @@ function drawCaptureFall(f) {
     const y = height + len - ((f * (9 + hash2(i, 11) * 10) + hash2(i, 12) * 900) % (height + len * 2));
     ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + len); ctx.stroke();
   }
-  // the two of them, slowly turning
-  const s = Math.min(width, height) / 175;
-  const cx = width / 2 + Math.sin(t * 0.9) * 10;
-  const cy = height * 0.44 + Math.sin(t * 1.3) * 8;
-  const rot = Math.sin(t * 0.7) * 0.32 + 0.12;
-  const glow = ctx.createRadialGradient(cx, cy - 10 * s, 5, cx, cy - 10 * s, 60 * s);
-  glow.addColorStop(0, 'rgba(255,200,150,0.30)');
+  // the inside face of the slavers' wall, rushing up past them (its battlements pass at the start)
+  drawFallWall(f);
+  // the two of them at their normal size, tumbling slowly down the screen
+  const k0 = Math.min(1, f / CAP_FALL_FRAMES);
+  const cx = width * 0.42 + Math.sin(t * 0.9) * 14;
+  const cy = height * (0.2 + 0.32 * k0) + Math.sin(t * 1.3) * 6;
+  const rot = Math.sin(t * 0.7) * 0.4 + 0.15;
+  const glow = ctx.createRadialGradient(cx, cy - 12, 4, cx, cy - 12, 80);
+  glow.addColorStop(0, 'rgba(255,200,150,0.28)');
   glow.addColorStop(1, 'rgba(255,200,150,0)');
   ctx.fillStyle = glow;
   ctx.fillRect(0, 0, width, height);
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(rot);
-  ctx.scale(s, s);
   dragon.wingState = 0.12 + Math.abs(Math.sin(f * 0.07)) * 0.08;   // wings pinned, barely moving
   drawDragon(0, 0, -0.15);
-  // Khaleesi reaches down to him: a small hand on his neck
-  ctx.fillStyle = '#f8c291';
-  ctx.fillRect(4, -14 + Math.sin(f * 0.05) * 0.6, 3, 2);
-  drawSquareNet(0, -8, 98, 0, 0.5, 0.42);
+  ctx.globalAlpha = 0.8;                // the game's net wrapped around them, a little see-through so they still read
+  drawSquareNet(3, -14, 92, 0, 0.75);
+  ctx.globalAlpha = 1;
   ctx.restore();
   // a tear-shaped heart rising between them
   if (f > 70) {
     const k = ((f - 70) % 150) / 150;
-    const hx = cx + 6 * s, hy = cy - 34 * s - k * 50;
+    const hx = cx + 4, hy = cy - 40 - k * 40;
     ctx.save();
     ctx.globalAlpha = Math.sin(k * Math.PI) * 0.85;
     ctx.fillStyle = '#ff6b8a';
