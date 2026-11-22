@@ -82,6 +82,8 @@ This inlines `src/style.css` and `src/js/*.js` (in `index.html` order) into `kha
 ## Other behaviors
 
 - **Invincible (Khaleesi riding):** reaching her plays `showKhaleesiSplash()` (render-characters.js), a one-second splash that freezes the game on a snapshot of the last frame. Touching villagers, small knights or gold knights kills them.
+- **Hearts refill** to 3 whenever a level is cleared (`startLevelCelebration()`, ui.js, which also covers the boss) and when the meadow ends.
+- **Background:** switching to another app or tab (`visibilitychange`/`pagehide`, end of audio.js) pauses all music and sound (`sound.hidden`, AudioContext suspended) and pauses PLAYING or BOSS. Coming back resumes the music for the current screen; the game stays on the pause menu.
 - **Resume:** `resumeFromPause()` (ui.js) restores PLAYING or BOSS and gives a free flap.
 - **Pause menu:** the save-code modal's RETURN button goes back to the pause menu. The beheading cutscene's RETURN TO GAME button appears only after the animation finishes (`CUTSCENE_BUTTON_FRAME`).
 - **Save codes:** 12 characters shown as `XXXX-XXXX-XXXX` (ui.js): score (5 chars, up to 60,466,175), kings (1), queens (1), villagers (3), level (1), check character (1, catches typos). Dashes, spaces and lowercase are ignored when loading, and old 6- and 7-character codes still load. While in the boss fight (or paused in it) the level character is `B` (`SAVE_CODE_BOSS`), and loading that code starts the boss fight. In the prologue the level character is `M` (meadow) or `V` (village). Continues come from the beheaded kings and queens stored in the code.

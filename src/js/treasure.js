@@ -339,9 +339,10 @@ function drawExtrasHUD() {
   ctx.font = 'bold 18px "Proxima Nova", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(width / 2 - 70, 64, 140, 26);
+  const top = Math.max(98, hudBubbleBottom ? hudBubbleBottom + 6 : 0);   // below the score, and below any speech bubble
+  ctx.fillRect(width / 2 - 70, top, 140, 26);
   ctx.fillStyle = pulse ? '#ffffff' : '#f1c40f';
-  ctx.fillText('💰 ' + treasureMult + 'x  ' + secs + 's', width / 2, 83);
+  ctx.fillText('💰 ' + treasureMult + 'x  ' + secs + "s", width / 2, top + 19);
   ctx.restore();
 }
 

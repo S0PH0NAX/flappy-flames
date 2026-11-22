@@ -456,6 +456,7 @@
 
     let khaleesiBannerTimer = 0;
     let khaleesiBannerText = "";
+    let hudBubbleBottom = 0;   // bottom of Khaleesi's speech bubble this frame (0 = none), so HUD extras can sit below it
 
     let currentLevel = 1;
     let levelTimerSeconds = 0;
@@ -639,19 +640,20 @@
         this.ctx = null;
         this.muted = false;
         this.isBoostPlaying = false;
+        this.hidden = false;   // true while the app is in the background
       }
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
-        if (this.ctx.state === 'suspended') {
+        if (this.ctx.state === 'suspended' && !this.hidden) {
           this.ctx.resume();
         }
       }
 
       playSoundEffect(audioElem, volume = 0.8) {
-        if (this.muted) return;
+        if (this.muted || this.hidden) return;
         if (audioElem && audioElem.src) {
           try {
             audioElem.currentTime = 0;
@@ -673,7 +675,7 @@
       }
 
       playFlapSound() {
-        if (this.muted || this.isBoostPlaying) return;
+        if (this.muted || this.hidden || this.isBoostPlaying) return;
         
         if (sfxBoost && sfxBoost.src) {
           this.isBoostPlaying = true;
@@ -888,7 +890,7 @@ knightHit() {
       }
 
       updateMusicState(gameState) {
-        if (this.muted) {
+        if (this.muted || this.hidden) {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
@@ -941,6 +943,24 @@ knightHit() {
     }
 
     const sound = new SoundEngine();
+
+    // Go quiet when the player switches to another app or tab (like a native phone app), and pause the game.
+    function onAppHidden() {
+      if (sound.hidden) return;
+      sound.hidden = true;
+      document.querySelectorAll('audio').forEach(a => { if (!a.paused) a.pause(); });
+      if (sound.ctx && sound.ctx.state === 'running') sound.ctx.suspend().catch(() => {});
+      if (state === 'PLAYING' || state === 'BOSS') togglePauseGame();
+    }
+    function onAppShown() {
+      if (!sound.hidden) return;
+      sound.hidden = false;
+      if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+      sound.updateMusicState(state);   // music picks back up for the current screen
+    }
+    document.addEventListener('visibilitychange', () => { document.hidden ? onAppHidden() : onAppShown(); });
+    window.addEventListener('pagehide', onAppHidden);
+    window.addEventListener('pageshow', () => { if (!document.hidden) onAppShown(); });
 </script>
 <script>
 // ui.js — HUD, pause, level progression, score/hearts, save codes, share graphic, reset
@@ -983,6 +1003,8 @@ knightHit() {
       celebrationAngle = 0;
       celebrationFadeAlpha = 0;
       state = 'LEVEL_CELEBRATE';
+      lives = 3;                 // clearing a level refills every heart
+      updateHeartsDisplay();
       sound.powerup();
       updateLevelBadgeUI();
     }
@@ -3040,6 +3062,7 @@ window.addEventListener('keydown', (e) => {
     }
 
     function renderMountedKhaleesiHUD() {
+      hudBubbleBottom = 0;
       const pSize = 64;
       const pX = 15;
       const pY = 15;
@@ -3078,6 +3101,7 @@ window.addEventListener('keydown', (e) => {
 
         const bX = Math.min(width - bW - 15, pX);
         const bY = pY + pSize + 14;
+        hudBubbleBottom = bY + bH;
 
         ctx.fillStyle = '#ffffff';
 
@@ -8642,9 +8666,10 @@ function drawExtrasHUD() {
   ctx.font = 'bold 18px "Proxima Nova", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
-  ctx.fillRect(width / 2 - 70, 64, 140, 26);
+  const top = Math.max(98, hudBubbleBottom ? hudBubbleBottom + 6 : 0);   // below the score, and below any speech bubble
+  ctx.fillRect(width / 2 - 70, top, 140, 26);
   ctx.fillStyle = pulse ? '#ffffff' : '#f1c40f';
-  ctx.fillText('💰 ' + treasureMult + 'x  ' + secs + 's', width / 2, 83);
+  ctx.fillText('💰 ' + treasureMult + 'x  ' + secs + "s", width / 2, top + 19);
   ctx.restore();
 }
 
@@ -9086,6 +9111,8 @@ function updatePrologue() {
       dragon.y += (height * 0.35 - dragon.y) * 0.03;
       dragon.velocity *= 0.9;
       if (P.ending >= PRO_END_FADE) {
+        lives = 3;                 // finishing the meadow refills every heart
+        updateHeartsDisplay();
         startPrologueLevel(PRO_VILLAGE);
         return;
       }

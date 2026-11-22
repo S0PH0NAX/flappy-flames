@@ -38,6 +38,8 @@
       celebrationAngle = 0;
       celebrationFadeAlpha = 0;
       state = 'LEVEL_CELEBRATE';
+      lives = 3;                 // clearing a level refills every heart
+      updateHeartsDisplay();
       sound.powerup();
       updateLevelBadgeUI();
     }

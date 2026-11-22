@@ -86,6 +86,7 @@
     }
 
     function renderMountedKhaleesiHUD() {
+      hudBubbleBottom = 0;
       const pSize = 64;
       const pX = 15;
       const pY = 15;
@@ -124,6 +125,7 @@
 
         const bX = Math.min(width - bW - 15, pX);
         const bY = pY + pSize + 14;
+        hudBubbleBottom = bY + bH;
 
         ctx.fillStyle = '#ffffff';
 

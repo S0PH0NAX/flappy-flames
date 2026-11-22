@@ -6,19 +6,20 @@
         this.ctx = null;
         this.muted = false;
         this.isBoostPlaying = false;
+        this.hidden = false;   // true while the app is in the background
       }
       init() {
         if (!this.ctx) {
           const AudioContext = window.AudioContext || window.webkitAudioContext;
           this.ctx = new AudioContext();
         }
-        if (this.ctx.state === 'suspended') {
+        if (this.ctx.state === 'suspended' && !this.hidden) {
           this.ctx.resume();
         }
       }
 
       playSoundEffect(audioElem, volume = 0.8) {
-        if (this.muted) return;
+        if (this.muted || this.hidden) return;
         if (audioElem && audioElem.src) {
           try {
             audioElem.currentTime = 0;
@@ -40,7 +41,7 @@
       }
 
       playFlapSound() {
-        if (this.muted || this.isBoostPlaying) return;
+        if (this.muted || this.hidden || this.isBoostPlaying) return;
         
         if (sfxBoost && sfxBoost.src) {
           this.isBoostPlaying = true;
@@ -255,7 +256,7 @@ knightHit() {
       }
 
       updateMusicState(gameState) {
-        if (this.muted) {
+        if (this.muted || this.hidden) {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
@@ -308,3 +309,21 @@ knightHit() {
     }
 
     const sound = new SoundEngine();
+
+    // Go quiet when the player switches to another app or tab (like a native phone app), and pause the game.
+    function onAppHidden() {
+      if (sound.hidden) return;
+      sound.hidden = true;
+      document.querySelectorAll('audio').forEach(a => { if (!a.paused) a.pause(); });
+      if (sound.ctx && sound.ctx.state === 'running') sound.ctx.suspend().catch(() => {});
+      if (state === 'PLAYING' || state === 'BOSS') togglePauseGame();
+    }
+    function onAppShown() {
+      if (!sound.hidden) return;
+      sound.hidden = false;
+      if (sound.ctx && sound.ctx.state === 'suspended') sound.ctx.resume().catch(() => {});
+      sound.updateMusicState(state);   // music picks back up for the current screen
+    }
+    document.addEventListener('visibilitychange', () => { document.hidden ? onAppHidden() : onAppShown(); });
+    window.addEventListener('pagehide', onAppHidden);
+    window.addEventListener('pageshow', () => { if (!document.hidden) onAppShown(); });

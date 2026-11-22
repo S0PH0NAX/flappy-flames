@@ -350,6 +350,8 @@ function updatePrologue() {
       dragon.y += (height * 0.35 - dragon.y) * 0.03;
       dragon.velocity *= 0.9;
       if (P.ending >= PRO_END_FADE) {
+        lives = 3;                 // finishing the meadow refills every heart
+        updateHeartsDisplay();
         startPrologueLevel(PRO_VILLAGE);
         return;
       }

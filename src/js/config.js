@@ -68,6 +68,7 @@
 
     let khaleesiBannerTimer = 0;
     let khaleesiBannerText = "";
+    let hudBubbleBottom = 0;   // bottom of Khaleesi's speech bubble this frame (0 = none), so HUD extras can sit below it
 
     let currentLevel = 1;
     let levelTimerSeconds = 0;
