@@ -256,7 +256,7 @@ knightHit() {
       }
 
       updateMusicState(gameState) {
-        if (this.muted || this.hidden) {
+        if (this.muted || this.hidden || gameState === 'PAUSED') {   // the pause menu is silent
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
