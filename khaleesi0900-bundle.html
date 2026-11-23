@@ -3093,14 +3093,31 @@ window.addEventListener('keydown', (e) => {
         const kx = obs.x + k.relX;
         const ky = obs.bottomY - 14;
 
-        const glowRadius = 18 + Math.sin(Date.now() / 120) * 4;
+        // a bright, pulsing white-gold halo so her red hair stands out against the stone
+        const now = Date.now();
+        const glowRadius = 30 + Math.sin(now / 150) * 6;
         const radial = ctx.createRadialGradient(kx, ky - 6, 2, kx, ky - 6, glowRadius);
-        radial.addColorStop(0, 'rgba(246, 185, 59, 0.7)');
+        radial.addColorStop(0, 'rgba(255, 252, 230, 0.95)');
+        radial.addColorStop(0.35, 'rgba(255, 220, 120, 0.7)');
+        radial.addColorStop(0.7, 'rgba(246, 185, 59, 0.3)');
         radial.addColorStop(1, 'rgba(246, 185, 59, 0)');
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';   // additive, so it really lights up the dark stone
         ctx.fillStyle = radial;
         ctx.beginPath();
         ctx.arc(kx, ky - 6, glowRadius, 0, Math.PI * 2);
         ctx.fill();
+        ctx.restore();
+        // twinkling sparkles circling her
+        for (let s = 0; s < 4; s++) {
+          const a = now / 600 + s * Math.PI / 2;
+          const tw = 0.5 + 0.5 * Math.sin(now / 90 + s * 1.7);
+          const sx = kx + Math.cos(a) * 20, sy = ky - 8 + Math.sin(a) * 14;
+          const r = 1.5 + tw * 2.5;
+          ctx.fillStyle = `rgba(255, 255, 240, ${0.4 + tw * 0.6})`;
+          ctx.fillRect(sx - r, sy - 0.75, r * 2, 1.5);
+          ctx.fillRect(sx - 0.75, sy - r, 1.5, r * 2);
+        }
 
         drawKhaleesiSprite(kx, ky);
       });
@@ -3779,10 +3796,8 @@ window.addEventListener('keydown', (e) => {
 
       if (goldShield.held) drawHeldShield(Date.now(), p);
 
-      if (khaleesiMounted) {
-        drawKhaleesiSprite(2 * p, -18 * p, 0.85);
-      } else if (khaleesiRidingNow()) {
-        drawKhaleesiSprite(-2.5 * p, -6.4 * p, 0.85);   // the calm prologue ride: seated on his back
+      if (khaleesiMounted || khaleesiRidingNow()) {
+        drawKhaleesiSprite(-2.5 * p, -6.4 * p, 0.85);   // seated on his back (prologue ride and invincible ride alike)
       }
 
       ctx.restore();
