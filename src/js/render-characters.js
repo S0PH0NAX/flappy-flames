@@ -6,23 +6,31 @@
       ctx.translate(kx, ky);
       ctx.scale(scale, scale);
 
-      ctx.fillStyle = '#f5f6fa';
+      // Dragon Queen Sarai: copper hair, gold circlet, green dragon-scale dress (matches sarai1/2.png)
+      ctx.fillStyle = '#b8431f';
       ctx.fillRect(-6, -16, 12, 10);
       ctx.fillRect(-8, -12, 16, 6);
       ctx.fillRect(-4, -6, 8, 12);
+      ctx.fillStyle = '#8a2e16';
+      ctx.fillRect(-8, -8, 3, 4);
 
-      ctx.fillStyle = '#f8c291';
+      ctx.fillStyle = '#e2a77e';
       ctx.fillRect(-4, -12, 8, 8);
 
-      ctx.fillStyle = '#0a3d62';
+      ctx.fillStyle = '#e8b33a';          // circlet with a ruby
+      ctx.fillRect(-5, -13, 10, 1);
+      ctx.fillStyle = '#d41f3a';
+      ctx.fillRect(-1, -14, 2, 2);
+
+      ctx.fillStyle = '#1d5c33';
       ctx.fillRect(1, -10, 2, 2);
 
-      ctx.fillStyle = '#4a69bd';
+      ctx.fillStyle = '#2f7a4f';
       ctx.fillRect(-5, -4, 10, 14);
-      ctx.fillStyle = '#1e3799';
+      ctx.fillStyle = '#1f5536';
       ctx.fillRect(-6, 2, 12, 8);
 
-      ctx.fillStyle = '#f6b93b';
+      ctx.fillStyle = '#e8b33a';
       ctx.fillRect(-5, -1, 10, 2);
 
       ctx.restore();

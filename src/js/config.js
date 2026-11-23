@@ -39,8 +39,8 @@
     uiMusicAudio.volume = 0.25;
     cutsceneMusicAudio.volume = 0.25;
 
-    const khaleesiFrame1 = new Image(); khaleesiFrame1.src = 'assets/images/khaleesi1.png';
-    const khaleesiFrame2 = new Image(); khaleesiFrame2.src = 'assets/images/khaleesi2.png';
+    const khaleesiFrame1 = new Image(); khaleesiFrame1.src = 'assets/images/sarai1.png';
+    const khaleesiFrame2 = new Image(); khaleesiFrame2.src = 'assets/images/sarai2.png';
     // Noble portraits for the beheading screen and the severed-head inventory.
     // face = [centerX, centerY, size] of the head crop; full = [x, y, size] of the square portrait crop (720px images).
     const NOBLES = [
