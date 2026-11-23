@@ -10,7 +10,7 @@ const BI_ALARM = 215;      // "!" over the dragon, roar
 const BI_TALK = 245;       // Khaleesi speaks
 const BI_FADE_OUT = 420;   // fade to black...
 const BI_END = 450;        // ...and the fight begins
-const BI_LINE = '"By the gods... it smashed right through the wall! FLY, SYRAXX!"';
+const BI_LINE = '"By the gods... it smashed right through the wall! FLY, CYNDRAXX!"';
 
 let bossIntro = null;
 

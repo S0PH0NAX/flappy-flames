@@ -49,7 +49,7 @@
 
       if (levelDialogueType === 'INTRO') {
         const speechLines = [
-          '"My brave Syraxx, burn their',
+          '"My brave Cyndraxx, burn their',
           'towers, slay the slavers, and bring',
           'me to victory. I love you!"'
         ];
@@ -77,7 +77,7 @@
 
       } else if (levelDialogueType === 'LEVEL1_CLEAR') {
         const speechLines = [
-          '"My beloved Syraxx, you will now',
+          '"My beloved Cyndraxx, you will now',
           'encounter the nobles. DO NOT BURN',
           'THE NOBLES! Bring me their heads to',
           'mount on the city walls!"'
@@ -107,7 +107,7 @@
       } else {
         ctx.fillStyle = '#2ecc71';
         ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-        ctx.fillText('"I LOVE YOU SO MUCH SYRAXX!"', width / 2, pY + pSize + 25);
+        ctx.fillText('"I LOVE YOU SO MUCH CYNDRAXX!"', width / 2, pY + pSize + 25);
 
         statsBoxY = pY + pSize + 40;
         const statsBoxW = width - 60;

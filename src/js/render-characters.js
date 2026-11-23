@@ -170,7 +170,7 @@
         ctx.strokeStyle = '#f1c40f';
         ctx.strokeRect(pX, pY, pSize, pSize);
 
-        renderBubbleBelow('BREAK THE WHEEL!', true);
+        renderBubbleBelow('BREAK EVERY CHAIN!', true);
       } else if (khaleesiBannerTimer > 0) {
         khaleesiBannerTimer--;
         const activeFrame = (Math.floor(Date.now() / 300) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;

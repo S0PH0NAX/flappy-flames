@@ -67,8 +67,8 @@
 
     // Banner shown when a level starts, introducing that level's new threat.
     function announceLevelStart() {
-      if (currentLevel === 2) setTimeout(() => showKhaleesiBanner('"Beware the armored knights, Syraxx! Keep your fire on them until their armor melts!"', 260), 4500);
-      else if (currentLevel === 4) showKhaleesiBanner('"The armored knights are everywhere now, Syraxx! Burn them down!"', 260);
+      if (currentLevel === 2) setTimeout(() => showKhaleesiBanner('"Beware the armored knights, Cyndraxx! Keep your fire on them until their armor melts!"', 260), 4500);
+      else if (currentLevel === 4) showKhaleesiBanner('"The armored knights are everywhere now, Cyndraxx! Burn them down!"', 260);
       else if (currentLevel === 5) { showKhaleesiBanner('"Golden knights! Snatch one while its guard is down and take its shield!"', 280); gkTalkSeen.spot = true; }
     }
 
@@ -115,7 +115,7 @@
     function resetScoreToZero() {
       score = 0;
       scoreDisplay.innerText = '0';
-      showKhaleesiBanner('"Syraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero."', 240);
+      showKhaleesiBanner('"Cyndraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero."', 240);
       floatingTexts.push({
         x: width / 2 - 80,
         y: height / 2 - 40,
@@ -277,7 +277,7 @@
 
       sCtx.fillStyle = '#ffffff';
       sCtx.font = 'bold 24px "Proxima Nova", sans-serif';
-      sCtx.fillText(`SYRAXX'S VICTORY STATS (LEVEL ${Math.min(FINAL_LEVEL, currentLevel)})`, sw / 2, 125);
+      sCtx.fillText(`CYNDRAXX'S VICTORY STATS (LEVEL ${Math.min(FINAL_LEVEL, currentLevel)})`, sw / 2, 125);
 
       const cardX = 60, cardY = 160, cardW = 680, cardH = 340;
       sCtx.fillStyle = '#11161d';
@@ -303,8 +303,8 @@
       sCtx.fillStyle = '#2ecc71';
       sCtx.font = 'bold 22px "Proxima Nova", sans-serif';
       sCtx.textAlign = 'left';
-      sCtx.fillText(`"I'm so proud of my Syraxx.`, 240, 215);
-      sCtx.fillText(`Syraxx earned ${score} points, burned`, 240, 248);
+      sCtx.fillText(`"I'm so proud of my Cyndraxx.`, 240, 215);
+      sCtx.fillText(`Cyndraxx earned ${score} points, burned`, 240, 248);
       sCtx.fillText(`${gameStats.burnedTowers} towers, killed ${gameStats.villagersKilled} villagers,`, 240, 281);
       sCtx.fillText(`and beheaded ${kingsTxt} and ${queensTxt}!"`, 240, 314);
 

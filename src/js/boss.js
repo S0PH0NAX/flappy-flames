@@ -228,7 +228,7 @@ function triggerBossBattle() {
   invulnerableTimer = 0;
   // the beheading music plays during the boss fight; start it from the top
   if (cutsceneMusicAudio.paused) cutsceneMusicAudio.currentTime = 0;
-  showKhaleesiBanner('"Here it comes! Burn it down, Syraxx!"', 220);
+  showKhaleesiBanner('"Here it comes! Burn it down, Cyndraxx!"', 220);
   updateLevelBadgeUI();
 }
 

@@ -96,7 +96,7 @@ function updateBossLogic() {
     if (khaleesiTimer <= 0) {
       khaleesiMounted = false;
       khaleesiCombo = 0;
-      showKhaleesiBanner('"I LOVE YOU ALWAYS, SYRAXX!"', 240);
+      showKhaleesiBanner('"I LOVE YOU ALWAYS, CYNDRAXX!"', 240);
     }
   }
 
@@ -222,7 +222,7 @@ function updateBossLogic() {
       } else if (aliveN === 0) {
         bossState.waveState = 'OPEN';
         bossState.clearHold = 0;
-        showKhaleesiBanner('"The archers are down! Burn the center, Syraxx!"', 160);
+        showKhaleesiBanner('"The archers are down! Burn the center, Cyndraxx!"', 160);
       }
     } else if (bossState.waveState === 'OPEN') {
       bossState.clearHold++;

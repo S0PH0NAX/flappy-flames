@@ -390,7 +390,7 @@ function updateGoldKnights(worldShift) {
         goldShield.drop = null;
         sound.powerup();
         floatingTexts.push({ x: dragon.x - 30, y: dragon.y - 40, text: 'GOLD SHIELD!', color: '#f1c40f', alpha: 1.0, vy: -1.2 });
-        goldKnightTalk('shield', '"That golden shield protects you, Syraxx! Arrows and spears can\'t hurt you now!"', 260);
+        goldKnightTalk('shield', '"That golden shield protects you, Cyndraxx! Arrows and spears can\'t hurt you now!"', 260);
       }
     } else if (g.state === 'CARRIED') {
       g.t++;

@@ -81,11 +81,11 @@
     }
 
     const fullStoryText = [
-      '"My beloved Syraxx, I have been',
+      '"My beloved Cyndraxx, I have been',
       'captured by the slavers. Burn',
       'their castle to the ground and',
       'find me. You are my heart',
-      'and soul. BREAK THE WHEEL!"'
+      'and soul. BREAK EVERY CHAIN!"'
     ];
     let totalCharCount = fullStoryText.join('\n').length;
     let typedCharIndex = 0;

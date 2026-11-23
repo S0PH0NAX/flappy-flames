@@ -578,7 +578,7 @@ function drawHen(h, x, gY) {
 
 function drawCrowd(e, gY) {
   const t = Date.now() / 1000;
-  const cheer = e.cheer > 0 ? e.cheer / 40 : 0;   // the crowd jumps when Syraxx sings
+  const cheer = e.cheer > 0 ? e.cheer / 40 : 0;   // the crowd jumps when Cyndraxx sings
   e.hens.forEach(h => {
     h.dx += h.dir * 0.08;
     if (Math.random() < 0.005) h.dir *= -1;
@@ -746,7 +746,7 @@ function drawProEnts() {
   });
   ctx.globalAlpha = 1;
   ctx.textAlign = 'left';
-  // the sheep in Syraxx's claws
+  // the sheep in Cyndraxx's claws
   if (pro.carried) {
     const s = { x: dragon.x + 4, dir: 1, phase: pro.carried.t * 3, scared: 1, lamb: pro.carried.lamb };
     drawSheep(s, dragon.y + 46);
@@ -916,7 +916,7 @@ function drawCaptureOverlay() {
   }
 }
 
-// Close-up: Syraxx and Khaleesi bound together in the net, tumbling through the dusk sky.
+// Close-up: Cyndraxx and Khaleesi bound together in the net, tumbling through the dusk sky.
 // The slavers' wall seen from inside the fall: stone courses scrolling up the right side of the screen,
 // with its battlements rushing past at the start. f = frame of the fall.
 function drawFallWall(f) {

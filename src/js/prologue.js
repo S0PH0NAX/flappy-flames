@@ -1,8 +1,8 @@
 // prologue.js — The two peaceful levels before level 1, and the ballista capture that ends them.
 //   Meadow (currentLevel PRO_MEADOW = -1): sunny rolling hills, wildflowers, sheep and shepherds, birds,
-//     maypole dancers. Khaleesi talks about peace; later she asks Syraxx to snatch a sheep and pays the shepherd.
+//     maypole dancers. Khaleesi talks about peace; later she asks Cyndraxx to snatch a sheep and pays the shepherd.
 //   Village (currentLevel PRO_VILLAGE = 0): thatched huts and crowds of peasants. At the end a castle wall
-//     rolls in and its ballista nets Syraxx and Khaleesi (state CAPTURE, no player control). Khaleesi is
+//     rolls in and its ballista nets Cyndraxx and Khaleesi (state CAPTURE, no player control). Khaleesi is
 //     dragged inside, then the old "captured by the slavers" message plays (state CAPTURED_MSG) and level 1 starts.
 // Khaleesi rides the whole time (no invincibility), fire is disabled, ground hits still cost hearts.
 // Art lives in render-prologue.js.
@@ -29,13 +29,13 @@ function proScore(pts, label, x, y, color) {
 }
 const PRO_SNATCH_DX = 30;             // how close (horizontally) the dragon must be to grab a sheep
 const PRO_SNATCH_DY = 44;             // ...and how far above the ground its feet may be
-const PRO_CARRY_FRAMES = 80;          // the sheep dangles this long before Syraxx eats it
+const PRO_CARRY_FRAMES = 80;          // the sheep dangles this long before Cyndraxx eats it
 const PRO_POUCH_FRAMES = 55;          // flight time of Khaleesi's gold pouch
 const PRO_END_FADE = 50;              // fade out at the end of the meadow
 const PRO_TITLE_FRAMES = 200;
 
 const PRO_INVITE_TEXT = [
-  '"Good morning, my sweet Syraxx!',
+  '"Good morning, my sweet Cyndraxx!',
   'The sun is shining and the whole',
   'valley is in bloom. Come, my love,',
   'let us take to the skies together',
@@ -45,23 +45,23 @@ totalCharCount = PRO_INVITE_TEXT.join('\n').length;   // the opening screen type
 
 const PRO_SCRIPT = {};
 PRO_SCRIPT[PRO_MEADOW] = [
-  { at: 2,  dur: 240, text: '"Feel the sun on your wings, Syraxx! Isn\'t our valley beautiful?"' },
+  { at: 2,  dur: 240, text: '"Feel the sun on your wings, Cyndraxx! Isn\'t our valley beautiful?"' },
   { at: 13, dur: 260, text: '"Wildflowers as far as the eye can see... I never tire of this view."' },
   { at: 25, dur: 300, text: '"This valley was meant to live in peace, my love. Every shepherd, every lamb, every child."' },
-  { at: 38, dur: 340, text: '"The only reason ever to go to war is to protect the innocent and the vulnerable. Never forget that, Syraxx."' },
+  { at: 38, dur: 340, text: '"The only reason ever to go to war is to protect the innocent and the vulnerable. Never forget that, Cyndraxx."' },
   { at: 50, fn: () => { pro.forceNext = 'maypole'; } },
   { at: 54, dur: 260, text: '"Listen! They\'re singing! Look at them dance around the maypole!"' },
   { at: 66, dur: 320, text: '"You must be getting hungry, my love. Go on, swoop down and snatch up a sheep!"',
     fn: () => { pro.hungry = true; pro.forceNext = 'flock'; pro.hungryAt = pro.t; } }
 ];
 PRO_SCRIPT[PRO_VILLAGE] = [
-  { at: 2,  dur: 260, text: '"Look down there, Syraxx... the village! Fly gently, let\'s not frighten anyone."' },
+  { at: 2,  dur: 260, text: '"Look down there, Cyndraxx... the village! Fly gently, let\'s not frighten anyone."' },
   { at: 14, dur: 320, text: '"See how everything fits together? The farmer grows the wheat, the miller grinds it, the baker feeds them all."' },
   { at: 28, dur: 280, text: '"The smith, the weaver, the shepherd... each one needs the others. Like you and me."' },
   { at: 32, fn: () => { pro.forceNext = 'festival'; pro.spawnGap = Math.min(pro.spawnGap, 60); } },
   { at: 42, dur: 260, text: '"Hear that? Their songs, their laughter... the music of their lives."' },
   { at: 56, dur: 300, text: '"Children chasing hens, grandmothers telling stories by the door. I could watch them forever."' },
-  { at: 70, dur: 260, text: '"This is why we fly, Syraxx. Not for glory. For them."' },
+  { at: 70, dur: 260, text: '"This is why we fly, Cyndraxx. Not for glory. For them."' },
   { at: 85, dur: 300, text: '"What\'s that up ahead? A castle... I don\'t like the look of those walls."' }
 ];
 
@@ -104,7 +104,7 @@ function fireDisabled() {
   return state === 'SPLASH' || state === 'START' || state === 'CAPTURE' || state === 'CAPTURED_MSG' || inPrologue();
 }
 
-// Khaleesi sits on Syraxx's back (drawn by drawDragon) without the invincible rainbow mode.
+// Khaleesi sits on Cyndraxx's back (drawn by drawDragon) without the invincible rainbow mode.
 function khaleesiRidingNow() {
   if (khaleesiMounted) return false;
   if (state === 'START') return true;
@@ -397,12 +397,12 @@ function proUpdateScript() {
   if (currentLevel === PRO_MEADOW) {
     if (P.sheepEaten && !P.saidLove && P.t - P.eatenAt > 420) {
       P.saidLove = true;
-      showKhaleesiBanner('"I love these days with you, Syraxx. I wish they would never end."', 280);
+      showKhaleesiBanner('"I love these days with you, Cyndraxx. I wish they would never end."', 280);
     }
-    // gentle reminder if Syraxx still hasn't eaten
+    // gentle reminder if Cyndraxx still hasn't eaten
     if (P.hungry && !P.carried && P.t - P.hungryAt > 900 && P.t - P.lastNag > 900 && khaleesiBannerTimer <= 0) {
       P.lastNag = P.t;
-      showKhaleesiBanner('"Don\'t be shy, Syraxx! Fly down low and grab a sheep!"', 220);
+      showKhaleesiBanner('"Don\'t be shy, Cyndraxx! Fly down low and grab a sheep!"', 220);
     }
   }
 }
@@ -451,7 +451,7 @@ function proUpdateSheep(gY) {
       }
       proScore(PRO_PTS_SHEEP, 'CHOMP!', dragon.x + 10, dragon.y - 30, '#ffffff');
       sound.knightHit();
-      if (lives < 3) {   // a good meal heals Syraxx
+      if (lives < 3) {   // a good meal heals Cyndraxx
         lives = 3;
         updateHeartsDisplay();
         sound.heartPickup();
@@ -556,7 +556,7 @@ function proBaa() {
 
 // ---------- the spring festival (village) ----------
 // A great thatched hall beside the town square, where the village dances round the maypole.
-// Khaleesi suggests landing on the hall's roof; touching the hall lands Syraxx there (no damage).
+// Khaleesi suggests landing on the hall's roof; touching the hall lands Cyndraxx there (no damage).
 // The world stops, they sing with the townsfolk, then a storybook (dance1, dance2), then they fly on.
 // (it appears 32 s into the village; see PRO_SCRIPT)
 const FEST_HALL_W = 206, FEST_WALL_H = 48, FEST_ROOF_H = 58, FEST_SQUARE_W = 244, FEST_GAP = 18;
@@ -565,7 +565,7 @@ const FEST_W = FEST_HALL_W + FEST_GAP + FEST_SQUARE_W;
 const FEST_LAND_FRAMES = 40, FEST_SING_FRAMES = 480, FEST_IMG_FRAMES = 270, FEST_AFTER_FRAMES = 230;
 const FEST_CAPTIONS = [
   'The whole village sang together, and Dragon Queen Sarai sang loudest of all...',
-  '...while Syraxx spread his great wings and flapped along to the music.'
+  '...while Cyndraxx spread his great wings and flapped along to the music.'
 ];
 const danceImg1 = new Image(); danceImg1.src = 'assets/images/dance1.jpg';
 const danceImg2 = new Image(); danceImg2.src = 'assets/images/dance2.jpg';
@@ -601,7 +601,7 @@ function proSpawnFestival(x) {
   return FEST_W;
 }
 
-function festHallTop(e) {        // the roof ridge, where Syraxx perches
+function festHallTop(e) {        // the roof ridge, where Cyndraxx perches
   return proGroundY(e.x + FEST_HALL_W / 2) - FEST_WALL_H - FEST_ROOF_H;
 }
 
@@ -620,7 +620,7 @@ function festApproach() {
   const F = pro.fest, e = F.ent;
   if (!F.announced && e.x < width - 40) {
     F.announced = true;
-    showKhaleesiBanner('"Syraxx, look! The spring festival! Let\'s land on that big roof and join them!"', 300);
+    showKhaleesiBanner('"Cyndraxx, look! The spring festival! Let\'s land on that big roof and join them!"', 300);
   }
   const top = festHallTop(e) + 6;
   const L = dragon.x - dragon.size / 2 + 6, R = dragon.x + dragon.size / 2 - 6;
@@ -667,7 +667,7 @@ function updateFestival() {
     if (F.t % 8 === 0) { dragon.wingState = 1; sound.flap(); }
     if (u >= 1) {
       F.phase = 'sing'; F.t = 0;
-      showKhaleesiBanner('"Ha! Sing with us, Syraxx! Everyone, sing!"', 200);
+      showKhaleesiBanner('"Ha! Sing with us, Cyndraxx! Everyone, sing!"', 200);
       e.crowd.people.forEach(p => { if (p.act !== 'lute') p.act = Math.random() < 0.7 ? 'dance' : 'wave'; });
     }
   } else if (F.phase === 'sing') {
@@ -704,7 +704,7 @@ function updateFestival() {
 }
 
 // ---------- singing on the festival roof ----------
-// While Syraxx is perched (before the storybook), the FIRE button becomes a blue SING button.
+// While Cyndraxx is perched (before the storybook), the FIRE button becomes a blue SING button.
 let singBtnShown = false;
 const SING_SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];   // C major pentatonic, two octaves
 
@@ -769,19 +769,19 @@ function festSing() {
 
 // ---------- the ballista capture (state CAPTURE) ----------
 // 1. aim and fire: a big square net unfolds in flight
-// 2. it wraps Syraxx and Khaleesi together; the rope drags them over the wall and they fall inside
+// 2. it wraps Cyndraxx and Khaleesi together; the rope drags them over the wall and they fall inside
 // 3. close-up: the two of them tumbling through the sky, bound in the net (beheading music starts)
-// 4. capture1.png (Khaleesi cut out of the net and dragged away), then capture2.png (Syraxx wakes and escapes)
+// 4. capture1.png (Khaleesi cut out of the net and dragged away), then capture2.png (Cyndraxx wakes and escapes)
 const CAP_FIRE = 70, CAP_HIT = 98, CAP_DRAG = 135, CAP_OVER = 215, CAP_CLOSE = 250;
 const CAP_FALL_FRAMES = 330;                       // close-up of the fall
 const CAP_IMG_FRAMES = 270;                        // each story image (about 4.5 s)
 const CAP_IMG1 = CAP_CLOSE + CAP_FALL_FRAMES;
 const CAP_IMG2 = CAP_IMG1 + CAP_IMG_FRAMES;
 const CAP_END = CAP_IMG2 + CAP_IMG_FRAMES;
-const CAP_FALL_LINE = '"Hold on to me, Syraxx... whatever they do to us, I will find you again."';
+const CAP_FALL_LINE = '"Hold on to me, Cyndraxx... whatever they do to us, I will find you again."';
 const CAP_IMG_CAPTIONS = [
   'They cut Dragon Queen Sarai from the net and dragged her away...',
-  '...but Syraxx woke, and broke free.'
+  '...but Cyndraxx woke, and broke free.'
 ];
 const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.jpg';
 const captureImg2 = new Image(); captureImg2.src = 'assets/images/capture2.jpg';
@@ -805,7 +805,7 @@ function startCapture() {
   isHoldingAction = false;
   invulnerableTimer = 0;
   pro.cap = { t: 0, net: null, hoverY: Math.min(Math.max(dragon.y, height * 0.3), height * 0.5), tumble: 0, from: null };
-  showKhaleesiBanner('"Syraxx... the knights are aiming something at us! Pull up!"', 120);
+  showKhaleesiBanner('"Cyndraxx... the knights are aiming something at us! Pull up!"', 120);
 }
 
 // taps during the story images move on to the next one
@@ -824,7 +824,7 @@ function updateCapture() {
   const hoverX = width * 0.3;
 
   if (t < CAP_HIT) {
-    // Syraxx is no longer under the player's control
+    // Cyndraxx is no longer under the player's control
     dragon.x += (hoverX - dragon.x) * 0.05;
     dragon.y += (C.hoverY + Math.sin(t / 12) * 6 - dragon.y) * 0.06;
     dragon.velocity = Math.sin(t / 12) * -1.5;
@@ -867,9 +867,9 @@ function updateCapture() {
   if (t === CAP_HIT) {
     sound.hit();
     sound.knightHit();
-    showKhaleesiBanner('"A net! Syraxx, we\'re caught!"', 110);
+    showKhaleesiBanner('"A net! Cyndraxx, we\'re caught!"', 110);
   }
-  if (t === CAP_DRAG) { sound.boulderLaunch(); showKhaleesiBanner('"They\'re pulling us in! SYRAXX!"', 120); }
+  if (t === CAP_DRAG) { sound.boulderLaunch(); showKhaleesiBanner('"They\'re pulling us in! CYNDRAXX!"', 120); }
   if (t === CAP_OVER) sound.towerDestroy();
   if (t === CAP_CLOSE) {
     khaleesiBannerTimer = 0;
