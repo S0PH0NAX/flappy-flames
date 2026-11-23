@@ -78,8 +78,8 @@
       } else if (levelDialogueType === 'LEVEL1_CLEAR') {
         const speechLines = [
           '"My beloved Syraxx, you will now',
-          'encounter the royals. DO NOT BURN',
-          'THE ROYALS! Bring me their heads to',
+          'encounter the nobles. DO NOT BURN',
+          'THE NOBLES! Bring me their heads to',
           'mount on the city walls!"'
         ];
 
@@ -128,8 +128,8 @@
           { label: "⚔️ Peasants Slain:", val: `${gameStats.villagersKilled}` },
           { label: "🏹 Archers Defeated:", val: `${gameStats.archersKilled}` },
           { label: "💥 Trebuchets Wrecked:", val: `${gameStats.trebuchetsDestroyed}` },
-          { label: "👑 Royals Beheaded:", val: `${gameStats.kingsBeheaded + gameStats.queensBeheaded}` },
-          { label: "👸 Khaleesi Rescues:", val: `${gameStats.khaleesiRescues}` }
+          { label: "👑 Nobles Beheaded:", val: `${gameStats.kingsBeheaded + gameStats.queensBeheaded}` },
+          { label: "👸 Queen Sarai Rescues:", val: `${gameStats.khaleesiRescues}` }
         ];
 
         lines.forEach((item, idx) => {
@@ -367,7 +367,7 @@
         const lines = [
           '"I\'m sorry beloved, you can\'t',
           'continue without the severed',
-          'head of a royal."'
+          'head of a noble."'
         ];
         lines.forEach((l, idx) => {
           ctx.fillText(l, width / 2, bY + 32 + (idx * 24));

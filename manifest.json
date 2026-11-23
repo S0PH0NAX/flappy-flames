@@ -2,7 +2,7 @@
   "id": "/flappy-flames/",
   "name": "Flappy Flame Arcade",
   "short_name": "Flappy Flame",
-  "description": "Arcade dragon flappy game featuring epic fires, knights, and Khaleesi powerups!",
+  "description": "Arcade dragon flappy game featuring epic fires, knights, and Dragon Queen Sarai powerups!",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b0b1a",
@@ -41,14 +41,14 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Find your Khaleesi"
+      "label": "Find Dragon Queen Sarai"
     },
        {
       "src": "screenshot4.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Khaleesi Crush!"
+      "label": "Dragon Queen Crush!"
     }
    
   ]

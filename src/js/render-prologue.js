@@ -1279,8 +1279,8 @@ function drawCapturedMessage() {
   ctx.fillStyle = 'rgba(5, 5, 12, 0.55)';
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#e74c3c';
-  ctx.font = 'bold 24px "Proxima Nova", sans-serif';
+  fitFont('DRAGON QUEEN SARAI HAS BEEN TAKEN', 24, width - 24);
   ctx.textAlign = 'center';
-  ctx.fillText('KHALEESI HAS BEEN TAKEN', width / 2, height / 2 - 185);
+  ctx.fillText('DRAGON QUEEN SARAI HAS BEEN TAKEN', width / 2, height / 2 - 185);
   drawStoryMessage(fullStoryText, 'TAP TO CONTINUE');
 }

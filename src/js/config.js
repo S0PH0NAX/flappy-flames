@@ -44,16 +44,21 @@
     // Noble portraits for the beheading screen and the severed-head inventory.
     // face = [centerX, centerY, size] of the head crop; full = [x, y, size] of the square portrait crop (720px images).
     const NOBLES = [
-      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535] },
-      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501] },
-      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580] },
-      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573] },
-      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720] },
-      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550] },
-      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378] }
+      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535], female: false },
+      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501], female: false },
+      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580], female: false },
+      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573], female: true },
+      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720], female: true },
+      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550], female: true },
+      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378], female: false }
     ];
     const nobleImgs = NOBLES.map(n => { const im = new Image(); im.src = 'assets/images/' + n.src; return im; });
-    function randomNoble() { return Math.floor(Math.random() * NOBLES.length); }
+    // type 'QUEEN' picks a woman's portrait, anything else a man's.
+    function randomNoble(type) {
+      const want = type === 'QUEEN';
+      const pool = NOBLES.map((n, i) => i).filter(i => NOBLES[i].female === want);
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
     // Draw noble i into the square (x, y, s). zoom 0 = the whole portrait, 1 = just the head.
     function drawNoble(i, x, y, s, zoom = 1) {
       const n = NOBLES[i] || NOBLES[0], im = nobleImgs[i] || nobleImgs[0];
@@ -67,6 +72,13 @@
       ctx.drawImage(im, sx, sy, ss, ss, x, y, s, s);
     }
 
+
+    // Set a bold font of up to px pixels, shrunk so text fits in maxW.
+    function fitFont(text, px, maxW) {
+      ctx.font = 'bold ' + px + 'px "Proxima Nova", sans-serif';
+      const w = ctx.measureText(text).width;
+      if (w > maxW) ctx.font = 'bold ' + Math.floor(px * maxW / w) + 'px "Proxima Nova", sans-serif';
+    }
 
     const fullStoryText = [
       '"My beloved Syraxx, I have been',

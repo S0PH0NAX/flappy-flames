@@ -57,9 +57,17 @@
             sound.powerup();
 
             floatingTexts.push({
-              x: dragon.x - 30,
-              y: dragon.y - 35,
-              text: 'KHALEESI! +' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x Combo!)',
+              x: Math.max(8, dragon.x - 30),
+              y: dragon.y - 60,
+              text: 'DRAGON QUEEN SARAI!',
+              color: '#f6b93b',
+              alpha: 1.0,
+              vy: -1.8
+            });
+            floatingTexts.push({
+              x: Math.max(8, dragon.x - 30),
+              y: dragon.y - 32,
+              text: '+' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x Combo!)',
               color: '#f6b93b',
               alpha: 1.0,
               vy: -1.8
@@ -623,12 +631,12 @@
 
       // titles
       ctx.textAlign = 'center';
-      ctx.font = 'bold 30px "Proxima Nova", sans-serif';
+      fitFont('DRAGON QUEEN SARAI RIDES!', 30, width - 24);
       ctx.lineWidth = 6;
       ctx.strokeStyle = '#2a0a3a';
-      ctx.strokeText('KHALEESI RIDES!', cx, cy - size / 2 - 22);
+      ctx.strokeText('DRAGON QUEEN SARAI RIDES!', cx, cy - size / 2 - 22);
       ctx.fillStyle = '#ffffff';
-      ctx.fillText('KHALEESI RIDES!', cx, cy - size / 2 - 22);
+      ctx.fillText('DRAGON QUEEN SARAI RIDES!', cx, cy - size / 2 - 22);
       const bounce = Math.sin(s.t * 0.3) * 3;
       ctx.font = 'bold 36px "Proxima Nova", sans-serif';
       const tg = ctx.createLinearGradient(cx - 120, 0, cx + 120, 0);

@@ -118,7 +118,13 @@ function updateBossLogic() {
 
   const gY = height - groundHeight;
 
-  if (dragon.y + dragon.size / 2 >= gY || dragon.y - dragon.size / 2 <= 0) {
+  // The top of the screen is just a ceiling: stop there, no damage, no recentering.
+  if (dragon.y - dragon.size / 2 < 0) {
+    dragon.y = dragon.size / 2;
+    if (dragon.velocity < 0) dragon.velocity = 0;
+  }
+
+  if (dragon.y + dragon.size / 2 >= gY) {
     if (!khaleesiMounted) {
       triggerHit();
       if (lives > 0) {

@@ -115,11 +115,11 @@
     function resetScoreToZero() {
       score = 0;
       scoreDisplay.innerText = '0';
-      showKhaleesiBanner('"Syraxx, you mustn\'t burn the royals. Take their heads. Score reset to zero."', 240);
+      showKhaleesiBanner('"Syraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero."', 240);
       floatingTexts.push({
         x: width / 2 - 80,
         y: height / 2 - 40,
-        text: 'ROYAL BURNED! SCORE RESET TO 0',
+        text: 'NOBLE BURNED! SCORE RESET TO 0',
         color: '#e74c3c',
         alpha: 1.0,
         vy: -1.0
@@ -222,7 +222,7 @@
         ...Array(savedKings).fill('KING'),
         ...Array(savedQueens).fill('QUEEN')
       ];
-      royalHeadNobles = royalHeadTypes.map(() => randomNoble());
+      royalHeadNobles = royalHeadTypes.map(t => randomNoble(t));
 
       updateLevelBadgeUI();
       scoreDisplay.innerText = score;

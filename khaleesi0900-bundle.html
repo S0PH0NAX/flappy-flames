@@ -432,16 +432,21 @@
     // Noble portraits for the beheading screen and the severed-head inventory.
     // face = [centerX, centerY, size] of the head crop; full = [x, y, size] of the square portrait crop (720px images).
     const NOBLES = [
-      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535] },
-      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501] },
-      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580] },
-      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573] },
-      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720] },
-      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550] },
-      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378] }
+      { src: 'noble1.jpg', face: [290, 140, 150], full: [0, 0, 535], female: false },
+      { src: 'noble2.jpg', face: [235, 105, 140], full: [0, 0, 501], female: false },
+      { src: 'noble3.jpg', face: [330, 140, 260], full: [0, 0, 580], female: false },
+      { src: 'noble4.jpg', face: [287, 270, 300], full: [0, 60, 573], female: true },
+      { src: 'noble5.jpg', face: [320, 345, 320], full: [0, 0, 720], female: true },
+      { src: 'noble6.jpg', face: [245, 360, 300], full: [0, 60, 550], female: true },
+      { src: 'noble7.jpg', face: [203, 215, 260], full: [0, 20, 378], female: false }
     ];
     const nobleImgs = NOBLES.map(n => { const im = new Image(); im.src = 'assets/images/' + n.src; return im; });
-    function randomNoble() { return Math.floor(Math.random() * NOBLES.length); }
+    // type 'QUEEN' picks a woman's portrait, anything else a man's.
+    function randomNoble(type) {
+      const want = type === 'QUEEN';
+      const pool = NOBLES.map((n, i) => i).filter(i => NOBLES[i].female === want);
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
     // Draw noble i into the square (x, y, s). zoom 0 = the whole portrait, 1 = just the head.
     function drawNoble(i, x, y, s, zoom = 1) {
       const n = NOBLES[i] || NOBLES[0], im = nobleImgs[i] || nobleImgs[0];
@@ -455,6 +460,13 @@
       ctx.drawImage(im, sx, sy, ss, ss, x, y, s, s);
     }
 
+
+    // Set a bold font of up to px pixels, shrunk so text fits in maxW.
+    function fitFont(text, px, maxW) {
+      ctx.font = 'bold ' + px + 'px "Proxima Nova", sans-serif';
+      const w = ctx.measureText(text).width;
+      if (w > maxW) ctx.font = 'bold ' + Math.floor(px * maxW / w) + 'px "Proxima Nova", sans-serif';
+    }
 
     const fullStoryText = [
       '"My beloved Syraxx, I have been',
@@ -1095,11 +1107,11 @@ knightHit() {
     function resetScoreToZero() {
       score = 0;
       scoreDisplay.innerText = '0';
-      showKhaleesiBanner('"Syraxx, you mustn\'t burn the royals. Take their heads. Score reset to zero."', 240);
+      showKhaleesiBanner('"Syraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero."', 240);
       floatingTexts.push({
         x: width / 2 - 80,
         y: height / 2 - 40,
-        text: 'ROYAL BURNED! SCORE RESET TO 0',
+        text: 'NOBLE BURNED! SCORE RESET TO 0',
         color: '#e74c3c',
         alpha: 1.0,
         vy: -1.0
@@ -1202,7 +1214,7 @@ knightHit() {
         ...Array(savedKings).fill('KING'),
         ...Array(savedQueens).fill('QUEEN')
       ];
-      royalHeadNobles = royalHeadTypes.map(() => randomNoble());
+      royalHeadNobles = royalHeadTypes.map(t => randomNoble(t));
 
       updateLevelBadgeUI();
       scoreDisplay.innerText = score;
@@ -1582,7 +1594,7 @@ knightHit() {
             sound.queenEntrance();
           }
 
-          showKhaleesiBanner('"Look Syraxx, a royal. Don\'t burn them, bring me their head!"', 240);
+          showKhaleesiBanner('"Look Syraxx, a noble. Don\'t burn them, bring me their head!"', 240);
         } else if (currentLevel >= 2 && Math.random() < (currentLevel >= 5 ? 0.6 : (currentLevel >= 4 ? 0.4 : 0.25))) {
           // armored knights never share a tower with peasants
           spawnSmallKnights(newObs);
@@ -1658,7 +1670,7 @@ function shootFire() {
       
       royalHeads++;
       royalHeadTypes.push(royalType);
-      cutsceneNoble = randomNoble();
+      cutsceneNoble = randomNoble(royalType);
       royalHeadNobles.push(cutsceneNoble);
 
       if (royalType === 'KING') gameStats.kingsBeheaded++;
@@ -3052,9 +3064,17 @@ window.addEventListener('keydown', (e) => {
             sound.powerup();
 
             floatingTexts.push({
-              x: dragon.x - 30,
-              y: dragon.y - 35,
-              text: 'KHALEESI! +' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x Combo!)',
+              x: Math.max(8, dragon.x - 30),
+              y: dragon.y - 60,
+              text: 'DRAGON QUEEN SARAI!',
+              color: '#f6b93b',
+              alpha: 1.0,
+              vy: -1.8
+            });
+            floatingTexts.push({
+              x: Math.max(8, dragon.x - 30),
+              y: dragon.y - 32,
+              text: '+' + scoreResult.totalPts + ' (' + scoreResult.multiplier + 'x Combo!)',
               color: '#f6b93b',
               alpha: 1.0,
               vy: -1.8
@@ -3618,12 +3638,12 @@ window.addEventListener('keydown', (e) => {
 
       // titles
       ctx.textAlign = 'center';
-      ctx.font = 'bold 30px "Proxima Nova", sans-serif';
+      fitFont('DRAGON QUEEN SARAI RIDES!', 30, width - 24);
       ctx.lineWidth = 6;
       ctx.strokeStyle = '#2a0a3a';
-      ctx.strokeText('KHALEESI RIDES!', cx, cy - size / 2 - 22);
+      ctx.strokeText('DRAGON QUEEN SARAI RIDES!', cx, cy - size / 2 - 22);
       ctx.fillStyle = '#ffffff';
-      ctx.fillText('KHALEESI RIDES!', cx, cy - size / 2 - 22);
+      ctx.fillText('DRAGON QUEEN SARAI RIDES!', cx, cy - size / 2 - 22);
       const bounce = Math.sin(s.t * 0.3) * 3;
       ctx.font = 'bold 36px "Proxima Nova", sans-serif';
       const tg = ctx.createLinearGradient(cx - 120, 0, cx + 120, 0);
@@ -5227,8 +5247,8 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
       } else if (levelDialogueType === 'LEVEL1_CLEAR') {
         const speechLines = [
           '"My beloved Syraxx, you will now',
-          'encounter the royals. DO NOT BURN',
-          'THE ROYALS! Bring me their heads to',
+          'encounter the nobles. DO NOT BURN',
+          'THE NOBLES! Bring me their heads to',
           'mount on the city walls!"'
         ];
 
@@ -5277,8 +5297,8 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
           { label: "⚔️ Peasants Slain:", val: `${gameStats.villagersKilled}` },
           { label: "🏹 Archers Defeated:", val: `${gameStats.archersKilled}` },
           { label: "💥 Trebuchets Wrecked:", val: `${gameStats.trebuchetsDestroyed}` },
-          { label: "👑 Royals Beheaded:", val: `${gameStats.kingsBeheaded + gameStats.queensBeheaded}` },
-          { label: "👸 Khaleesi Rescues:", val: `${gameStats.khaleesiRescues}` }
+          { label: "👑 Nobles Beheaded:", val: `${gameStats.kingsBeheaded + gameStats.queensBeheaded}` },
+          { label: "👸 Queen Sarai Rescues:", val: `${gameStats.khaleesiRescues}` }
         ];
 
         lines.forEach((item, idx) => {
@@ -5516,7 +5536,7 @@ function drawMasonry(rx, ry, rw, rh, pal, owner) {
         const lines = [
           '"I\'m sorry beloved, you can\'t',
           'continue without the severed',
-          'head of a royal."'
+          'head of a noble."'
         ];
         lines.forEach((l, idx) => {
           ctx.fillText(l, width / 2, bY + 32 + (idx * 24));
@@ -6084,7 +6104,13 @@ function updateBossLogic() {
 
   const gY = height - groundHeight;
 
-  if (dragon.y + dragon.size / 2 >= gY || dragon.y - dragon.size / 2 <= 0) {
+  // The top of the screen is just a ceiling: stop there, no damage, no recentering.
+  if (dragon.y - dragon.size / 2 < 0) {
+    dragon.y = dragon.size / 2;
+    if (dragon.velocity < 0) dragon.velocity = 0;
+  }
+
+  if (dragon.y + dragon.size / 2 >= gY) {
     if (!khaleesiMounted) {
       triggerHit();
       if (lives > 0) {
@@ -8748,6 +8774,20 @@ const PRO_CODE_MEADOW = 22, PRO_CODE_VILLAGE = 31;   // save-code level characte
 LEVEL_DURATIONS[PRO_MEADOW] = 100;
 LEVEL_DURATIONS[PRO_VILLAGE] = 95;
 const PRO_SPEED = 2.5;                // world scroll, px per frame
+const FEST_APPROACH_SPEED = 1.1;      // slower scroll while the festival hall comes in, so the roof is easier to land on
+const PRO_PTS_SHEEP = 250, PRO_PTS_ROOF = 500, PRO_PTS_SING = 50;
+// current world scroll: eases down to FEST_APPROACH_SPEED as the festival hall approaches
+function proSpeed() {
+  const F = pro && pro.fest;
+  if (!F || F.phase !== 'approach') return PRO_SPEED;
+  const k = Math.max(0, Math.min(1, (width + 260 - F.ent.x) / 260));
+  return PRO_SPEED + (FEST_APPROACH_SPEED - PRO_SPEED) * k;
+}
+// score points with a floating label
+function proScore(pts, label, x, y, color) {
+  const r = addScore(pts);
+  floatingTexts.push({ x: x, y: y, text: label + ' +' + r.totalPts, color: color, alpha: 1.0, vy: -1.3 });
+}
 const PRO_SNATCH_DX = 30;             // how close (horizontally) the dragon must be to grab a sheep
 const PRO_SNATCH_DY = 44;             // ...and how far above the ground its feet may be
 const PRO_CARRY_FRAMES = 80;          // the sheep dangles this long before Syraxx eats it
@@ -8979,7 +9019,7 @@ function updateSunnyAmbient() {
   if (!sunnyScene()) return;
   const moving = state === 'SPLASH' || state === 'START' || (state === 'PLAYING' && inPrologue() && !(pro && pro.wall && pro.wall.stopped) && !festBusy());
   if (moving) {
-    const s = (state === 'PLAYING') ? PRO_SPEED : 1.2;
+    const s = (state === 'PLAYING') ? proSpeed() : 1.2;
     sunnyScroll += s;
     if (state !== 'PLAYING') backgroundParallaxX += 0.25;
   }
@@ -9018,7 +9058,7 @@ function updatePrologue() {
 
   const gY = height - groundHeight;
   const stopped = P.wall && P.wall.stopped;
-  const shift = stopped ? 0 : PRO_SPEED;
+  const shift = stopped ? 0 : proSpeed();
   if (!stopped) backgroundParallaxX += 0.4;
 
   // flight physics (same as the main game)
@@ -9170,7 +9210,7 @@ function proUpdateSheep(gY) {
         particles.push({ x: dragon.x + 30, y: dragon.y + 4, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.8) * 4,
                          size: 3 + Math.random() * 4, life: 30 + Math.random() * 20, color: Math.random() < 0.8 ? '#ffffff' : '#e8e2d0' });
       }
-      floatingTexts.push({ x: dragon.x + 10, y: dragon.y - 30, text: 'CHOMP!', color: '#ffffff', alpha: 1.0, vy: -1.4 });
+      proScore(PRO_PTS_SHEEP, 'CHOMP!', dragon.x + 10, dragon.y - 30, '#ffffff');
       sound.knightHit();
       if (lives < 3) {   // a good meal heals Syraxx
         lives = 3;
@@ -9189,7 +9229,7 @@ function proUpdateSheep(gY) {
   if (pch) {
     pch.t++;
     const tgt = pch.shepherd && !pch.shepherd.gone ? pch.shepherd.x + 10 : pch.tx;
-    if (!pch.shepherd) pch.tx -= PRO_SPEED;
+    if (!pch.shepherd) pch.tx -= proSpeed();
     const u = Math.min(1, pch.t / PRO_POUCH_FRAMES);
     const ty = proGroundY(tgt) - 18;
     pch.x = pch.sx + (tgt - pch.sx) * u;
@@ -9210,7 +9250,7 @@ function proUpdateSheep(gY) {
       P.pouch = null;
     }
   }
-  P.coins.forEach(c => { c.life--; c.x -= PRO_SPEED * 0.5; });
+  P.coins.forEach(c => { c.life--; c.x -= proSpeed() * 0.5; });
   P.coins = P.coins.filter(c => c.life > 0);
 }
 
@@ -9285,7 +9325,7 @@ const FEST_POLE_DX = 112;           // maypole position within the square
 const FEST_W = FEST_HALL_W + FEST_GAP + FEST_SQUARE_W;
 const FEST_LAND_FRAMES = 40, FEST_SING_FRAMES = 480, FEST_IMG_FRAMES = 270, FEST_AFTER_FRAMES = 230;
 const FEST_CAPTIONS = [
-  'The whole village sang together, and Khaleesi sang loudest of all...',
+  'The whole village sang together, and Dragon Queen Sarai sang loudest of all...',
   '...while Syraxx spread his great wings and flapped along to the music.'
 ];
 const danceImg1 = new Image(); danceImg1.src = 'assets/images/dance1.jpg';
@@ -9350,6 +9390,7 @@ function festApproach() {
     F.from = { x: dragon.x, y: dragon.y };
     isHoldingAction = false; dragon.vx = 0;
     sound.powerup();
+    proScore(PRO_PTS_ROOF, 'NICE LANDING!', dragon.x - 30, dragon.y - 40, '#fff3a0');
     return;
   }
   if (e.x + FEST_HALL_W < dragon.x - dragon.size) {
@@ -9475,6 +9516,7 @@ function festSing() {
   F.singCool = 14;
   F.singT = 30;
   playSingChime();
+  proScore(PRO_PTS_SING, '♪', dragon.x + proRand(-10, 20), dragon.y - 50, '#bfe6ff');
   dragon.wingState = 1;
   F.ent.crowd.cheer = 40;
   for (let i = 0; i < 9; i++) {
@@ -9499,7 +9541,7 @@ const CAP_IMG2 = CAP_IMG1 + CAP_IMG_FRAMES;
 const CAP_END = CAP_IMG2 + CAP_IMG_FRAMES;
 const CAP_FALL_LINE = '"Hold on to me, Syraxx... whatever they do to us, I will find you again."';
 const CAP_IMG_CAPTIONS = [
-  'They cut Khaleesi from the net and dragged her away...',
+  'They cut Dragon Queen Sarai from the net and dragged her away...',
   '...but Syraxx woke, and broke free.'
 ];
 const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.jpg';
@@ -10915,9 +10957,9 @@ function drawCapturedMessage() {
   ctx.fillStyle = 'rgba(5, 5, 12, 0.55)';
   ctx.fillRect(0, 0, width, height);
   ctx.fillStyle = '#e74c3c';
-  ctx.font = 'bold 24px "Proxima Nova", sans-serif';
+  fitFont('DRAGON QUEEN SARAI HAS BEEN TAKEN', 24, width - 24);
   ctx.textAlign = 'center';
-  ctx.fillText('KHALEESI HAS BEEN TAKEN', width / 2, height / 2 - 185);
+  ctx.fillText('DRAGON QUEEN SARAI HAS BEEN TAKEN', width / 2, height / 2 - 185);
   drawStoryMessage(fullStoryText, 'TAP TO CONTINUE');
 }
 </script>

@@ -179,7 +179,7 @@
             sound.queenEntrance();
           }
 
-          showKhaleesiBanner('"Look Syraxx, a royal. Don\'t burn them, bring me their head!"', 240);
+          showKhaleesiBanner('"Look Syraxx, a noble. Don\'t burn them, bring me their head!"', 240);
         } else if (currentLevel >= 2 && Math.random() < (currentLevel >= 5 ? 0.6 : (currentLevel >= 4 ? 0.4 : 0.25))) {
           // armored knights never share a tower with peasants
           spawnSmallKnights(newObs);
@@ -255,7 +255,7 @@ function shootFire() {
       
       royalHeads++;
       royalHeadTypes.push(royalType);
-      cutsceneNoble = randomNoble();
+      cutsceneNoble = randomNoble(royalType);
       royalHeadNobles.push(cutsceneNoble);
 
       if (royalType === 'KING') gameStats.kingsBeheaded++;

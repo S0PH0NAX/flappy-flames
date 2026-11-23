@@ -13,6 +13,20 @@ const PRO_CODE_MEADOW = 22, PRO_CODE_VILLAGE = 31;   // save-code level characte
 LEVEL_DURATIONS[PRO_MEADOW] = 100;
 LEVEL_DURATIONS[PRO_VILLAGE] = 95;
 const PRO_SPEED = 2.5;                // world scroll, px per frame
+const FEST_APPROACH_SPEED = 1.1;      // slower scroll while the festival hall comes in, so the roof is easier to land on
+const PRO_PTS_SHEEP = 250, PRO_PTS_ROOF = 500, PRO_PTS_SING = 50;
+// current world scroll: eases down to FEST_APPROACH_SPEED as the festival hall approaches
+function proSpeed() {
+  const F = pro && pro.fest;
+  if (!F || F.phase !== 'approach') return PRO_SPEED;
+  const k = Math.max(0, Math.min(1, (width + 260 - F.ent.x) / 260));
+  return PRO_SPEED + (FEST_APPROACH_SPEED - PRO_SPEED) * k;
+}
+// score points with a floating label
+function proScore(pts, label, x, y, color) {
+  const r = addScore(pts);
+  floatingTexts.push({ x: x, y: y, text: label + ' +' + r.totalPts, color: color, alpha: 1.0, vy: -1.3 });
+}
 const PRO_SNATCH_DX = 30;             // how close (horizontally) the dragon must be to grab a sheep
 const PRO_SNATCH_DY = 44;             // ...and how far above the ground its feet may be
 const PRO_CARRY_FRAMES = 80;          // the sheep dangles this long before Syraxx eats it
@@ -244,7 +258,7 @@ function updateSunnyAmbient() {
   if (!sunnyScene()) return;
   const moving = state === 'SPLASH' || state === 'START' || (state === 'PLAYING' && inPrologue() && !(pro && pro.wall && pro.wall.stopped) && !festBusy());
   if (moving) {
-    const s = (state === 'PLAYING') ? PRO_SPEED : 1.2;
+    const s = (state === 'PLAYING') ? proSpeed() : 1.2;
     sunnyScroll += s;
     if (state !== 'PLAYING') backgroundParallaxX += 0.25;
   }
@@ -283,7 +297,7 @@ function updatePrologue() {
 
   const gY = height - groundHeight;
   const stopped = P.wall && P.wall.stopped;
-  const shift = stopped ? 0 : PRO_SPEED;
+  const shift = stopped ? 0 : proSpeed();
   if (!stopped) backgroundParallaxX += 0.4;
 
   // flight physics (same as the main game)
@@ -435,7 +449,7 @@ function proUpdateSheep(gY) {
         particles.push({ x: dragon.x + 30, y: dragon.y + 4, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.8) * 4,
                          size: 3 + Math.random() * 4, life: 30 + Math.random() * 20, color: Math.random() < 0.8 ? '#ffffff' : '#e8e2d0' });
       }
-      floatingTexts.push({ x: dragon.x + 10, y: dragon.y - 30, text: 'CHOMP!', color: '#ffffff', alpha: 1.0, vy: -1.4 });
+      proScore(PRO_PTS_SHEEP, 'CHOMP!', dragon.x + 10, dragon.y - 30, '#ffffff');
       sound.knightHit();
       if (lives < 3) {   // a good meal heals Syraxx
         lives = 3;
@@ -454,7 +468,7 @@ function proUpdateSheep(gY) {
   if (pch) {
     pch.t++;
     const tgt = pch.shepherd && !pch.shepherd.gone ? pch.shepherd.x + 10 : pch.tx;
-    if (!pch.shepherd) pch.tx -= PRO_SPEED;
+    if (!pch.shepherd) pch.tx -= proSpeed();
     const u = Math.min(1, pch.t / PRO_POUCH_FRAMES);
     const ty = proGroundY(tgt) - 18;
     pch.x = pch.sx + (tgt - pch.sx) * u;
@@ -475,7 +489,7 @@ function proUpdateSheep(gY) {
       P.pouch = null;
     }
   }
-  P.coins.forEach(c => { c.life--; c.x -= PRO_SPEED * 0.5; });
+  P.coins.forEach(c => { c.life--; c.x -= proSpeed() * 0.5; });
   P.coins = P.coins.filter(c => c.life > 0);
 }
 
@@ -550,7 +564,7 @@ const FEST_POLE_DX = 112;           // maypole position within the square
 const FEST_W = FEST_HALL_W + FEST_GAP + FEST_SQUARE_W;
 const FEST_LAND_FRAMES = 40, FEST_SING_FRAMES = 480, FEST_IMG_FRAMES = 270, FEST_AFTER_FRAMES = 230;
 const FEST_CAPTIONS = [
-  'The whole village sang together, and Khaleesi sang loudest of all...',
+  'The whole village sang together, and Dragon Queen Sarai sang loudest of all...',
   '...while Syraxx spread his great wings and flapped along to the music.'
 ];
 const danceImg1 = new Image(); danceImg1.src = 'assets/images/dance1.jpg';
@@ -615,6 +629,7 @@ function festApproach() {
     F.from = { x: dragon.x, y: dragon.y };
     isHoldingAction = false; dragon.vx = 0;
     sound.powerup();
+    proScore(PRO_PTS_ROOF, 'NICE LANDING!', dragon.x - 30, dragon.y - 40, '#fff3a0');
     return;
   }
   if (e.x + FEST_HALL_W < dragon.x - dragon.size) {
@@ -740,6 +755,7 @@ function festSing() {
   F.singCool = 14;
   F.singT = 30;
   playSingChime();
+  proScore(PRO_PTS_SING, '♪', dragon.x + proRand(-10, 20), dragon.y - 50, '#bfe6ff');
   dragon.wingState = 1;
   F.ent.crowd.cheer = 40;
   for (let i = 0; i < 9; i++) {
@@ -764,7 +780,7 @@ const CAP_IMG2 = CAP_IMG1 + CAP_IMG_FRAMES;
 const CAP_END = CAP_IMG2 + CAP_IMG_FRAMES;
 const CAP_FALL_LINE = '"Hold on to me, Syraxx... whatever they do to us, I will find you again."';
 const CAP_IMG_CAPTIONS = [
-  'They cut Khaleesi from the net and dragged her away...',
+  'They cut Dragon Queen Sarai from the net and dragged her away...',
   '...but Syraxx woke, and broke free.'
 ];
 const captureImg1 = new Image(); captureImg1.src = 'assets/images/capture1.jpg';
