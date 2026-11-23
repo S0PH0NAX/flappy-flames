@@ -27,29 +27,35 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Flappy Flame Gameplay - Action"
+      "label": "Burn the slavers' towers"
     },
     {
       "src": "screenshot2.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Fire breathing action"
+      "label": "Dragon Queen Sarai rides!"
     },
     {
       "src": "screenshot3.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Find Dragon Queen Sarai"
+      "label": "Battle the siege-tower boss"
     },
-       {
+    {
       "src": "screenshot4.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "Dragon Queen Crush!"
+      "label": "Sing at the spring festival"
+    },
+    {
+      "src": "screenshot5.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Take a noble's head"
     }
-   
   ]
 }

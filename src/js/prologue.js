@@ -710,7 +710,7 @@ const SING_SCALE = [523.25, 587.33, 659.25, 783.99, 880.0, 1046.5, 1174.66];   /
 
 function festCanSing() {
   const F = pro && pro.fest;
-  return state === 'PLAYING' && !!F && (F.phase === 'land' || F.phase === 'sing');
+  return state === 'PLAYING' && inPrologue() && !!F && (F.phase === 'land' || F.phase === 'sing');
 }
 
 function updateSingButton() {
