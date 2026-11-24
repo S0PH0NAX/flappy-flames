@@ -662,6 +662,7 @@
 // audio.js — SoundEngine (Web Audio synth + <audio> element playback)
 // Classic script: shares global scope with the other src/js files. Load order matters (see index.html).
 
+    const BONK_MIN_GAP = 0.22;   // seconds between peasant bonks
     class SoundEngine {
       constructor() {
         this.ctx = null;
@@ -754,7 +755,7 @@
         const vol = rapid ? 0.55 : 1;
         const len = rapid ? 0.32 : 0.5;
         const out = c.createGain();
-        out.gain.value = 0.9 * vol;
+        out.gain.value = 0.38 * vol;   // kept below the music and other effects
         out.connect(c.destination);
 
         // the rush of flame
@@ -812,14 +813,15 @@
       }
 
       // Cartoon "bonk" for peasants knocked flying: a quick falling boing with a woody knock and a click.
-      // Pitch varies a little each time, and a crowd hit at once is spread out instead of stacking.
+      // Pitch varies a little each time. At most one plays every BONK_MIN_GAP seconds.
       bonk() {
         if (this.muted || this.hidden) return;
         this.init();
         const c = this.ctx;
         if (!c) return;
-        let now = c.currentTime;
-        if (this._lastBonk != null && now - this._lastBonk < 0.045) now = this._lastBonk + 0.045;   // stagger a crowd
+        const now = c.currentTime;
+        // one bonk per wing beat: a crowd hit at once (or fast flapping) plays a single bonk, not a trill
+        if (this._lastBonk != null && now - this._lastBonk < BONK_MIN_GAP) return;
         this._lastBonk = now;
         const pitch = 0.85 + Math.random() * 0.35;
         const out = c.createGain();

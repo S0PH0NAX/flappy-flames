@@ -25,7 +25,7 @@ They're plain classic scripts sharing one global scope. **Don't use ES modules**
 Top-level code runs in load order, so anything a file uses *immediately* at load time must already be defined in an earlier file. Function bodies can reference anything.
 
 1. `config.js`: constants, global state variables, DOM element refs, canvas + `resize()`, image loading, dragon/entity arrays
-2. `audio.js`: `SoundEngine` class and the `sound` instance. Fire (`fireRoar()`) and the wing-knockback `bonk()` are synthesized in Web Audio (shared `noiseBuffer()`): fire is a noise "fwoosh" swept bright to dark with a low body and crackles (lighter when shots come within 0.12s); bonk is a falling boing, woody knock and click, staggered 45ms apart when a crowd is hit at once. `knightHit()` is still used for armor clangs, chests and the like.
+2. `audio.js`: `SoundEngine` class and the `sound` instance. Fire (`fireRoar()`) and the wing-knockback `bonk()` are synthesized in Web Audio (shared `noiseBuffer()`): fire is a noise "fwoosh" swept bright to dark with a low body and crackles (lighter when shots come within 0.12s); fire is kept quiet relative to the music (output gain 0.38). bonk is a falling boing, woody knock and click; at most one plays every `BONK_MIN_GAP` (0.22s), so a crowd or fast flapping makes one bonk, not a trill. `knightHit()` is still used for armor clangs, chests and the like.
 3. `ui.js`: HUD updates, pause, level progression, score/hearts, save codes, share graphic, `resetGame()`
 4. `entities.js`: `spawnObstacle()` (castles, archers, knights, trebuchets, Khaleesis, hearts), `triggerBeheadingCutscene()`
 5. `input.js`: touch/mouse/keyboard input, menu click handling, button listeners
