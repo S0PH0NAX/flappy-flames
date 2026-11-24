@@ -383,7 +383,7 @@
                   const pushDir = kx >= dragon.x ? 1 : -1;
                   k.knockbackVelocity = pushDir * (12.0 + Math.random() * 6.0);
                   k.stunTimer = 22;
-                  sound.knightHit();
+                  sound.bonk();
                 }
               }
             });

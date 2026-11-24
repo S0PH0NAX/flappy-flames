@@ -44,21 +44,39 @@
       const spikeRed = shielded ? '#f08020' : '#c0392b';
       const hornCream = '#f5e6d3';
 
-      const cyanWing = khaleesiMounted ? strobeColor : (shielded ? '#fff0a0' : '#00d2d3');
-      const navyBone = '#222f3e';
+      // wings: crimson membrane with a lighter sheen, dark maroon bones (the original cyan sprite is in
+      // archive/old-versions and git tag dragon-sprite-v1)
+      const wingMembrane = khaleesiMounted ? strobeColor : (shielded ? '#fff0a0' : '#b8322e');
+      const wingSheen = khaleesiMounted ? '#ffffff' : (shielded ? '#fffbe0' : '#e2553a');
+      const wingBone = shielded ? '#a87a10' : '#4a1512';
+      const clawCream = '#f5e6d3';
+      const highlight = khaleesiMounted ? '#ffffff' : (shielded ? '#fff3b0' : '#ffa36b');
 
+      // tail with a spade tip
       ctx.fillStyle = darkOrange;
       ctx.fillRect(-12 * p, 1 * p, 4 * p, 3 * p);
       ctx.fillRect(-15 * p, -1 * p, 4 * p, 3 * p);
       ctx.fillStyle = spikeRed;
+      ctx.fillRect(-18 * p, -2 * p, 3 * p, 2 * p);
+      ctx.fillRect(-17 * p, 0 * p, 2 * p, 2 * p);
+      ctx.fillRect(-19 * p, -3 * p, 2 * p, 1 * p);
+      // back spikes
       ctx.fillRect(-10 * p, -3 * p, 2 * p, 3 * p);
+      ctx.fillRect(-7 * p, -5 * p, 2 * p, 2 * p);
       ctx.fillRect(-5 * p, -6 * p, 2 * p, 3 * p);
 
+      // legs with cream claws
       ctx.fillStyle = darkOrange;
       ctx.fillRect(-7 * p, 5 * p, 4 * p, 4 * p);
+      ctx.fillStyle = clawCream;
+      ctx.fillRect(-7 * p, 9 * p, 1 * p, 1 * p);
+      ctx.fillRect(-5 * p, 9 * p, 1 * p, 1 * p);
+      ctx.fillRect(-3.5 * p, 9 * p, 1 * p, 1 * p);
 
       ctx.fillStyle = mainOrange;
       ctx.fillRect(-9 * p, -3 * p, 13 * p, 10 * p);
+      ctx.fillStyle = darkOrange;                 // shaded underside
+      ctx.fillRect(-9 * p, 6 * p, 6 * p, 1 * p);
 
       ctx.fillStyle = bellyYellow;
       ctx.fillRect(-3 * p, 1 * p, 7 * p, 6 * p);
@@ -69,11 +87,18 @@
       ctx.fillStyle = mainOrange;
       ctx.fillRect(0 * p, -7 * p, 12 * p, 8 * p);
       ctx.fillRect(7 * p, -4 * p, 7 * p, 6 * p);
+      ctx.fillStyle = highlight;                  // light along the top of the head and snout
+      ctx.fillRect(0 * p, -7 * p, 4 * p, 1 * p);
+      ctx.fillRect(9 * p, -4 * p, 4 * p, 1 * p);
       ctx.fillStyle = darkOrange;
       ctx.fillRect(12 * p, -3 * p, 1 * p, 1 * p);
+      ctx.fillRect(7 * p, 1 * p, 7 * p, 1 * p);   // jaw line
 
       ctx.fillStyle = '#ff7675';
       ctx.fillRect(5 * p, 0 * p, 3 * p, 2 * p);
+
+      ctx.fillStyle = clawCream;                  // a little fang
+      ctx.fillRect(11 * p, 2 * p, 1 * p, 1 * p);
 
       ctx.fillStyle = hornCream;
       ctx.fillRect(-1 * p, -10 * p, 3 * p, 4 * p);
@@ -85,6 +110,8 @@
       ctx.fillRect(6 * p, -5 * p, 3 * p, 4 * p);
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(6 * p, -5 * p, 1 * p, 1 * p);
+      ctx.fillStyle = darkOrange;                 // brow ridge for a bolder look
+      ctx.fillRect(4 * p, -7 * p, 6 * p, 1 * p);
 
       dragon.wingState *= 0.84;
       const flapY = Math.round(dragon.wingState * 10) * p;
@@ -92,12 +119,17 @@
       ctx.save();
       ctx.translate(0, flapY);
 
-      ctx.fillStyle = cyanWing;
+      ctx.fillStyle = wingMembrane;
       ctx.fillRect(-12 * p, -13 * p, 10 * p, 10 * p);
       ctx.fillRect(-8 * p, -8 * p, 8 * p, 7 * p);
       ctx.fillRect(-4 * p, -4 * p, 6 * p, 5 * p);
+      ctx.fillStyle = wingSheen;                  // lighter panels between the bones
+      ctx.fillRect(-12 * p, -11 * p, 2 * p, 4 * p);
+      ctx.fillRect(-8 * p, -11 * p, 2 * p, 5 * p);
+      ctx.fillRect(-4 * p, -9 * p, 2 * p, 4 * p);
+      ctx.fillRect(0 * p, -7 * p, 2 * p, 3 * p);
 
-      ctx.fillStyle = navyBone;
+      ctx.fillStyle = wingBone;
       ctx.fillRect(-14 * p, -15 * p, 4 * p, 4 * p);
       ctx.fillRect(-10 * p, -13 * p, 4 * p, 2 * p);
       ctx.fillRect(-6 * p, -11 * p, 4 * p, 2 * p);
@@ -106,6 +138,9 @@
       ctx.fillRect(-14 * p, -11 * p, 2 * p, 6 * p);
       ctx.fillRect(-10 * p, -5 * p, 2 * p, 4 * p);
       ctx.fillRect(-5 * p, -1 * p, 2 * p, 3 * p);
+      ctx.fillStyle = clawCream;                  // claws at the wing tips
+      ctx.fillRect(-15 * p, -16 * p, 1 * p, 1 * p);
+      ctx.fillRect(-14 * p, -5 * p, 1 * p, 1 * p);
 
       ctx.restore();
 

@@ -11,7 +11,7 @@ Single-page canvas game. Open `index.html` directly (double-click / `file:///` w
 - `assets/audio/` — only the music/SFX the game loads (MP3/WAV/OGG/FLAC), plus the CC0 license note for the wing flap.
 - `khaleesi0900.html` — untouched pre-refactor backup.
 - `khaleesi0900-bundle.html` — generated single-file build. Don't edit it by hand.
-- `archive/` — not used by the game:
+- `archive/` — not used by the game. NOTE: `old-versions/` (earlier builds), `source-packs/` and `google-play-package/` (with **`signing.keystore`**) were moved out to `~/Desktop/flappy archive/`; `archive/old-versions/` here only holds `render-dragon-v1-original-sprite.js` (the cyan-winged sprite, also git tag `dragon-sprite-v1`). The list below is the original layout:
   - `old-versions/` — earlier builds and snippets. They expect assets in the root folder, so they won't play sound or show art.
   - `google-play-package/` — the old Android build (.aab/.apk), **including `signing.keystore`**. Keep it: you need that key to publish updates.
   - `store-listing/` — store screenshots.
@@ -25,14 +25,14 @@ They're plain classic scripts sharing one global scope. **Don't use ES modules**
 Top-level code runs in load order, so anything a file uses *immediately* at load time must already be defined in an earlier file. Function bodies can reference anything.
 
 1. `config.js`: constants, global state variables, DOM element refs, canvas + `resize()`, image loading, dragon/entity arrays
-2. `audio.js`: `SoundEngine` class and the `sound` instance
+2. `audio.js`: `SoundEngine` class and the `sound` instance. Fire (`fireRoar()`) and the wing-knockback `bonk()` are synthesized in Web Audio (shared `noiseBuffer()`): fire is a noise "fwoosh" swept bright to dark with a low body and crackles (lighter when shots come within 0.12s); bonk is a falling boing, woody knock and click, staggered 45ms apart when a crowd is hit at once. `knightHit()` is still used for armor clangs, chests and the like.
 3. `ui.js`: HUD updates, pause, level progression, score/hearts, save codes, share graphic, `resetGame()`
 4. `entities.js`: `spawnObstacle()` (castles, archers, knights, trebuchets, Khaleesis, hearts), `triggerBeheadingCutscene()`
 5. `input.js`: touch/mouse/keyboard input, menu click handling, button listeners
 6. `render-sky.js`: sky gradient, starfield band, twinkling stars, full moon with the real near-side maria and Tycho rays, two cloud layers, far and near parallax castles. Static layers are cached offscreen per size and level (`bgLayer`); `hash2()` gives flicker-free noise.
 7. `render-world.js`: ground, ground flames, battlements, archers and arrows
 8. `render-characters.js`: Khaleesi, mounted HUD, castle walls (obstacles) with arched wooden doors (`drawWoodenDoor`), collectable hearts
-9. `render-dragon.js`: `drawDragon()`, the original blocky sprite from khaleesi0900.html. While the gold shield is held it turns gold, glows, and holds the shield across its belly (`drawHeldShield`).
+9. `render-dragon.js`: `drawDragon()`, the blocky sprite from khaleesi0900.html, polished: crimson wings with a lighter sheen and maroon bones (the original had cyan wings; it is saved as git tag `dragon-sprite-v1` and in `archive/old-versions/`), brow ridge, fang, head highlight, spade tail tip, extra back spike, cream claws. While the gold shield is held it turns gold, glows, and holds the shield across its belly (`drawHeldShield`).
 10. `render-enemies.js`: trebuchets, boulders, `drawKnights()` (villager and royal movement and states)
 11. `render-people.js`: villager sprite (random headwear, beard, apron, skin tone; pitchfork or torch) and king/queen sprites
 12. `render-masonry.js`: `drawMasonry()`, with 4 cached stone styles (brick, fieldstone, ashlar with quoins, Flemish bond) plus weathering; charred versions get soot and embers

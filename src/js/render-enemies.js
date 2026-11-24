@@ -296,7 +296,7 @@
           k.state = 'FALLING';
           k.fallVelocityY = -4;
           k.knockbackVelocity = (kx + 11 >= dragon.x ? 1 : -1) * 7;
-          sound.knightHit();
+          sound.bonk();
         }
 
         const hasFireOnKnight = k.state === 'ALIVE' && (obs.isCharred || obs.charProgress > 0 || obs.surfaceFlames.some(sf => Math.abs((obs.x + sf.relX) - kx) < 24));

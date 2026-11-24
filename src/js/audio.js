@@ -69,29 +69,137 @@
         this.playFlapSound();
       }
 
+      // one second of white noise, made once and reused by the fire and bonk sounds
+      noiseBuffer() {
+        if (!this._noise) {
+          const sr = this.ctx.sampleRate;
+          this._noise = this.ctx.createBuffer(1, sr, sr);
+          const d = this._noise.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        }
+        return this._noise;
+      }
+
+      // Dragon fire: a breathy "fwoosh" (noise swept from bright to dark), a low rumble under it,
+      // and a few random crackles. Rapid shots get a lighter version so auto-fire doesn't pile up.
       fireRoar() {
-    if (this.muted) return;
-    this.init();
-    
-    // Create a low frequency pitch sweep for the fire roar core
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sawtooth';
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    
-    // Pitch drop simulation (fire release crackle into low rumble)
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.35);
-    
-    // Volume envelope (quick attack, smooth decay)
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-    
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.35);
-}
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const rapid = this._lastFire != null && now - this._lastFire < 0.12;
+        this._lastFire = now;
+        const vol = rapid ? 0.55 : 1;
+        const len = rapid ? 0.32 : 0.5;
+        const out = c.createGain();
+        out.gain.value = 0.9 * vol;
+        out.connect(c.destination);
+
+        // the rush of flame
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuffer();
+        src.playbackRate.value = 0.9 + Math.random() * 0.2;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 0.7;
+        bp.frequency.setValueAtTime(2600, now);
+        bp.frequency.exponentialRampToValueAtTime(420, now + len);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 5200;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.5, now + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.22, now + len * 0.45);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        src.connect(bp).connect(lp).connect(g).connect(out);
+        src.start(now, Math.random() * 0.4);
+        src.stop(now + len + 0.05);
+
+        // low body underneath
+        const o = c.createOscillator();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(110, now);
+        o.frequency.exponentialRampToValueAtTime(48, now + len);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.22, now + 0.04);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + len * 0.9);
+        o.connect(og).connect(out);
+        o.start(now);
+        o.stop(now + len);
+
+        // crackles
+        if (!rapid) {
+          for (let i = 0; i < 5; i++) {
+            const t = now + 0.05 + Math.random() * (len - 0.1);
+            const cs = c.createBufferSource();
+            cs.buffer = this.noiseBuffer();
+            const hp = c.createBiquadFilter();
+            hp.type = 'highpass';
+            hp.frequency.value = 2500 + Math.random() * 2500;
+            const cg = c.createGain();
+            cg.gain.setValueAtTime(0.0001, t);
+            cg.gain.exponentialRampToValueAtTime(0.12 + Math.random() * 0.1, t + 0.003);
+            cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+            cs.connect(hp).connect(cg).connect(out);
+            cs.start(t, Math.random() * 0.8);
+            cs.stop(t + 0.03);
+          }
+        }
+      }
+
+      // Cartoon "bonk" for peasants knocked flying: a quick falling boing with a woody knock and a click.
+      // Pitch varies a little each time, and a crowd hit at once is spread out instead of stacking.
+      bonk() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        let now = c.currentTime;
+        if (this._lastBonk != null && now - this._lastBonk < 0.045) now = this._lastBonk + 0.045;   // stagger a crowd
+        this._lastBonk = now;
+        const pitch = 0.85 + Math.random() * 0.35;
+        const out = c.createGain();
+        out.gain.value = 0.6;
+        out.connect(c.destination);
+
+        const o = c.createOscillator();             // the boing
+        o.type = 'sine';
+        o.frequency.setValueAtTime(620 * pitch, now);
+        o.frequency.exponentialRampToValueAtTime(150 * pitch, now + 0.13);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.42, now + 0.004);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        o.connect(og).connect(out);
+        o.start(now); o.stop(now + 0.22);
+
+        const w = c.createOscillator();             // woody knock
+        w.type = 'triangle';
+        w.frequency.setValueAtTime(980 * pitch, now);
+        w.frequency.exponentialRampToValueAtTime(420 * pitch, now + 0.05);
+        const wg = c.createGain();
+        wg.gain.setValueAtTime(0.0001, now);
+        wg.gain.exponentialRampToValueAtTime(0.18, now + 0.002);
+        wg.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+        w.connect(wg).connect(out);
+        w.start(now); w.stop(now + 0.08);
+
+        const n = c.createBufferSource();           // impact click
+        n.buffer = this.noiseBuffer();
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 2200;
+        bp.Q.value = 1.2;
+        const ng = c.createGain();
+        ng.gain.setValueAtTime(0.0001, now);
+        ng.gain.exponentialRampToValueAtTime(0.3, now + 0.002);
+        ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+        n.connect(bp).connect(ng).connect(out);
+        n.start(now, Math.random() * 0.8); n.stop(now + 0.04);
+      }
 
       towerDestroy() {
         this.playSoundEffect(sfxRockBreak, 0.15);

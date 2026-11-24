@@ -730,29 +730,137 @@
         this.playFlapSound();
       }
 
+      // one second of white noise, made once and reused by the fire and bonk sounds
+      noiseBuffer() {
+        if (!this._noise) {
+          const sr = this.ctx.sampleRate;
+          this._noise = this.ctx.createBuffer(1, sr, sr);
+          const d = this._noise.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        }
+        return this._noise;
+      }
+
+      // Dragon fire: a breathy "fwoosh" (noise swept from bright to dark), a low rumble under it,
+      // and a few random crackles. Rapid shots get a lighter version so auto-fire doesn't pile up.
       fireRoar() {
-    if (this.muted) return;
-    this.init();
-    
-    // Create a low frequency pitch sweep for the fire roar core
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    
-    osc.type = 'sawtooth';
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    
-    // Pitch drop simulation (fire release crackle into low rumble)
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.35);
-    
-    // Volume envelope (quick attack, smooth decay)
-    gain.gain.setValueAtTime(0.35, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.35);
-    
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.35);
-}
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const rapid = this._lastFire != null && now - this._lastFire < 0.12;
+        this._lastFire = now;
+        const vol = rapid ? 0.55 : 1;
+        const len = rapid ? 0.32 : 0.5;
+        const out = c.createGain();
+        out.gain.value = 0.9 * vol;
+        out.connect(c.destination);
+
+        // the rush of flame
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuffer();
+        src.playbackRate.value = 0.9 + Math.random() * 0.2;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 0.7;
+        bp.frequency.setValueAtTime(2600, now);
+        bp.frequency.exponentialRampToValueAtTime(420, now + len);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 5200;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.5, now + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.22, now + len * 0.45);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        src.connect(bp).connect(lp).connect(g).connect(out);
+        src.start(now, Math.random() * 0.4);
+        src.stop(now + len + 0.05);
+
+        // low body underneath
+        const o = c.createOscillator();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime(110, now);
+        o.frequency.exponentialRampToValueAtTime(48, now + len);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.22, now + 0.04);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + len * 0.9);
+        o.connect(og).connect(out);
+        o.start(now);
+        o.stop(now + len);
+
+        // crackles
+        if (!rapid) {
+          for (let i = 0; i < 5; i++) {
+            const t = now + 0.05 + Math.random() * (len - 0.1);
+            const cs = c.createBufferSource();
+            cs.buffer = this.noiseBuffer();
+            const hp = c.createBiquadFilter();
+            hp.type = 'highpass';
+            hp.frequency.value = 2500 + Math.random() * 2500;
+            const cg = c.createGain();
+            cg.gain.setValueAtTime(0.0001, t);
+            cg.gain.exponentialRampToValueAtTime(0.12 + Math.random() * 0.1, t + 0.003);
+            cg.gain.exponentialRampToValueAtTime(0.0001, t + 0.025);
+            cs.connect(hp).connect(cg).connect(out);
+            cs.start(t, Math.random() * 0.8);
+            cs.stop(t + 0.03);
+          }
+        }
+      }
+
+      // Cartoon "bonk" for peasants knocked flying: a quick falling boing with a woody knock and a click.
+      // Pitch varies a little each time, and a crowd hit at once is spread out instead of stacking.
+      bonk() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        let now = c.currentTime;
+        if (this._lastBonk != null && now - this._lastBonk < 0.045) now = this._lastBonk + 0.045;   // stagger a crowd
+        this._lastBonk = now;
+        const pitch = 0.85 + Math.random() * 0.35;
+        const out = c.createGain();
+        out.gain.value = 0.6;
+        out.connect(c.destination);
+
+        const o = c.createOscillator();             // the boing
+        o.type = 'sine';
+        o.frequency.setValueAtTime(620 * pitch, now);
+        o.frequency.exponentialRampToValueAtTime(150 * pitch, now + 0.13);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.42, now + 0.004);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        o.connect(og).connect(out);
+        o.start(now); o.stop(now + 0.22);
+
+        const w = c.createOscillator();             // woody knock
+        w.type = 'triangle';
+        w.frequency.setValueAtTime(980 * pitch, now);
+        w.frequency.exponentialRampToValueAtTime(420 * pitch, now + 0.05);
+        const wg = c.createGain();
+        wg.gain.setValueAtTime(0.0001, now);
+        wg.gain.exponentialRampToValueAtTime(0.18, now + 0.002);
+        wg.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+        w.connect(wg).connect(out);
+        w.start(now); w.stop(now + 0.08);
+
+        const n = c.createBufferSource();           // impact click
+        n.buffer = this.noiseBuffer();
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.frequency.value = 2200;
+        bp.Q.value = 1.2;
+        const ng = c.createGain();
+        ng.gain.setValueAtTime(0.0001, now);
+        ng.gain.exponentialRampToValueAtTime(0.3, now + 0.002);
+        ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+        n.connect(bp).connect(ng).connect(out);
+        n.start(now, Math.random() * 0.8); n.stop(now + 0.04);
+      }
 
       towerDestroy() {
         this.playSoundEffect(sfxRockBreak, 0.15);
@@ -3729,21 +3837,39 @@ window.addEventListener('keydown', (e) => {
       const spikeRed = shielded ? '#f08020' : '#c0392b';
       const hornCream = '#f5e6d3';
 
-      const cyanWing = khaleesiMounted ? strobeColor : (shielded ? '#fff0a0' : '#00d2d3');
-      const navyBone = '#222f3e';
+      // wings: crimson membrane with a lighter sheen, dark maroon bones (the original cyan sprite is in
+      // archive/old-versions and git tag dragon-sprite-v1)
+      const wingMembrane = khaleesiMounted ? strobeColor : (shielded ? '#fff0a0' : '#b8322e');
+      const wingSheen = khaleesiMounted ? '#ffffff' : (shielded ? '#fffbe0' : '#e2553a');
+      const wingBone = shielded ? '#a87a10' : '#4a1512';
+      const clawCream = '#f5e6d3';
+      const highlight = khaleesiMounted ? '#ffffff' : (shielded ? '#fff3b0' : '#ffa36b');
 
+      // tail with a spade tip
       ctx.fillStyle = darkOrange;
       ctx.fillRect(-12 * p, 1 * p, 4 * p, 3 * p);
       ctx.fillRect(-15 * p, -1 * p, 4 * p, 3 * p);
       ctx.fillStyle = spikeRed;
+      ctx.fillRect(-18 * p, -2 * p, 3 * p, 2 * p);
+      ctx.fillRect(-17 * p, 0 * p, 2 * p, 2 * p);
+      ctx.fillRect(-19 * p, -3 * p, 2 * p, 1 * p);
+      // back spikes
       ctx.fillRect(-10 * p, -3 * p, 2 * p, 3 * p);
+      ctx.fillRect(-7 * p, -5 * p, 2 * p, 2 * p);
       ctx.fillRect(-5 * p, -6 * p, 2 * p, 3 * p);
 
+      // legs with cream claws
       ctx.fillStyle = darkOrange;
       ctx.fillRect(-7 * p, 5 * p, 4 * p, 4 * p);
+      ctx.fillStyle = clawCream;
+      ctx.fillRect(-7 * p, 9 * p, 1 * p, 1 * p);
+      ctx.fillRect(-5 * p, 9 * p, 1 * p, 1 * p);
+      ctx.fillRect(-3.5 * p, 9 * p, 1 * p, 1 * p);
 
       ctx.fillStyle = mainOrange;
       ctx.fillRect(-9 * p, -3 * p, 13 * p, 10 * p);
+      ctx.fillStyle = darkOrange;                 // shaded underside
+      ctx.fillRect(-9 * p, 6 * p, 6 * p, 1 * p);
 
       ctx.fillStyle = bellyYellow;
       ctx.fillRect(-3 * p, 1 * p, 7 * p, 6 * p);
@@ -3754,11 +3880,18 @@ window.addEventListener('keydown', (e) => {
       ctx.fillStyle = mainOrange;
       ctx.fillRect(0 * p, -7 * p, 12 * p, 8 * p);
       ctx.fillRect(7 * p, -4 * p, 7 * p, 6 * p);
+      ctx.fillStyle = highlight;                  // light along the top of the head and snout
+      ctx.fillRect(0 * p, -7 * p, 4 * p, 1 * p);
+      ctx.fillRect(9 * p, -4 * p, 4 * p, 1 * p);
       ctx.fillStyle = darkOrange;
       ctx.fillRect(12 * p, -3 * p, 1 * p, 1 * p);
+      ctx.fillRect(7 * p, 1 * p, 7 * p, 1 * p);   // jaw line
 
       ctx.fillStyle = '#ff7675';
       ctx.fillRect(5 * p, 0 * p, 3 * p, 2 * p);
+
+      ctx.fillStyle = clawCream;                  // a little fang
+      ctx.fillRect(11 * p, 2 * p, 1 * p, 1 * p);
 
       ctx.fillStyle = hornCream;
       ctx.fillRect(-1 * p, -10 * p, 3 * p, 4 * p);
@@ -3770,6 +3903,8 @@ window.addEventListener('keydown', (e) => {
       ctx.fillRect(6 * p, -5 * p, 3 * p, 4 * p);
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(6 * p, -5 * p, 1 * p, 1 * p);
+      ctx.fillStyle = darkOrange;                 // brow ridge for a bolder look
+      ctx.fillRect(4 * p, -7 * p, 6 * p, 1 * p);
 
       dragon.wingState *= 0.84;
       const flapY = Math.round(dragon.wingState * 10) * p;
@@ -3777,12 +3912,17 @@ window.addEventListener('keydown', (e) => {
       ctx.save();
       ctx.translate(0, flapY);
 
-      ctx.fillStyle = cyanWing;
+      ctx.fillStyle = wingMembrane;
       ctx.fillRect(-12 * p, -13 * p, 10 * p, 10 * p);
       ctx.fillRect(-8 * p, -8 * p, 8 * p, 7 * p);
       ctx.fillRect(-4 * p, -4 * p, 6 * p, 5 * p);
+      ctx.fillStyle = wingSheen;                  // lighter panels between the bones
+      ctx.fillRect(-12 * p, -11 * p, 2 * p, 4 * p);
+      ctx.fillRect(-8 * p, -11 * p, 2 * p, 5 * p);
+      ctx.fillRect(-4 * p, -9 * p, 2 * p, 4 * p);
+      ctx.fillRect(0 * p, -7 * p, 2 * p, 3 * p);
 
-      ctx.fillStyle = navyBone;
+      ctx.fillStyle = wingBone;
       ctx.fillRect(-14 * p, -15 * p, 4 * p, 4 * p);
       ctx.fillRect(-10 * p, -13 * p, 4 * p, 2 * p);
       ctx.fillRect(-6 * p, -11 * p, 4 * p, 2 * p);
@@ -3791,6 +3931,9 @@ window.addEventListener('keydown', (e) => {
       ctx.fillRect(-14 * p, -11 * p, 2 * p, 6 * p);
       ctx.fillRect(-10 * p, -5 * p, 2 * p, 4 * p);
       ctx.fillRect(-5 * p, -1 * p, 2 * p, 3 * p);
+      ctx.fillStyle = clawCream;                  // claws at the wing tips
+      ctx.fillRect(-15 * p, -16 * p, 1 * p, 1 * p);
+      ctx.fillRect(-14 * p, -5 * p, 1 * p, 1 * p);
 
       ctx.restore();
 
@@ -4119,7 +4262,7 @@ window.addEventListener('keydown', (e) => {
           k.state = 'FALLING';
           k.fallVelocityY = -4;
           k.knockbackVelocity = (kx + 11 >= dragon.x ? 1 : -1) * 7;
-          sound.knightHit();
+          sound.bonk();
         }
 
         const hasFireOnKnight = k.state === 'ALIVE' && (obs.isCharred || obs.charProgress > 0 || obs.surfaceFlames.some(sf => Math.abs((obs.x + sf.relX) - kx) < 24));
@@ -11372,7 +11515,7 @@ function drawCapturedMessage() {
                   const pushDir = kx >= dragon.x ? 1 : -1;
                   k.knockbackVelocity = pushDir * (12.0 + Math.random() * 6.0);
                   k.stunTimer = 22;
-                  sound.knightHit();
+                  sound.bonk();
                 }
               }
             });
