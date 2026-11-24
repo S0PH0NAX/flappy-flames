@@ -80,6 +80,33 @@
       if (w > maxW) ctx.font = 'bold ' + Math.floor(px * maxW / w) + 'px "Proxima Nova", sans-serif';
     }
 
+    // Speech bubbles sized to their text: as wide as the longest line plus padding, as tall as the lines.
+    const SPEECH_PAD_X = 18, SPEECH_PAD_Y = 13;
+    function speechBoxHeight(n, px, lineH) { return SPEECH_PAD_Y * 2 + (n - 1) * lineH + px; }
+    // Draws a white rounded bubble centred on cx with its top at y. `shown` (optional) limits how many
+    // characters are typed out so far; the box is always sized for the full text so it doesn't grow.
+    function drawSpeechBox(lines, cx, y, px, lineH, color, shown) {
+      ctx.font = 'bold ' + px + 'px "Proxima Nova", sans-serif';
+      let longest = 0;
+      lines.forEach(l => { longest = Math.max(longest, ctx.measureText(l).width); });
+      const w = Math.min(width - 24, Math.ceil(longest) + SPEECH_PAD_X * 2);
+      const h = speechBoxHeight(lines.length, px, lineH);
+      const x = cx - w / 2;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      if (ctx.roundRect) ctx.roundRect(x, y, w, h, 12); else ctx.rect(x, y, w, h);
+      ctx.fill();
+      ctx.fillStyle = color || '#000000';
+      ctx.textAlign = 'center';
+      let left = shown == null ? Infinity : shown;
+      lines.forEach((l, i) => {
+        const part = left >= l.length ? l : l.slice(0, Math.max(0, left));
+        left -= l.length + 1;
+        ctx.fillText(part, cx, y + SPEECH_PAD_Y + px * 0.8 + i * lineH);
+      });
+      return { x: x, y: y, w: w, h: h };
+    }
+
     const fullStoryText = [
       '"My beloved Cyndraxx, I have been',
       'captured by the slavers. Burn',

@@ -565,7 +565,7 @@
       if (state === 'BOSS') renderBoss();
 
       if (state === 'SPLASH') {
-        drawStoryMessage(PRO_INVITE_TEXT, 'TAP TO START GAME');
+        drawStoryMessage(PRO_INVITE_TEXT, 'TAP TO START GAME', 'DRAGON QUEEN SARAI');
       } else if (state === 'CAPTURED_MSG') {
         drawCapturedMessage();
       } else if (state === 'CAPTURE') {
@@ -577,7 +577,7 @@
         ctx.fillStyle = '#f1c40f';
         ctx.font = 'bold 28px "Proxima Nova", sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText("LEVEL CLEARED!", width / 2, height * 0.18);
+        ctx.fillText("LEVEL CLEARED!", width / 2, Math.max(height * 0.18, 125));   // stays below the score and hearts
 
         if (celebrationFadeAlpha > 0) {
           ctx.fillStyle = `rgba(10, 10, 20, ${celebrationFadeAlpha})`;

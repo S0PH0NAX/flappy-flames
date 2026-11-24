@@ -1233,31 +1233,13 @@ function drawFestStory() {
 }
 
 // ---------- story message screens (opening invitation and the capture letter) ----------
-function drawStoryMessage(lines, donePrompt) {
+function drawStoryMessage(lines, donePrompt, nameTag) {
   const portraitSize = 180;
   const pX = (width - portraitSize) / 2;
   const pY = height / 2 - 10;
   const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
-  const bX = 25, bY = pY - 145, bW = width - 50, bH = 125;
-
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 14); else ctx.rect(bX, bY, bW, bH);
-  ctx.fill();
-
-  const cur = Math.floor(typedCharIndex);
-  let counter = 0;
-  ctx.fillStyle = '#000000';
-  ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-  ctx.textAlign = 'center';
-  lines.forEach((line, idx) => {
-    let visible = '';
-    for (let c = 0; c < line.length; c++) {
-      if (counter < cur) { visible += line[c]; counter++; }
-    }
-    ctx.fillText(visible, width / 2, bY + 18 + idx * 18);
-    counter++;
-  });
+  const bH = speechBoxHeight(lines.length, 13, 18);
+  drawSpeechBox(lines, width / 2, pY - 20 - bH, 13, 18, '#000000', Math.floor(typedCharIndex));
 
   ctx.fillStyle = '#11161d';
   ctx.fillRect(pX, pY, portraitSize, portraitSize);
@@ -1266,13 +1248,28 @@ function drawStoryMessage(lines, donePrompt) {
   ctx.strokeStyle = '#f1c40f';
   ctx.strokeRect(pX, pY, portraitSize, portraitSize);
 
+  let promptY = pY + portraitSize + 35;
+  if (nameTag) {   // who is speaking, on a gold plate under the portrait
+    fitFont(nameTag, 20, width - 40);
+    const tw = ctx.measureText(nameTag).width + 28, ty = pY + portraitSize + 8;
+    ctx.fillStyle = '#5a1a12';
+    ctx.fillRect((width - tw) / 2, ty, tw, 30);
+    ctx.strokeStyle = '#f1c40f';
+    ctx.lineWidth = 2;
+    ctx.strokeRect((width - tw) / 2, ty, tw, 30);
+    ctx.fillStyle = '#f1c40f';
+    ctx.textAlign = 'center';
+    ctx.fillText(nameTag, width / 2, ty + 22);
+    promptY += 34;
+  }
+
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 16px "Proxima Nova", sans-serif';
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 3;
   const prompt = textTypingComplete ? donePrompt : 'TAP TO SHOW FULL MESSAGE';
-  ctx.strokeText(prompt, width / 2, pY + portraitSize + 35);
-  ctx.fillText(prompt, width / 2, pY + portraitSize + 35);
+  ctx.strokeText(prompt, width / 2, promptY);
+  ctx.fillText(prompt, width / 2, promptY);
 }
 
 function drawCapturedMessage() {

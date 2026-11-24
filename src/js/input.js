@@ -12,10 +12,10 @@
       const canvasY = (clientY - rect.top) * scaleY;
 
       const pSize = 140;
-      const pY = 120;
-      const isIntroStyle = (levelDialogueType === 'INTRO' || levelDialogueType === 'LEVEL1_CLEAR');
+      const pY = LEVEL_DIALOGUE_PY;
+      const isIntroStyle = !!LEVEL_SPEECH[levelDialogueType];
       const statsBoxY = isIntroStyle ? (pY + pSize + 20) : (pY + pSize + 40);
-      const statsBoxH = isIntroStyle ? 90 : 175;
+      const statsBoxH = isIntroStyle ? levelSpeechHeight(levelDialogueType) : 175;
 
       const btnW = 220;
       const btnH = 46;

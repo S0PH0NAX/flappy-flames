@@ -384,9 +384,11 @@ function drawBossIntroOverlay() {
     ctx.strokeRect(px, py, ps, ps);
 
     ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-    const bx = px + ps + 12, bwid = Math.min(width - bx - 14, 320);
+    const bx = px + ps + 12;
+    let bwid = Math.min(width - bx - 14, 320);
     const shown = BI_LINE.slice(0, Math.floor(a * 1.4));
     const lines = biWrap(BI_LINE, bwid - 20);
+    bwid = Math.min(bwid, Math.ceil(Math.max(...lines.map(l => ctx.measureText(l).width))) + 20);   // no wider than the text
     const bh = lines.length * 17 + 16;
     const by = py + ps / 2 - bh / 2;
     ctx.fillStyle = '#ffffff';

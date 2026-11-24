@@ -1,13 +1,32 @@
 // screens.js — Level dialogue, beheading cutscene, game-over screens
 // Classic script: shares global scope with the other src/js files. Load order matters (see index.html).
 
+    const LEVEL_DIALOGUE_PY = 150;   // portrait top; keeps the title below the score and hearts (input.js uses it for the button)
+
+    // Sarai's words on the level-start / level-1-clear dialogue (input.js sizes the button tap area from these)
+    const LEVEL_SPEECH = {
+      INTRO: { px: 15, lineH: 22, lines: [
+        '"My brave Cyndraxx, burn their',
+        'towers, slay the slavers, and bring',
+        'me to victory. I love you!"'] },
+      LEVEL1_CLEAR: { px: 14, lineH: 21, lines: [
+        '"My beloved Cyndraxx, you will now',
+        'encounter the nobles. DO NOT BURN',
+        'THE NOBLES! Bring me their heads to',
+        'mount on the city walls!"'] }
+    };
+    function levelSpeechHeight(type) {
+      const sp = LEVEL_SPEECH[type];
+      return speechBoxHeight(sp.lines.length, sp.px, sp.lineH);
+    }
+
     function renderLevelDialogue() {
       ctx.fillStyle = 'rgba(10, 10, 20, 0.92)';
       ctx.fillRect(0, 0, width, height);
 
       const pSize = 140;
       const pX = (width - pSize) / 2;
-      const pY = 120;
+      const pY = LEVEL_DIALOGUE_PY;
       const activeFrame = (Math.floor(Date.now() / 5000) % 2 === 0) ? khaleesiFrame1 : khaleesiFrame2;
 
       ctx.fillStyle = '#11161d';
@@ -43,66 +62,15 @@
         buttonText = "PLAY AGAIN";
       }
 
-      ctx.fillText(title, width / 2, pY - 25);
+      fitFont(title, 22, width - 24);
+      ctx.fillText(title, width / 2, pY - 20);
 
       let statsBoxY, statsBoxH;
 
-      if (levelDialogueType === 'INTRO') {
-        const speechLines = [
-          '"My brave Cyndraxx, burn their',
-          'towers, slay the slavers, and bring',
-          'me to victory. I love you!"'
-        ];
-
-        const bW = width - 60;
-        bH = 90;
-        const bX = 30;
-        bY = pY + pSize + 20;
-        statsBoxY = bY;
-        statsBoxH = bH;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
-        else ctx.fillRect(bX, bY, bW, bH);
-        ctx.fill();
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-        ctx.textAlign = 'center';
-
-        speechLines.forEach((l, idx) => {
-          ctx.fillText(l, width / 2, bY + 26 + (idx * 22));
-        });
-
-      } else if (levelDialogueType === 'LEVEL1_CLEAR') {
-        const speechLines = [
-          '"My beloved Cyndraxx, you will now',
-          'encounter the nobles. DO NOT BURN',
-          'THE NOBLES! Bring me their heads to',
-          'mount on the city walls!"'
-        ];
-
-        const bW = width - 60;
-        bH = 110;
-        const bX = 30;
-        bY = pY + pSize + 20;
-        statsBoxY = bY;
-        statsBoxH = bH;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
-        else ctx.fillRect(bX, bY, bW, bH);
-        ctx.fill();
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 14px "Proxima Nova", sans-serif';
-        ctx.textAlign = 'center';
-
-        speechLines.forEach((l, idx) => {
-          ctx.fillText(l, width / 2, bY + 24 + (idx * 21));
-        });
+      if (LEVEL_SPEECH[levelDialogueType]) {
+        const sp = LEVEL_SPEECH[levelDialogueType];
+        statsBoxY = pY + pSize + 20;
+        statsBoxH = drawSpeechBox(sp.lines, width / 2, statsBoxY, sp.px, sp.lineH).h;
 
       } else {
         ctx.fillStyle = '#2ecc71';
@@ -348,30 +316,12 @@
         ctx.strokeStyle = '#f1c40f';
         ctx.strokeRect(pX, pY, portraitSize, portraitSize);
 
-        const bMargin = 20;
-        const bX = bMargin;
         const bY = pY + portraitSize + 20;
-        const bW = width - (bMargin * 2);
-        const bH = 110;
-
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 12);
-        else ctx.fillRect(bX, bY, bW, bH);
-        ctx.fill();
-
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-        ctx.textAlign = 'center';
-
-        const lines = [
+        const bH = drawSpeechBox([
           '"I\'m sorry beloved, you can\'t',
           'continue without the severed',
           'head of a noble."'
-        ];
-        lines.forEach((l, idx) => {
-          ctx.fillText(l, width / 2, bY + 32 + (idx * 24));
-        });
+        ], width / 2, bY, 14, 21).h;
 
         ctx.fillStyle = '#e74c3c';
         ctx.font = 'bold 12px "Proxima Nova", sans-serif';

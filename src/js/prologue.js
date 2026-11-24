@@ -298,7 +298,7 @@ function updatePrologue() {
   const gY = height - groundHeight;
   const stopped = P.wall && P.wall.stopped;
   const shift = stopped ? 0 : proSpeed();
-  if (!stopped) backgroundParallaxX += 0.4;
+  if (!stopped) backgroundParallaxX += 0.4 * shift / PRO_SPEED;
 
   // flight physics (same as the main game)
   dragon.velocity += dragon.gravity;
@@ -317,6 +317,7 @@ function updatePrologue() {
   if (dragon.x > dragon.baseX) {
     let back = 1.2;
     if (dragon.x > thirty) back = 3.5 + (dragon.x - thirty) / (width - thirty) * 9.0;
+    back *= shift / PRO_SPEED;   // eases off with the scroll, so the slowed festival approach doesn't drag Cyndraxx backward
     dragon.x = Math.max(dragon.baseX, dragon.x - back);
   }
   // no overhead obstacles: the top of the screen just stops you
