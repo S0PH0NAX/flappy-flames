@@ -654,10 +654,48 @@
     }
 
 
-    function loop() {
+    // ---- Real-time game clock ----
+    // The game was written as "one step per screen refresh", so it ran in slow motion on phones that
+    // only manage 30 fps (iPhone Low Power Mode, warm or older phones) and too fast on 90/120 Hz screens.
+    // Now the game always advances 60 steps per real second. Much of the older code moves things while
+    // drawing them (peasants, arrows, flames, particles, pickups), so catch-up steps also run render()
+    // with the actual drawing calls switched off ("logic-only"), which costs almost nothing.
+    // save/restore stay real so alpha, blend mode and other settings never leak into the next drawn frame.
+    const GAME_STEP_MS = 1000 / 60;
+    const MAX_STEPS_PER_FRAME = 4;          // a long hiccup (or coming back from the background) never fast-forwards
+    const NO_DRAW = ['fillRect', 'strokeRect', 'clearRect', 'fillText', 'strokeText', 'drawImage', 'putImageData',
+      'fill', 'stroke', 'clip', 'beginPath', 'closePath', 'moveTo', 'lineTo', 'arc', 'arcTo', 'ellipse', 'rect',
+      'roundRect', 'quadraticCurveTo', 'bezierCurveTo', 'translate', 'rotate', 'scale',
+      'setTransform', 'transform', 'resetTransform', 'setLineDash'];
+    const noDraw = () => {};
+    let logicOnlyPass = false;              // true while render() runs without drawing (see freezeFrameForSplash)
+    let clockLast = null, clockAcc = 0;
+
+    function renderLogicOnly() {
+      logicOnlyPass = true;
+      NO_DRAW.forEach(m => { ctx[m] = noDraw; });
+      try { render(); } finally {
+        NO_DRAW.forEach(m => { delete ctx[m]; });
+        logicOnlyPass = false;
+      }
+    }
+
+    function loop(now) {
+      requestAnimationFrame(loop);
+      if (typeof now !== 'number') now = performance.now();
+      if (clockLast === null) clockLast = now - GAME_STEP_MS;
+      let dt = now - clockLast;
+      clockLast = now;
+      if (dt > 250) dt = GAME_STEP_MS;      // back from a pause, the background or a stall: just carry on
+      clockAcc += dt;
+      // a little slack so a 60 Hz screen with jittery timestamps still gets exactly one step per frame
+      let steps = Math.floor((clockAcc + 2) / GAME_STEP_MS);
+      if (steps < 1) return;                // faster screen (90/120 Hz): nothing due yet, skip this refresh
+      if (steps > MAX_STEPS_PER_FRAME) { steps = MAX_STEPS_PER_FRAME; clockAcc = 0; }
+      else clockAcc -= steps * GAME_STEP_MS;
+      for (let i = 1; i < steps; i++) { update(); renderLogicOnly(); }
       update();
       render();
-      requestAnimationFrame(loop);
     }
 
     loop();

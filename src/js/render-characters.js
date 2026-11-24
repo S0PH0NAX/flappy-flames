@@ -600,7 +600,7 @@
 
     // snapshot of the game screen taken the frame the splash starts, shown underneath it
     function freezeFrameForSplash() {
-      if (!khaleesiSplash || khaleesiSplash.frozen) return;
+      if (!khaleesiSplash || khaleesiSplash.frozen || logicOnlyPass) return;   // snapshot a frame that was really drawn
       const c = document.createElement('canvas');
       c.width = canvas.width; c.height = canvas.height;
       c.getContext('2d').drawImage(canvas, 0, 0);
