@@ -35,34 +35,34 @@ const PRO_END_FADE = 50;              // fade out at the end of the meadow
 const PRO_TITLE_FRAMES = 200;
 
 const PRO_INVITE_TEXT = [
-  '"Good morning, my sweet Cyndraxx!',
+  'Good morning, my sweet Cyndraxx!',
   'The sun is shining and the whole',
   'valley is in bloom. Come, my love,',
   'let us take to the skies together',
-  'and see our beautiful home!"'
+  'and see our beautiful home!'
 ];
 totalCharCount = PRO_INVITE_TEXT.join('\n').length;   // the opening screen types this message
 
 const PRO_SCRIPT = {};
 PRO_SCRIPT[PRO_MEADOW] = [
-  { at: 2,  dur: 240, text: '"Feel the sun on your wings, Cyndraxx! Isn\'t our valley beautiful?"' },
-  { at: 13, dur: 260, text: '"Wildflowers as far as the eye can see... I never tire of this view."' },
-  { at: 25, dur: 300, text: '"This valley was meant to live in peace, my love. Every shepherd, every lamb, every child."' },
-  { at: 38, dur: 340, text: '"The only reason ever to go to war is to protect the innocent and the vulnerable. Never forget that, Cyndraxx."' },
+  { at: 2,  dur: 240, text: 'Feel the sun on your wings, Cyndraxx! Isn\'t our valley beautiful?' },
+  { at: 13, dur: 260, text: 'Wildflowers as far as the eye can see... I never tire of this view.' },
+  { at: 25, dur: 300, text: 'This valley was meant to live in peace, my love. Every shepherd, every lamb, every child.' },
+  { at: 38, dur: 340, text: 'The only reason ever to go to war is to protect the innocent and the vulnerable. Never forget that, Cyndraxx.' },
   { at: 50, fn: () => { pro.forceNext = 'maypole'; } },
-  { at: 54, dur: 260, text: '"Listen! They\'re singing! Look at them dance around the maypole!"' },
-  { at: 66, dur: 320, text: '"You must be getting hungry, my love. Go on, swoop down and snatch up a sheep!"',
+  { at: 54, dur: 260, text: 'Listen! They\'re singing! Look at them dance around the maypole!' },
+  { at: 66, dur: 320, text: 'You must be getting hungry, my love. Go on, swoop down and snatch up a sheep!',
     fn: () => { pro.hungry = true; pro.forceNext = 'flock'; pro.hungryAt = pro.t; } }
 ];
 PRO_SCRIPT[PRO_VILLAGE] = [
-  { at: 2,  dur: 260, text: '"Look down there, Cyndraxx... the village! Fly gently, let\'s not frighten anyone."' },
-  { at: 14, dur: 320, text: '"See how everything fits together? The farmer grows the wheat, the miller grinds it, the baker feeds them all."' },
-  { at: 28, dur: 280, text: '"The smith, the weaver, the shepherd... each one needs the others. Like you and me."' },
+  { at: 2,  dur: 260, text: 'Look down there, Cyndraxx... the village! Fly gently, let\'s not frighten anyone.' },
+  { at: 14, dur: 320, text: 'See how everything fits together? The farmer grows the wheat, the miller grinds it, the baker feeds them all.' },
+  { at: 28, dur: 280, text: 'The smith, the weaver, the shepherd... each one needs the others. Like you and me.' },
   { at: 32, fn: () => { pro.forceNext = 'festival'; pro.spawnGap = Math.min(pro.spawnGap, 60); } },
-  { at: 42, dur: 260, text: '"Hear that? Their songs, their laughter... the music of their lives."' },
-  { at: 56, dur: 300, text: '"Children chasing hens, grandmothers telling stories by the door. I could watch them forever."' },
-  { at: 70, dur: 260, text: '"This is why we fly, Cyndraxx. Not for glory. For them."' },
-  { at: 85, dur: 300, text: '"What\'s that up ahead? A castle... I don\'t like the look of those walls."' }
+  { at: 42, dur: 260, text: 'Hear that? Their songs, their laughter... the music of their lives.' },
+  { at: 56, dur: 300, text: 'Children chasing hens, grandmothers telling stories by the door. I could watch them forever.' },
+  { at: 70, dur: 260, text: 'This is why we fly, Cyndraxx. Not for glory. For them.' },
+  { at: 85, dur: 300, text: 'What\'s that up ahead? A castle... I don\'t like the look of those walls.' }
 ];
 
 // Rolling ground: height above the flat ground line at world position wx (screen x + sunnyScroll).
@@ -398,12 +398,12 @@ function proUpdateScript() {
   if (currentLevel === PRO_MEADOW) {
     if (P.sheepEaten && !P.saidLove && P.t - P.eatenAt > 420) {
       P.saidLove = true;
-      showKhaleesiBanner('"I love these days with you, Cyndraxx. I wish they would never end."', 280);
+      showKhaleesiBanner('I love these days with you, Cyndraxx. I wish they would never end.', 280);
     }
     // gentle reminder if Cyndraxx still hasn't eaten
     if (P.hungry && !P.carried && P.t - P.hungryAt > 900 && P.t - P.lastNag > 900 && khaleesiBannerTimer <= 0) {
       P.lastNag = P.t;
-      showKhaleesiBanner('"Don\'t be shy, Cyndraxx! Fly down low and grab a sheep!"', 220);
+      showKhaleesiBanner('Don\'t be shy, Cyndraxx! Fly down low and grab a sheep!', 220);
     }
   }
 }
@@ -435,7 +435,7 @@ function proUpdateSheep(gY) {
         // the rest of the flock scatters
         P.ents.forEach(o => { if (o.type === 'sheep' && Math.abs(o.x - e.x) < 160) { o.scared = 50; o.dir = o.x < e.x ? -1 : 1; } });
         proDropGold(e.x);
-        showKhaleesiBanner('"Good boy! And a few gold coins for the shepherd. We never take without paying."', 300);
+        showKhaleesiBanner('Good boy! And a few gold coins for the shepherd. We never take without paying.', 300);
         break;
       }
     }
@@ -621,7 +621,7 @@ function festApproach() {
   const F = pro.fest, e = F.ent;
   if (!F.announced && e.x < width - 40) {
     F.announced = true;
-    showKhaleesiBanner('"Cyndraxx, look! The spring festival! Let\'s land on that big roof and join them!"', 300);
+    showKhaleesiBanner('Cyndraxx, look! The spring festival! Let\'s land on that big roof and join them!', 300);
   }
   const top = festHallTop(e) + 6;
   const L = dragon.x - dragon.size / 2 + 6, R = dragon.x + dragon.size / 2 - 6;
@@ -635,7 +635,7 @@ function festApproach() {
   }
   if (e.x + FEST_HALL_W < dragon.x - dragon.size) {
     // flew past: the next village festival comes round again
-    showKhaleesiBanner('"Oh! We flew right past it! Let\'s circle round and try again!"', 220);
+    showKhaleesiBanner('Oh! We flew right past it! Let\'s circle round and try again!', 220);
     pro.fest = null;
     pro.forceNext = 'festival';
     pro.spawnGap = 420;
@@ -668,7 +668,7 @@ function updateFestival() {
     if (F.t % 8 === 0) { dragon.wingState = 1; sound.flap(); }
     if (u >= 1) {
       F.phase = 'sing'; F.t = 0;
-      showKhaleesiBanner('"Ha! Sing with us, Cyndraxx! Everyone, sing!"', 200);
+      showKhaleesiBanner('Ha! Sing with us, Cyndraxx! Everyone, sing!', 200);
       e.crowd.people.forEach(p => { if (p.act !== 'lute') p.act = Math.random() < 0.7 ? 'dance' : 'wave'; });
     }
   } else if (F.phase === 'sing') {
@@ -681,13 +681,13 @@ function updateFestival() {
       pro.notes.push({ x: dragon.x + proRand(-10, 30), y: dragon.y - 40, vx: proRand(-0.5, 0.5), vy: -proRand(0.6, 1.1), life: 90,
                        glyph: proPick(['♪', '♫', '♩']), color: proPick(['#ffffff', '#fff3a0', '#ffd1e8']) });
     }
-    if (F.t === 210) showKhaleesiBanner('"♪ The frost is gone, the swallows sing, come dance with us, it\'s spring, it\'s spring! ♪"', 250);
+    if (F.t === 210) showKhaleesiBanner('♪ The frost is gone, the swallows sing, come dance with us, it\'s spring, it\'s spring! ♪', 250);
     if (F.t >= FEST_SING_FRAMES) { F.phase = 'story'; F.t = 0; khaleesiBannerTimer = 0; }
   } else if (F.phase === 'story') {
     dragon.x = perchX; dragon.y = perchY;
     if (F.t >= FEST_IMG_FRAMES * 2) {
       F.phase = 'after'; F.t = 0;
-      showKhaleesiBanner('"We should journey on, my love, and leave the townsfolk to their revels."', FEST_AFTER_FRAMES);
+      showKhaleesiBanner('We should journey on, my love, and leave the townsfolk to their revels.', FEST_AFTER_FRAMES);
     }
   } else if (F.phase === 'after') {
     dragon.x = perchX;
@@ -779,7 +779,7 @@ const CAP_IMG_FRAMES = 270;                        // each story image (about 4.
 const CAP_IMG1 = CAP_CLOSE + CAP_FALL_FRAMES;
 const CAP_IMG2 = CAP_IMG1 + CAP_IMG_FRAMES;
 const CAP_END = CAP_IMG2 + CAP_IMG_FRAMES;
-const CAP_FALL_LINE = '"Hold on to me, Cyndraxx... whatever they do to us, I will find you again."';
+const CAP_FALL_LINE = 'Hold on to me, Cyndraxx... whatever they do to us, I will find you again.';
 const CAP_IMG_CAPTIONS = [
   'They cut Dragon Queen Sarai from the net and dragged her away...',
   '...but Cyndraxx woke, and broke free.'
@@ -806,7 +806,7 @@ function startCapture() {
   isHoldingAction = false;
   invulnerableTimer = 0;
   pro.cap = { t: 0, net: null, hoverY: Math.min(Math.max(dragon.y, height * 0.3), height * 0.5), tumble: 0, from: null };
-  showKhaleesiBanner('"Cyndraxx... the knights are aiming something at us! Pull up!"', 120);
+  showKhaleesiBanner('Cyndraxx... the knights are aiming something at us! Pull up!', 120);
 }
 
 // taps during the story images move on to the next one
@@ -868,9 +868,9 @@ function updateCapture() {
   if (t === CAP_HIT) {
     sound.hit();
     sound.knightHit();
-    showKhaleesiBanner('"A net! Cyndraxx, we\'re caught!"', 110);
+    showKhaleesiBanner('A net! Cyndraxx, we\'re caught!', 110);
   }
-  if (t === CAP_DRAG) { sound.boulderLaunch(); showKhaleesiBanner('"They\'re pulling us in! CYNDRAXX!"', 120); }
+  if (t === CAP_DRAG) { sound.boulderLaunch(); showKhaleesiBanner('They\'re pulling us in! CYNDRAXX!', 120); }
   if (t === CAP_OVER) sound.towerDestroy();
   if (t === CAP_CLOSE) {
     khaleesiBannerTimer = 0;

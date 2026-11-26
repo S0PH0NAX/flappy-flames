@@ -6,14 +6,14 @@
     // Sarai's words on the level-start / level-1-clear dialogue (input.js sizes the button tap area from these)
     const LEVEL_SPEECH = {
       INTRO: { px: 15, lineH: 22, lines: [
-        '"My brave Cyndraxx, burn their',
+        'My brave Cyndraxx, burn their',
         'towers, slay the slavers, and bring',
-        'me to victory. I love you!"'] },
+        'me to victory. I love you!'] },
       LEVEL1_CLEAR: { px: 14, lineH: 21, lines: [
-        '"My beloved Cyndraxx, you will now',
+        'My beloved Cyndraxx, you will now',
         'encounter the nobles. DO NOT BURN',
         'THE NOBLES! Bring me their heads to',
-        'mount on the city walls!"'] }
+        'mount on the city walls!'] }
     };
     function levelSpeechHeight(type) {
       const sp = LEVEL_SPEECH[type];
@@ -75,7 +75,7 @@
       } else {
         ctx.fillStyle = '#2ecc71';
         ctx.font = 'bold 15px "Proxima Nova", sans-serif';
-        ctx.fillText('"I LOVE YOU SO MUCH CYNDRAXX!"', width / 2, pY + pSize + 25);
+        ctx.fillText('I LOVE YOU SO MUCH CYNDRAXX!', width / 2, pY + pSize + 25);
 
         statsBoxY = pY + pSize + 40;
         const statsBoxW = width - 60;
@@ -155,7 +155,7 @@
       ctx.fillStyle = '#ffffff';
       ctx.font = 'bold 12px "Proxima Nova", sans-serif';
       ctx.textAlign = 'left';
-      ctx.fillText('"Death to tyrants, gods and masters!"', pX, pY + pSize + 18);
+      ctx.fillText('Death to tyrants, gods and masters!', pX, pY + pSize + 18);
 
       const boxSize = 240;
       const bX = (width - boxSize) / 2;
@@ -318,9 +318,9 @@
 
         const bY = pY + portraitSize + 20;
         const bH = drawSpeechBox([
-          '"I\'m sorry beloved, you can\'t',
+          'I\'m sorry beloved, you can\'t',
           'continue without the severed',
-          'head of a noble."'
+          'head of a noble.'
         ], width / 2, bY, 14, 21).h;
 
         ctx.fillStyle = '#e74c3c';

@@ -854,12 +854,11 @@ function drawCathDialogue(s) {
   const P = who === 'NARR' ? 0 : Math.min(78, W * 0.19);
   const margin = 12;
   const boxW = W - margin * 2;
-  const italic = who === 'NARR';                  // Cyndraxx's lines (spoken or thought) are plain text
-  const font = (italic ? 'italic ' : '') + 'bold 15px "Proxima Nova", sans-serif';
+  const font = 'bold 15px "Proxima Nova", sans-serif';   // all dialogue is plain text: no quotes or italics
   ctx.font = font;
   const textX = margin + (P ? P + 22 : 18);
   const maxW = boxW - (P ? P + 34 : 36);
-  const full = who === 'CLEM' ? '"' + s.text + '"' : s.text;
+  const full = s.text;
   const lines = cathWrap(full, maxW);
   const nameH = who === 'NARR' ? 0 : 22;
   const boxH = Math.max(P + 20, nameH + lines.length * 20 + 24);
@@ -899,7 +898,7 @@ function drawCathDialogue(s) {
   }
   ctx.font = font;
   ctx.fillStyle = who === 'NARR' ? '#f3e6d0' : '#111111';
-  let left = S.typed >= s.text.length ? Infinity : Math.floor(S.typed) + (who === 'CLEM' ? 1 : 0);
+  let left = S.typed >= s.text.length ? Infinity : Math.floor(S.typed);
   lines.forEach((ln, i) => {
     const part = left >= ln.length ? ln : ln.slice(0, Math.max(0, left));
     left -= ln.length + 1;

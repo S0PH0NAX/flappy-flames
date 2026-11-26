@@ -67,9 +67,9 @@
 
     // Banner shown when a level starts, introducing that level's new threat.
     function announceLevelStart() {
-      if (currentLevel === 2) setTimeout(() => showKhaleesiBanner('"Beware the armored knights, Cyndraxx! Keep your fire on them until their armor melts!"', 260), 4500);
-      else if (currentLevel === 4) showKhaleesiBanner('"The armored knights are everywhere now, Cyndraxx! Burn them down!"', 260);
-      else if (currentLevel === 5) { showKhaleesiBanner('"Golden knights! Snatch one while its guard is down and take its shield!"', 280); gkTalkSeen.spot = true; }
+      if (currentLevel === 2) setTimeout(() => showKhaleesiBanner('Beware the armored knights, Cyndraxx! Keep your fire on them until their armor melts!', 260), 4500);
+      else if (currentLevel === 4) showKhaleesiBanner('The armored knights are everywhere now, Cyndraxx! Burn them down!', 260);
+      else if (currentLevel === 5) { showKhaleesiBanner('Golden knights! Snatch one while its guard is down and take its shield!', 280); gkTalkSeen.spot = true; }
     }
 
     function debugWarpToLevel(targetLvl) {
@@ -92,7 +92,7 @@
       state = 'PLAYING';
       updateLevelBadgeUI();
       sound.powerup();
-      showKhaleesiBanner(`"Warped to Level ${currentLevel}! Progress reset."`, 150);
+      showKhaleesiBanner(`Warped to Level ${currentLevel}! Progress reset.`, 150);
       if (targetLvl >= 2) setTimeout(announceLevelStart, 2600);
     }
 
@@ -115,7 +115,7 @@
     function resetScoreToZero() {
       score = 0;
       scoreDisplay.innerText = '0';
-      showKhaleesiBanner('"Cyndraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero."', 240);
+      showKhaleesiBanner('Cyndraxx, you mustn\'t burn the nobles. Take their heads. Score reset to zero.', 240);
       floatingTexts.push({
         x: width / 2 - 80,
         y: height / 2 - 40,
@@ -303,10 +303,10 @@
       sCtx.fillStyle = '#2ecc71';
       sCtx.font = 'bold 22px "Proxima Nova", sans-serif';
       sCtx.textAlign = 'left';
-      sCtx.fillText(`"I'm so proud of my Cyndraxx.`, 240, 215);
+      sCtx.fillText(`I'm so proud of my Cyndraxx.`, 240, 215);
       sCtx.fillText(`Cyndraxx earned ${score} points, burned`, 240, 248);
       sCtx.fillText(`${gameStats.burnedTowers} towers, killed ${gameStats.villagersKilled} villagers,`, 240, 281);
-      sCtx.fillText(`and beheaded ${kingsTxt} and ${queensTxt}!"`, 240, 314);
+      sCtx.fillText(`and beheaded ${kingsTxt} and ${queensTxt}!`, 240, 314);
 
       sCtx.strokeStyle = '#e74c3c';
       sCtx.lineWidth = 2;

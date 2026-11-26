@@ -96,7 +96,7 @@ function updateBossLogic() {
     if (khaleesiTimer <= 0) {
       khaleesiMounted = false;
       khaleesiCombo = 0;
-      showKhaleesiBanner('"I LOVE YOU ALWAYS, CYNDRAXX!"', 240);
+      showKhaleesiBanner('I LOVE YOU ALWAYS, CYNDRAXX!', 240);
     }
   }
 
@@ -218,11 +218,11 @@ function updateBossLogic() {
         bossState.waveState = 'SPAWNING';
         bossState.waveToSpawn = bossWaveSize(bossState.wave);
         bossState.spawnTimer = BOSS_WAVE_SPAWN_GAP;
-        showKhaleesiBanner('"More archers are coming up the ladder!"', 140);
+        showKhaleesiBanner('More archers are coming up the ladder!', 140);
       } else if (aliveN === 0) {
         bossState.waveState = 'OPEN';
         bossState.clearHold = 0;
-        showKhaleesiBanner('"The archers are down! Burn the center, Cyndraxx!"', 160);
+        showKhaleesiBanner('The archers are down! Burn the center, Cyndraxx!', 160);
       }
     } else if (bossState.waveState === 'OPEN') {
       bossState.clearHold++;

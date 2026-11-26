@@ -323,7 +323,7 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyC' && !e.repeat) {
     if (state === 'PLAYING' || state === 'BOSS') {
       startLevelCelebration(currentLevel, 'LEVEL1_CLEAR');
-      showKhaleesiBanner('"CELEBRATION ANIMATION TRIGGERED!"', 180);
+      showKhaleesiBanner('CELEBRATION ANIMATION TRIGGERED!', 180);
     }
   }
 

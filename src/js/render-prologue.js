@@ -1021,7 +1021,7 @@ function drawCaptureFall(f) {
   }
   // her words, typed slowly
   if (f > 40) {
-    ctx.font = 'italic bold 15px "Proxima Nova", sans-serif';
+    ctx.font = 'bold 15px "Proxima Nova", sans-serif';
     ctx.textAlign = 'center';
     const shown = CAP_FALL_LINE.slice(0, Math.floor((f - 40) * 0.55));
     const lines = biWrap(CAP_FALL_LINE, width - 60);
@@ -1075,7 +1075,7 @@ function drawStoryPicture(img, cap, f, frames) {
     ctx.fillRect(0, height - bandH - 30, width, bandH + 30);
     ctx.globalAlpha = ca;
     ctx.fillStyle = '#f3e6d0';
-    ctx.font = 'italic bold 15px "Proxima Nova", sans-serif';
+    ctx.font = 'bold 15px "Proxima Nova", sans-serif';
     ctx.textAlign = 'center';
     biWrap(cap, width - 40).forEach((ln, i) => ctx.fillText(ln, width / 2, height - bandH + 14 + i * 19));
     ctx.textAlign = 'left';

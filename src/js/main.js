@@ -10,7 +10,7 @@
 
       if (lives <= 0) {
         state = 'GAMEOVER';
-        showKhaleesiBanner('"DO NOT FAIL ME, CYNDRAXX! TRY AGAIN!"', 300);
+        showKhaleesiBanner('DO NOT FAIL ME, CYNDRAXX! TRY AGAIN!', 300);
       }
     }
 
@@ -122,7 +122,7 @@
         if (khaleesiTimer <= 0) {
           khaleesiMounted = false;
           khaleesiCombo = 0;
-          showKhaleesiBanner('"I LOVE YOU ALWAYS, CYNDRAXX!"', 240);
+          showKhaleesiBanner('I LOVE YOU ALWAYS, CYNDRAXX!', 240);
         }
       }
 

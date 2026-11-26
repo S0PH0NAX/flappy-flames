@@ -120,7 +120,7 @@
           direction: Math.random() < 0.5 ? 1 : -1,
           rescued: false
         });
-        showKhaleesiBanner('"I\'M HERE CYNDRAXX! COME TO ME!"', 200);
+        showKhaleesiBanner('I\'M HERE CYNDRAXX! COME TO ME!', 200);
       }
 
       const heartChance = 0.10;
@@ -180,7 +180,7 @@
             sound.queenEntrance();
           }
 
-          showKhaleesiBanner('"Look Cyndraxx, a noble. Don\'t burn them, bring me their head!"', 240);
+          showKhaleesiBanner('Look Cyndraxx, a noble. Don\'t burn them, bring me their head!', 240);
         } else if (currentLevel >= 2 && Math.random() < (currentLevel >= 5 ? 0.6 : (currentLevel >= 4 ? 0.4 : 0.25))) {
           // armored knights never share a tower with peasants
           spawnSmallKnights(newObs);
