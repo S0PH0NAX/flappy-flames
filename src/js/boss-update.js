@@ -422,8 +422,7 @@ function updateBossLogic() {
   bossUpdateBurn('bot', bossState.botHp, g);
 
   if (bossState.burn.top.charred && bossState.burn.mid.charred && bossState.burn.bot.charred) {
-    bossState.active = false;
-    startLevelCelebration(4, 'BOSS_CLEAR');
+    startBossFall();   // the tower collapses into a pit and drags Cyndraxx down with it (boss-fall.js)
   }
 }
 

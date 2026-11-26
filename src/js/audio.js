@@ -286,14 +286,14 @@
       }
 
       // the priest's strange power: a glassy, rising shimmer of bell tones
-      magicShimmer(dur = 1.6) {
+      magicShimmer(dur = 1.6, vol = 0.35) {
         if (this.muted || this.hidden) return;
         this.init();
         const c = this.ctx;
         if (!c) return;
         const now = c.currentTime;
         const out = c.createGain();
-        out.gain.value = 0.35;
+        out.gain.value = vol;
         out.connect(c.destination);
         const notes = [1046.5, 1174.7, 1396.9, 1568, 1760, 2093, 2349.3, 2793.8];
         const count = Math.round(dur * 14);
@@ -341,6 +341,94 @@
         o.start(now); o.stop(now + len + 0.25);
         this._ping(now + len, 2093, 0.15, 1.2, 'sine', out);
         this._ping(now + len, 3136, 0.08, 1.0, 'sine', out);
+      }
+
+      // ---- boss ending (boss-fall.js) ----
+      // the chain paying out behind the arrow: a quick run of metallic clinks
+      chainRattle(dur = 0.6) {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.4;
+        out.connect(c.destination);
+        const n = Math.round(dur * 22);
+        for (let i = 0; i < n; i++) {
+          const t = now + (i / n) * dur + Math.random() * 0.02;
+          this._ping(t, 2600 + Math.random() * 1800, 0.06, 0.06, 'square', out);
+          this._ping(t, 5200 + Math.random() * 2000, 0.03, 0.04, 'sine', out);
+        }
+      }
+
+      // the arrow striking Cyndraxx's heart: a hard thud and a deep, ringing heartbeat
+      pierceHit() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.6;
+        out.connect(c.destination);
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 1;
+        const ng = c.createGain();
+        ng.gain.setValueAtTime(0.0001, now);
+        ng.gain.exponentialRampToValueAtTime(0.8, now + 0.005);
+        ng.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+        n.connect(bp).connect(ng).connect(out);
+        n.start(now); n.stop(now + 0.15);
+        [0, 0.32].forEach((d, i) => {          // lub... dub
+          const o = c.createOscillator();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(i ? 70 : 85, now + 0.05 + d);
+          o.frequency.exponentialRampToValueAtTime(38, now + 0.35 + d);
+          const g = c.createGain();
+          g.gain.setValueAtTime(0.0001, now + 0.05 + d);
+          g.gain.exponentialRampToValueAtTime(i ? 0.5 : 0.8, now + 0.07 + d);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + 0.5 + d);
+          o.connect(g).connect(out);
+          o.start(now + 0.05 + d); o.stop(now + 0.55 + d);
+        });
+      }
+
+      // the tower giving way: a long, deep crash
+      collapseBoom() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime, len = 2.4;
+        const out = c.createGain();
+        out.gain.value = 0.7;
+        out.connect(c.destination);
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuffer();
+        src.loop = true;
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.setValueAtTime(900, now);
+        lp.frequency.exponentialRampToValueAtTime(120, now + len);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.9, now + 0.04);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        src.connect(lp).connect(g).connect(out);
+        src.start(now); src.stop(now + len + 0.05);
+        const o = c.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(60, now);
+        o.frequency.exponentialRampToValueAtTime(28, now + len);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.7, now + 0.05);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        o.connect(og).connect(out);
+        o.start(now); o.stop(now + len);
       }
 
       towerDestroy() {
@@ -553,7 +641,7 @@ knightHit() {
             uiMusicAudio.play().catch(() => {});
           }
         } 
-        else if (gameState === 'CUTSCENE' || gameState === 'BOSS') {   // the boss fight uses the beheading music
+        else if (gameState === 'CUTSCENE' || gameState === 'BOSS' || gameState === 'BOSS_FALL') {   // the boss ending keeps the boss music   // the boss fight uses the beheading music
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (cutsceneMusicAudio.paused) {

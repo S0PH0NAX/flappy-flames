@@ -157,6 +157,7 @@
       sound.init();
 
       if (state === 'BOSS_INTRO') { skipBossIntro(); return; }
+      if (state === 'BOSS_FALL') { bossFallTap(); return; }   // the boss ending (skippable after a few seconds)
       if (state === 'CAPTURE') { captureTap(); return; }   // no control during the capture; taps only move through the story images
 
       const rect = canvas.getBoundingClientRect();
@@ -316,6 +317,13 @@ window.addEventListener('keydown', (e) => {
   if ((e.code === 'Digit8' || e.code === 'Numpad8') && !e.repeat) { resetGame(); startPrologueLevel(PRO_VILLAGE); }  // debug: prologue village
   if ((e.code === 'Digit9' || e.code === 'Numpad9') && !e.repeat) debugStartCapture();                                // debug: ballista capture
   if (e.code === 'KeyB') triggerBossBattle();
+  if (e.code === 'KeyE' && !e.repeat && state !== 'BOSS_FALL') {   // debug: the boss ending
+    if (state !== 'BOSS') triggerBossBattle();
+    bossState.x = bossState.baseX = width - bossGeom().bw;
+    ['top', 'mid', 'bot'].forEach(k => { bossState.burn[k].charred = true; bossState.burn[k].charProgress = 1; });
+    bossState.topHp = bossState.midHp = bossState.botHp = 0;
+    startBossFall();
+  }
   if (e.code === 'KeyK' && !e.repeat) { debugWarpToLevel(2); levelTimerSeconds = CATH_AT - 4; }   // debug: level 2 just before the cathedral
   if (state === 'CATHEDRAL' && !e.repeat && cathedralKey(e.code)) return;   // R = rest, F = fight on
   if (e.code === 'KeyI' && !e.repeat) { currentLevel = 3; updateLevelBadgeUI(); startBossIntro(); }   // debug: boss intro cinematic

@@ -42,6 +42,7 @@ function bossIntroMusicOn() {
 // How loud the wheel rumble should be right now (0..1). Called every frame from update().
 function currentRumbleLevel() {
   if (khaleesiSplash) return 0;
+  if (state === 'BOSS_FALL') return bossFallRumble();
   if (state === 'BOSS' && bossState.active) return 0.5 * Math.max(0, bossState.roll);
   if (state === 'BOSS_INTRO' && bossIntro) {
     const t = bossIntro.t;
@@ -54,6 +55,7 @@ function currentRumbleLevel() {
 
 // Camera shake for the whole scene, in px.
 function sceneShake() {
+  if (state === 'BOSS_FALL') return bossFallShake();
   if (state === 'BOSS_INTRO' && bossIntro && bossIntro.shake > 0.3) {
     const s = bossIntro.shake;
     return { x: (Math.random() - 0.5) * s, y: (Math.random() - 0.5) * s };

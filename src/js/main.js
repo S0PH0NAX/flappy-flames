@@ -108,6 +108,7 @@
       if (state === 'CAPTURE') { updateCapture(); return; }
       if (state === 'BOSS_INTRO') { updateBossIntro(); return; }
       if (state === 'CATHEDRAL') { updateCathedralScene(); return; }
+      if (state === 'BOSS_FALL') { updateBossFall(); return; }
       if (state === 'BOSS') { updateBossLogic(); return; }
 
       if (state === 'LEVEL_CELEBRATE') {
@@ -547,6 +548,12 @@
         ctx.textAlign = 'left';
         return;
       }
+      if (bossFallCinematic() && bossFall.phase === 'cavern') {   // falling through the cavern (boss-fall.js)
+        drawBossFallCavern();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
 
       if (sunnyScene()) {
         // prologue, opening screen and start menu: sunny valley
@@ -573,6 +580,7 @@
       }
       drawParticles();
       if (state === 'BOSS') renderBoss();
+      else if (state === 'BOSS_FALL') drawBossFallScene();   // tower sinking into the pit, the chain arrow, Cyndraxx
 
       if (state === 'SPLASH') {
         drawStoryMessage(PRO_INVITE_TEXT, 'TAP TO START GAME', 'DRAGON QUEEN SARAI');
@@ -602,6 +610,8 @@
         renderPauseScreen();
       } else if (state === 'GAMEOVER') {
         renderGameOverScreen();
+      } else if (state === 'BOSS_FALL') {
+        // all drawn by drawBossFallScene()
       } else if (state === 'CATHEDRAL') {
         drawCathedralScene();     // the window shatters (the dragon has gone through it)
       } else if (state === 'BOSS_INTRO') {
