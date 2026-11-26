@@ -147,6 +147,9 @@
     }
     
     // Save code: 12 characters, shown as XXXX-XXXX-XXXX.
+    // The 3 villager characters also carry the extra heart containers (0-2): value = extra * SAVE_HEART_STEP + villagers,
+    // so codes made before this (villagers far below 15,552) still load with no extra hearts.
+    const SAVE_HEART_STEP = 15552;   // 36^3 / 3
     //   score (5) · kings (1) · queens (1) · villagers (3) · level (1, "B" = boss) · check (1)
     // Old 6- and 7-character codes still load.
     function codeEncode(n, len) {
@@ -173,7 +176,8 @@
       const p = Math.min(Math.max(0, Math.floor(score)), 36 ** 5 - 1);
       const k = Math.min(gameStats.kingsBeheaded, 35);
       const q = Math.min(gameStats.queensBeheaded, 35);
-      const v = Math.min(gameStats.villagersKilled, 36 ** 3 - 1);
+      const extraHearts = Math.max(0, Math.min(2, maxLives - 3));
+      const v = Math.min(gameStats.villagersKilled, SAVE_HEART_STEP - 1) + extraHearts * SAVE_HEART_STEP;
       let lvl = atBossFight() ? SAVE_CODE_BOSS : Math.min(currentLevel, FINAL_LEVEL);
       if (inPrologue() || state === 'CAPTURE') lvl = currentLevel === PRO_MEADOW ? PRO_CODE_MEADOW : PRO_CODE_VILLAGE;
       if (caveLevel > 0 && cave) lvl = CAVE_CODES[caveLevel];
@@ -185,7 +189,7 @@
     function loadSaveCode(codeStr) {
       if (!codeStr) return false;
       const clean = codeStr.toUpperCase().replace(/[^0-9A-Z]/g, '');
-      let savedScore, savedKings, savedQueens, savedVillagers, lvlVal;
+      let savedScore, savedKings, savedQueens, savedVillagers, lvlVal, savedHearts = 0;
 
       if (clean.length === 12) {
         const body = clean.slice(0, 11);
@@ -194,6 +198,10 @@
         savedKings = codeDecode(body[5]);
         savedQueens = codeDecode(body[6]);
         savedVillagers = codeDecode(body.slice(7, 10));
+        if (savedVillagers >= 0) {
+          savedHearts = Math.min(2, Math.floor(savedVillagers / SAVE_HEART_STEP));
+          savedVillagers = savedVillagers % SAVE_HEART_STEP;
+        }
         lvlVal = codeDecode(body[10]);
       } else if (clean.length === 6 || clean.length === 7) {
         // old short format: score (2) kings queens villagers (2) [level]
@@ -227,6 +235,8 @@
         ...Array(savedQueens).fill('QUEEN')
       ];
       royalHeadNobles = royalHeadTypes.map(t => randomNoble(t));
+      maxLives = 3 + savedHearts;     // heart containers from the cathedral and Brown Jenkins
+      lives = maxLives;
 
       updateLevelBadgeUI();
       scoreDisplay.innerText = score;
