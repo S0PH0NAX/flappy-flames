@@ -25,6 +25,7 @@
         if (battlements[i].x + battlements[i].width < -100) battlements.splice(i, 1);
       }
 
+      if (cathedral) cathedral.x -= scrollSpeed * worldSpeedMult;
       for (let i = obstacles.length - 1; i >= 0; i--) {
         obstacles[i].x -= scrollSpeed * worldSpeedMult;
         if (obstacles[i].x + obstacles[i].width < -100) obstacles.splice(i, 1);
@@ -106,6 +107,7 @@
 
       if (state === 'CAPTURE') { updateCapture(); return; }
       if (state === 'BOSS_INTRO') { updateBossIntro(); return; }
+      if (state === 'CATHEDRAL') { updateCathedralScene(); return; }
       if (state === 'BOSS') { updateBossLogic(); return; }
 
       if (state === 'LEVEL_CELEBRATE') {
@@ -132,7 +134,7 @@
             if (royalHeadTypes.length > 0) royalHeadTypes.pop();
             if (royalHeadNobles.length > 0) royalHeadNobles.pop();
             headFadingIndex = -1;
-            lives = 3;
+            lives = maxLives;
             updateHeartsDisplay();
 
             dragon.velocity = dragon.jump;
@@ -233,7 +235,7 @@
               h.collected = true;
               sound.heartPickup();
 
-              if (lives < 3) {
+              if (lives < maxLives) {
                 lives++;
                 updateHeartsDisplay();
               }
@@ -539,6 +541,13 @@
       ctx.save();
       if (shake) ctx.translate(shake.x, shake.y);
 
+      if (cathCinematic()) {      // inside the cathedral (cathedral.js / render-cathedral.js)
+        drawCathedralScene();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
+
       if (sunnyScene()) {
         // prologue, opening screen and start menu: sunny valley
         drawSunnyBackdrop();
@@ -551,6 +560,7 @@
         drawParallaxCastleBackground();
         if (state === 'BOSS_INTRO') drawBossIntroScene();
         obstacles.forEach(drawCastleWalls);
+        drawCathedralTower();
         drawBattlements();
         drawLevelChests();      // behind archers, peasants and knights
         drawArchersAndArrows();
@@ -592,6 +602,8 @@
         renderPauseScreen();
       } else if (state === 'GAMEOVER') {
         renderGameOverScreen();
+      } else if (state === 'CATHEDRAL') {
+        drawCathedralScene();     // the window shatters (the dragon has gone through it)
       } else if (state === 'BOSS_INTRO') {
         drawBossIntroOverlay();
       } else if (state === 'BOSS') {
@@ -601,6 +613,7 @@
         drawDragon(dragon.x, dragon.y);
         renderMountedKhaleesiHUD();
         drawDragonCarried();
+        drawCathedralHUD();
         drawExtrasHUD();
         if (inPrologue()) drawProOverlay();
       }

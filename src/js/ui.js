@@ -38,7 +38,7 @@
       celebrationAngle = 0;
       celebrationFadeAlpha = 0;
       state = 'LEVEL_CELEBRATE';
-      lives = 3;                 // clearing a level refills every heart
+      lives = maxLives;          // clearing a level refills every heart
       updateHeartsDisplay();
       sound.powerup();
       updateLevelBadgeUI();
@@ -128,7 +128,7 @@
 
     function updateHeartsDisplay() {
       let str = '';
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < maxLives; i++) {
         str += i < lives ? '❤️' : '🖤';
       }
       heartsText.innerText = str;
@@ -367,6 +367,7 @@
       dragon.velocity = 0;
       dragon.wingState = 0;
       score = 0;
+      maxLives = 3;
       lives = 3;
       royalHeads = 0;
       royalHeadTypes = [];

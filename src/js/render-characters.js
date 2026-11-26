@@ -58,7 +58,7 @@
             khaleesiTimer = KHALEESI_MAX_TIME;
             gameStats.khaleesiRescues++;
             
-            lives = 3;
+            lives = maxLives;
             updateHeartsDisplay();
             const scoreResult = addScore(500);
 

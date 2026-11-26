@@ -211,6 +211,7 @@
     let levelDialogueType = 'INTRO';
     let score = 0;
     let lives = 3;
+    let maxLives = 3;          // the cathedral's heart container adds one (cathedral.js)
     let royalHeads = 0;
     let royalHeadTypes = [];
     let royalHeadNobles = [];   // which noble portrait (NOBLES index) each collected head shows

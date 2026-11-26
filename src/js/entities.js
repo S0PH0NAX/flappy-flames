@@ -3,6 +3,7 @@
 
     function spawnObstacle() {
       if (state === 'LEVEL_CELEBRATE') return;
+      if (cathedralBlocksSpawn()) return;   // level 2's cathedral gets the sky to itself (cathedral.js)
 
       const prevObs = obstacles[obstacles.length - 1];
       

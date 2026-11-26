@@ -42,6 +42,7 @@ function clearLevelExtras() {
   treasureMultTimer = 0;
   treasureMult = 1;
   setFireButtonDrop(false);
+  resetCathedral();
 }
 
 function setFireButtonDrop(on) {
@@ -311,6 +312,7 @@ function updateLevelExtras(worldShift) {
   updateSmallKnights();
   updateGoldKnights(worldShift);
   updateChests(worldShift);
+  updateCathedralTower(worldShift);
 }
 
 // Chests are drawn before everyone standing near them (main.js calls this right after the battlements),

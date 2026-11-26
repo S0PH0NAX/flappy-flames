@@ -113,7 +113,7 @@ function khaleesiRidingNow() {
 }
 
 function updateFireButtonLock() {
-  const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory();
+  const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory() || cathCinematic();
   if (cine !== cinematicShown) { cinematicShown = cine; container.classList.toggle('cinematic', cine); }
   updateSingButton();
   const off = fireDisabled() && !singBtnShown;
@@ -365,7 +365,7 @@ function updatePrologue() {
       dragon.y += (height * 0.35 - dragon.y) * 0.03;
       dragon.velocity *= 0.9;
       if (P.ending >= PRO_END_FADE) {
-        lives = 3;                 // finishing the meadow refills every heart
+        lives = maxLives;          // finishing the meadow refills every heart
         updateHeartsDisplay();
         startPrologueLevel(PRO_VILLAGE);
         return;
@@ -452,8 +452,8 @@ function proUpdateSheep(gY) {
       }
       proScore(PRO_PTS_SHEEP, 'CHOMP!', dragon.x + 10, dragon.y - 30, '#ffffff');
       sound.knightHit();
-      if (lives < 3) {   // a good meal heals Cyndraxx
-        lives = 3;
+      if (lives < maxLives) {   // a good meal heals Cyndraxx
+        lives = maxLives;
         updateHeartsDisplay();
         sound.heartPickup();
         floatingTexts.push({ x: dragon.x - 10, y: dragon.y - 52, text: 'HEARTS REFILLED!', color: '#ff6b8a', alpha: 1.0, vy: -1.1 });
@@ -883,7 +883,7 @@ function startCapturedMessage() {
   pro = null;
   currentLevel = 1;
   levelTimerSeconds = 0;
-  lives = 3;
+  lives = maxLives;
   updateHeartsDisplay();
   typedCharIndex = 0;
   textTypingComplete = false;

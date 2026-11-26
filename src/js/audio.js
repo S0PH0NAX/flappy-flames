@@ -203,6 +203,146 @@
         n.start(now, Math.random() * 0.8); n.stop(now + 0.04);
       }
 
+      // ---- cathedral encounter (cathedral.js) ----
+      // a short ringing tone; used for glass tinkles and the priest's shimmering magic
+      _ping(t, freq, vol, dur, type, out) {
+        const c = this.ctx;
+        const o = c.createOscillator();
+        o.type = type || 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        o.connect(g).connect(out);
+        o.start(t); o.stop(t + dur + 0.02);
+      }
+
+      // the great stained-glass window shattering: a bright crash and a shower of tinkles
+      glassShatter() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.5;
+        out.connect(c.destination);
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const hp = c.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 2400;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.7, now + 0.006);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+        n.connect(hp).connect(g).connect(out);
+        n.start(now); n.stop(now + 0.5);
+        for (let i = 0; i < 18; i++) {
+          this._ping(now + 0.02 + Math.random() * 0.7, 2200 + Math.random() * 4200, 0.05 + Math.random() * 0.08, 0.12 + Math.random() * 0.25, 'sine', out);
+        }
+      }
+
+      // Cyndraxx's giant breath of flame: a long, deep roar
+      bigBreath() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime, len = 1.8;
+        const out = c.createGain();
+        out.gain.value = 0.5;
+        out.connect(c.destination);
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuffer();
+        src.loop = true;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 0.6;
+        bp.frequency.setValueAtTime(900, now);
+        bp.frequency.linearRampToValueAtTime(2200, now + 0.25);
+        bp.frequency.exponentialRampToValueAtTime(380, now + len);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.6, now + 0.08);
+        g.gain.setValueAtTime(0.5, now + len * 0.6);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        src.connect(bp).connect(g).connect(out);
+        src.start(now); src.stop(now + len + 0.05);
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(70, now);
+        o.frequency.exponentialRampToValueAtTime(40, now + len);
+        const lp = c.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 260;
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.35, now + 0.1);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + len);
+        o.connect(lp).connect(og).connect(out);
+        o.start(now); o.stop(now + len);
+      }
+
+      // the priest's strange power: a glassy, rising shimmer of bell tones
+      magicShimmer(dur = 1.6) {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.35;
+        out.connect(c.destination);
+        const notes = [1046.5, 1174.7, 1396.9, 1568, 1760, 2093, 2349.3, 2793.8];
+        const count = Math.round(dur * 14);
+        for (let i = 0; i < count; i++) {
+          const t = now + (i / count) * dur;
+          const f = notes[Math.floor(Math.random() * notes.length)] * (Math.random() < 0.3 ? 0.5 : 1);
+          this._ping(t, f, 0.07, 0.5 + Math.random() * 0.5, 'sine', out);
+          this._ping(t, f * 1.003, 0.03, 0.6, 'triangle', out);
+        }
+      }
+
+      // the teleportation spell: a rushing sweep upward into a bright ring
+      teleportWhoosh() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime, len = 1.6;
+        const out = c.createGain();
+        out.gain.value = 0.45;
+        out.connect(c.destination);
+        const src = c.createBufferSource();
+        src.buffer = this.noiseBuffer();
+        src.loop = true;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass';
+        bp.Q.value = 2.5;
+        bp.frequency.setValueAtTime(250, now);
+        bp.frequency.exponentialRampToValueAtTime(6000, now + len);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.6, now + len * 0.8);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + len + 0.3);
+        src.connect(bp).connect(g).connect(out);
+        src.start(now); src.stop(now + len + 0.35);
+        const o = c.createOscillator();
+        o.type = 'sine';
+        o.frequency.setValueAtTime(180, now);
+        o.frequency.exponentialRampToValueAtTime(1800, now + len);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.18, now + len * 0.7);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + len + 0.2);
+        o.connect(og).connect(out);
+        o.start(now); o.stop(now + len + 0.25);
+        this._ping(now + len, 2093, 0.15, 1.2, 'sine', out);
+        this._ping(now + len, 3136, 0.08, 1.0, 'sine', out);
+      }
+
       towerDestroy() {
         this.playSoundEffect(sfxRockBreak, 0.15);
       }
@@ -393,6 +533,11 @@ knightHit() {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (bossIntroMusicOn() && cutsceneMusicAudio.paused) cutsceneMusicAudio.play().catch(() => {});
+        }
+        else if (gameState === 'CATHEDRAL') {   // the cathedral cutscene plays the village music
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
+          if (uiMusicAudio.paused) uiMusicAudio.play().catch(() => {});
         }
         else if (gameState === 'PLAYING' || gameState === 'LEVEL_CELEBRATE') {
           if (!uiMusicAudio.paused) uiMusicAudio.pause();

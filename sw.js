@@ -1,7 +1,7 @@
 // Network first: players always get the newest version when online,
 // and fall back to the cached copy when offline.
 // Bump CACHE_NAME if you ever need to force-clear old caches.
-const CACHE_NAME = 'flappy-flame-v3';
+const CACHE_NAME = 'flappy-flame-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

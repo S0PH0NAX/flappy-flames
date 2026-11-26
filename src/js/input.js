@@ -165,6 +165,8 @@
       const clickX = (clientX !== undefined) ? (clientX - rect.left) * scaleX : undefined;
       const clickY = (clientY !== undefined) ? (clientY - rect.top) * scaleY : undefined;
 
+      if (state === 'CATHEDRAL') { cathedralTap(clickX, clickY); return; }   // cathedral cutscene: advance, REST / FIGHT ON
+
       if (state === 'LEVEL_DIALOGUE') {
         if (clientX !== undefined && clientY !== undefined) {
           checkLevelDialogueClick(clientX, clientY);
@@ -314,6 +316,8 @@ window.addEventListener('keydown', (e) => {
   if ((e.code === 'Digit8' || e.code === 'Numpad8') && !e.repeat) { resetGame(); startPrologueLevel(PRO_VILLAGE); }  // debug: prologue village
   if ((e.code === 'Digit9' || e.code === 'Numpad9') && !e.repeat) debugStartCapture();                                // debug: ballista capture
   if (e.code === 'KeyB') triggerBossBattle();
+  if (e.code === 'KeyK' && !e.repeat) { debugWarpToLevel(2); levelTimerSeconds = CATH_AT - 4; }   // debug: level 2 just before the cathedral
+  if (state === 'CATHEDRAL' && !e.repeat && cathedralKey(e.code)) return;   // R = rest, F = fight on
   if (e.code === 'KeyI' && !e.repeat) { currentLevel = 3; updateLevelBadgeUI(); startBossIntro(); }   // debug: boss intro cinematic
 
   if (e.code === 'KeyC' && !e.repeat) {
