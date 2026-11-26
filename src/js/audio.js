@@ -602,7 +602,7 @@ knightHit() {
         }
 
         // the beheading music: the capture's fall, story images and "captured" message, and levels 2 and 5
-        const sadMusic = captureSadMusic() || (gameState === 'PLAYING' && (currentLevel === 2 || currentLevel === 5));
+        const sadMusic = captureSadMusic() || (gameState === 'PLAYING' && (currentLevel === 2 || currentLevel === 5 || caveLevel > 0));
         // the prologue keeps the opening-screen music until the net drags them over the wall
         const prologueMusic = !sadMusic && (gameState === 'START' || gameState === 'CAPTURE' ||
           (inPrologue() && (gameState === 'PLAYING' || gameState === 'PAUSED' || gameState === 'GAMEOVER')));
@@ -641,7 +641,7 @@ knightHit() {
             uiMusicAudio.play().catch(() => {});
           }
         } 
-        else if (gameState === 'CUTSCENE' || gameState === 'BOSS' || gameState === 'BOSS_FALL') {   // the boss ending keeps the boss music   // the boss fight uses the beheading music
+        else if (gameState === 'CUTSCENE' || gameState === 'BOSS' || gameState === 'BOSS_FALL' || gameState === 'SURFACE') {   // the boss ending keeps the boss music   // the boss fight uses the beheading music
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (cutsceneMusicAudio.paused) {

@@ -167,8 +167,9 @@
         if (progressBarFill) progressBarFill.style.width = '100%';
         return;
       }
-      levelBadge.innerText = currentLevel <= 0 ? proLevelName(currentLevel) : `LVL ${currentLevel}`;
-      const maxSecs = LEVEL_DURATIONS[currentLevel] || 90;
+      const inCaveLvl = typeof caveLevel !== 'undefined' && caveLevel > 0;
+      levelBadge.innerText = inCaveLvl ? `CAVE ${caveLevel}` : (currentLevel <= 0 ? proLevelName(currentLevel) : `LVL ${currentLevel}`);
+      const maxSecs = inCaveLvl ? CAVE_DURATIONS[caveLevel] : (LEVEL_DURATIONS[currentLevel] || 90);
       const progressPercent = Math.min(100, Math.max(0, (levelTimerSeconds / maxSecs) * 100));
       if (progressBarFill) {
         progressBarFill.style.width = `${progressPercent}%`;

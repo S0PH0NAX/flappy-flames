@@ -117,6 +117,12 @@
         return true;
       }
 
+      if (jenkinsRejected) {          // refused Brown Jenkins: CONTINUE goes straight to level 4
+        const by = height / 2 - 35;
+        if (clickY >= by && clickY <= by + 44 && clickX >= (width - 200) / 2 && clickX <= (width + 200) / 2) finishBossFall();
+        return true;
+      }
+
       const btnW = 200;
       const btnH = 44;
       const btnX = (width - btnW) / 2;
@@ -138,8 +144,10 @@
 
         if (clickY >= restartBtnY && clickY <= restartBtnY + btnH) {
           const proLvl = inPrologue() ? currentLevel : null;   // dying in the prologue restarts that prologue level
+          const caveLvl = caveLevel;                            // ...and in the caves, that cave level
           resetGame();
           if (proLvl !== null) startPrologueLevel(proLvl);
+          else if (caveLvl) startCaveLevel(caveLvl);
           else state = 'PLAYING';
           return true;
         }
@@ -157,7 +165,6 @@
       sound.init();
 
       if (state === 'BOSS_INTRO') { skipBossIntro(); return; }
-      if (state === 'BOSS_FALL') { bossFallTap(); return; }   // the boss ending (skippable after a few seconds)
       if (state === 'CAPTURE') { captureTap(); return; }   // no control during the capture; taps only move through the story images
 
       const rect = canvas.getBoundingClientRect();
@@ -166,7 +173,9 @@
       const clickX = (clientX !== undefined) ? (clientX - rect.left) * scaleX : undefined;
       const clickY = (clientY !== undefined) ? (clientY - rect.top) * scaleY : undefined;
 
-      if (state === 'CATHEDRAL') { cathedralTap(clickX, clickY); return; }   // cathedral cutscene: advance, REST / FIGHT ON
+      if (state === 'CATHEDRAL') { cathedralTap(clickX, clickY); return; }
+      if (state === 'BOSS_FALL') { bossFallTap(clickX, clickY); return; }   // the boss ending, Brown Jenkins (boss-fall.js)
+      if (state === 'SURFACE') { surfaceTap(); return; }   // cathedral cutscene: advance, REST / FIGHT ON
 
       if (state === 'LEVEL_DIALOGUE') {
         if (clientX !== undefined && clientY !== undefined) {
@@ -326,6 +335,17 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyK' && !e.repeat) { debugWarpToLevel(2); levelTimerSeconds = CATH_AT - 4; }   // debug: level 2 just before the cathedral
   if (state === 'CATHEDRAL' && !e.repeat && cathedralKey(e.code)) return;   // R = rest, F = fight on
+  if (state === 'BOSS_FALL' && !e.repeat && bossFallKey(e.code)) return;    // A = accept, R = reject
+  if (e.code === 'KeyU' && !e.repeat) startCaveLevel(1);                   // debug: cave 1
+  if (e.code === 'KeyY' && !e.repeat) startCaveLevel(2);                   // debug: cave 2
+  if (e.code === 'KeyH' && !e.repeat) startSurfaceScene();                 // debug: the climb to the surface
+  if (e.code === 'KeyJ' && !e.repeat) {                                     // debug: the cavern floor and Brown Jenkins
+    if (state !== 'BOSS') triggerBossBattle();
+    bossState.x = bossState.baseX = width - bossGeom().bw;
+    ['top', 'mid', 'bot'].forEach(k => { bossState.burn[k].charred = true; bossState.burn[k].charProgress = 1; });
+    startBossFall();
+    startBfFloor(bossFall);
+  }
   if (e.code === 'KeyI' && !e.repeat) { currentLevel = 3; updateLevelBadgeUI(); startBossIntro(); }   // debug: boss intro cinematic
 
   if (e.code === 'KeyC' && !e.repeat) {
@@ -499,6 +519,7 @@ window.addEventListener('keydown', (e) => {
         pauseModal.style.display = 'none';
         state = 'PLAYING';
         if (saveCodeBoss) triggerBossBattle();   // a boss code drops you straight into the siege-tower fight
+        else if (saveCodeCave) startCaveLevel(saveCodeCave);   // a cave code starts that cave level
         else if (inPrologue()) startPrologueLevel(currentLevel);
       } else {
         alert("Invalid save code!");

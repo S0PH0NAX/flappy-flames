@@ -109,6 +109,7 @@
       if (state === 'BOSS_INTRO') { updateBossIntro(); return; }
       if (state === 'CATHEDRAL') { updateCathedralScene(); return; }
       if (state === 'BOSS_FALL') { updateBossFall(); return; }
+      if (state === 'SURFACE') { updateSurface(); return; }
       if (state === 'BOSS') { updateBossLogic(); return; }
 
       if (state === 'LEVEL_CELEBRATE') {
@@ -158,6 +159,7 @@
         }
       }
 
+      if (state === 'PLAYING' && caveLevel > 0 && cave) { updateCave(); return; }   // the dark cave levels (cave.js)
       if (state === 'PLAYING' && inPrologue()) { updatePrologue(); return; }
 
       if (state === 'PLAYING') {
@@ -548,8 +550,30 @@
         ctx.textAlign = 'left';
         return;
       }
-      if (bossFallCinematic() && bossFall.phase === 'cavern') {   // falling through the cavern (boss-fall.js)
+      if (bossFallCinematic() && (bossFall.phase === 'cavern' || bossFall.phase === 'floor')) {   // the cavern (boss-fall.js)
         drawBossFallCavern();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
+      if (state === 'SURFACE') {  // climbing back to the surface (render-cave.js)
+        drawSurfaceScene();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
+      if (caveView()) {           // the dark cave levels (render-cave.js)
+        drawCaveScene();
+        if (state === 'PAUSED') renderPauseScreen();
+        else if (state === 'GAMEOVER') renderGameOverScreen();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
+      if (state === 'GAMEOVER' && jenkinsRejected) {   // refused Brown Jenkins: game over in the dark
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, width, height);
+        renderGameOverScreen();
         ctx.restore();
         ctx.textAlign = 'left';
         return;

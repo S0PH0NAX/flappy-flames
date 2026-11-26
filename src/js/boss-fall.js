@@ -1,14 +1,16 @@
 // boss-fall.js — The siege tower boss's ending (state 'BOSS_FALL'): the burned-out tower stops, the ground
 // gives way and it sinks, burning, into a huge pit. A lone archer climbs out of the turret and fires an arrow
 // trailing a chain; it pierces Cyndraxx's heart and the chain drags him down into the pit after the tower.
-// Then he falls through a dark cavern full of glowing mushrooms and jellyfish-like creatures flashing in neon
-// patterns. It ends on a fade to black, then the "SIEGE TOWER DESTROYED" dialogue (level 4 follows).
+// He falls through the dark, anchored to the burning tower below, fire and wreckage streaming past, while
+// glowing mushrooms and jellyfish-like creatures slowly appear. He lands on the cavern floor among the burning
+// wreckage, bleeding, thinks of Sarai and fades to black, then wakes, and Brown Jenkins (a possum with a human
+// face and hands) offers to save him for Nyarlathotep's price: ACCEPT (healed, +1 heart container, the debt
+// explained, then the cave levels in cave.js) or REJECT (game over; CONTINUE goes straight to level 4).
 // Classic script: shares global scope with the other src/js files.
 
 const BF_ARCHER_AT = 170;        // the lone archer climbs out of the turret
 const BF_DRAW_AT = 205;          // ...draws his bow
 const BF_FIRE_AT = 245;          // ...and fires
-const BF_CAVERN_LEN = 540;       // frames falling through the cavern
 const BF_SKIP_AFTER = 240;       // taps can skip once this much has played (so fire-button taps at the kill don't)
 
 let bossFall = null;
@@ -171,31 +173,247 @@ function updateBossFall() {
       B.fade = Math.min(1, B.fade + 1 / 30);
       if (B.fade >= 1) {
         B.phase = 'cavern';
-        B.cave = { t: 0, fall: 0 };
+        B.cave = { t: 0, fall: 0, bio: 0, stream: [] };
         dragon.wingState = 0;
       }
     }
   }
 
-  if (B.phase === 'cavern') {
-    const C = B.cave;
-    C.t++;
-    C.fall += 6.5;
-    B.rumble = 0;
-    B.drot = (B.drot || 0) + 0.012;
-    if (C.t % 130 === 40) sound.magicShimmer(0.9, 0.16);
-    if (C.t >= BF_CAVERN_LEN) finishBossFall();
+  if (B.phase === 'cavern') updateBfCavern(B);
+  else if (B.phase === 'floor') updateBfFloor(B);
+}
+
+// ---- falling through the cavern, anchored by the chain to the burning tower below ----
+const BF_FALL_LEN = 600;         // frames of the fall
+const BF_IMPACT_LEN = 80;        // the tower hits the cavern floor, then Cyndraxx does
+const BF_TOWER_SCALE = 0.6;      // the tower is drawn a little smaller in the cavern
+
+function bfCavernDragonSpot(t) {
+  return { x: width * 0.5 + Math.sin(t * 0.017) * 22, y: height * 0.27 + Math.sin(t * 0.03) * 8 };
+}
+
+function updateBfCavern(B) {
+  const C = B.cave;
+  C.t++;
+  B.rumble = 0;
+  const falling = C.t < BF_FALL_LEN;
+  C.fall += falling ? 7 : Math.max(0, 7 - (C.t - BF_FALL_LEN) * 0.3);
+  C.bio = Math.max(0, Math.min(1, (C.t - 160) / 320));      // the glow creeps in out of the darkness
+  B.drot = Math.sin(C.t * 0.02) * 0.25 + 0.35;
+  if (C.t % 130 === 70 && C.bio > 0.2) sound.magicShimmer(0.9, 0.12 * C.bio);
+  const spot = bfCavernDragonSpot(C.t);
+  // fire, embers, burning timbers and stones streaming up past him from the tower below
+  if (falling) {
+    const tx = spot.x, ty = spot.y + 120;
+    for (let i = 0; i < 4; i++) C.stream.push({ k: 'ember', x: tx + (Math.random() - 0.5) * width * 0.55, y: ty + 20 + Math.random() * height * 0.7, vx: (Math.random() - 0.5) * 1.2, vy: -7 - Math.random() * 8, s: 1.5 + Math.random() * 2, life: 120 });
+    if (Math.random() < 0.45) C.stream.push({ k: 'flame', x: tx + (Math.random() - 0.5) * width * 0.4, y: ty + 30 + Math.random() * 60, vx: (Math.random() - 0.5) * 1.5, vy: -3 - Math.random() * 4, s: 10 + Math.random() * 14, life: 70 });
+    if (Math.random() < 0.12) C.stream.push({ k: 'chunk', x: tx + (Math.random() - 0.5) * width * 0.6, y: height + 30, vx: (Math.random() - 0.5) * 1.5, vy: -4 - Math.random() * 5, s: 7 + Math.random() * 10, rot: Math.random() * 6, vr: (Math.random() - 0.5) * 0.2, life: 260 });
+    if (Math.random() < 0.3) C.stream.push({ k: 'smoke', x: tx + (Math.random() - 0.5) * width * 0.5, y: ty + 40, vx: (Math.random() - 0.5), vy: -2.5 - Math.random() * 2, s: 18 + Math.random() * 20, life: 90 });
+  }
+  for (let i = C.stream.length - 1; i >= 0; i--) {
+    const p = C.stream[i];
+    p.x += p.vx; p.y += p.vy; p.life--;
+    if (p.rot !== undefined) p.rot += p.vr;
+    if (!falling) { p.vy *= 0.93; p.vx *= 0.95; }
+    if (p.life <= 0 || p.y < -60) C.stream.splice(i, 1);
+  }
+  // the floor: the tower smashes into it, then Cyndraxx slams down among the wreckage
+  if (C.t === BF_FALL_LEN) {
+    B.shake = 14;
+    sound.collapseBoom();
+    sound.towerDestroy();
+    for (let i = 0; i < 40; i++) {
+      C.stream.push({ k: i % 3 ? 'ember' : 'flame', x: spot.x + (Math.random() - 0.5) * width * 0.8, y: height * 0.85, vx: (Math.random() - 0.5) * 9, vy: -3 - Math.random() * 9, s: i % 3 ? 2 : 14 + Math.random() * 14, life: 60 });
+    }
+  }
+  if (C.t === BF_FALL_LEN + 62) { B.shake = 8; sound.hit(); sound.knightHit(); }
+  if (C.t >= BF_FALL_LEN + BF_IMPACT_LEN) startBfFloor(B);
+}
+
+// ---- on the cavern floor: dying, the dark, waking, Brown Jenkins ----
+const BF_JENK_ACCEPT = { id: 'accept', label: 'ACCEPT', col: '#6c3fa0', edge: '#3f2266' };
+const BF_JENK_REJECT = { id: 'reject', label: 'REJECT', col: '#c0392b', edge: '#7f241b' };
+const BF_LINES = {
+  failed: 'I have failed you, Sarai.',
+  die: 'I am going to die down here in the dark. I will never see you again.',
+  fly: 'If only I could fly free with you once more, over the fields of wildflowers...',
+  sarai: 'Sarai...',
+  j1: 'Brown Jenkins is here to help you, dragon. Brown Jenkins is the adjudicator of Nyarlathotep.',
+  j2: 'Brown Jenkins will save you, but there is a price. Nyarlathotep\'s price.',
+  j3: 'Now you owe Nyarlathotep, little dragon. You owe a debt.',
+  c1: 'What must I do?',
+  j4: 'The Great Old Ones seek entrance to your plane. They require worshippers, supplicants.',
+  j5: 'They feed on their fear and call it sin and forgiveness. They call it purity.',
+  j6: 'Nyarlathotep has an undying enemy, a mindless predator that calls itself the Angel that Weeps.',
+  c2: 'The Angel that Weeps?',
+  j7: 'That creature is no angel. It\'s a mask, a deception. It\'s a gibbering horror that seeks only to devour, and implant its seed in mortals.',
+  j8: 'It grows inside of Clement the Simple.',
+  c3: 'Clement the Simple. That priest. He offers forgiveness for sins, but he\'s just finding new hosts for the seed of the Angel that Weeps.',
+  c4: 'He\'s too powerful. How do I kill him?',
+  j9: 'Nyarlathotep will grant you power when the time comes. You made a deal, Cyndraxx.'
+};
+
+function bfFloorSteps() {
+  return [
+    { act: 'lie', frames: 110 },
+    { say: 'CYN', text: BF_LINES.failed },
+    { say: 'CYN', text: BF_LINES.die },
+    { say: 'CYN', text: BF_LINES.fly },
+    { say: 'CYN', text: BF_LINES.sarai },
+    { act: 'die', frames: 330 },
+    { act: 'black', frames: 150 },
+    { act: 'wake', frames: 260 },
+    { act: 'jenkins', frames: 170 },
+    { say: 'JENK', text: BF_LINES.j1 },
+    { say: 'JENK', text: BF_LINES.j2, choice: [BF_JENK_ACCEPT, BF_JENK_REJECT] }
+  ];
+}
+function bfAcceptSteps() {
+  return [
+    { act: 'heal', frames: 220 },
+    { act: 'heart', frames: 230 },
+    { say: 'JENK', text: BF_LINES.j3 },
+    { say: 'CYN', text: BF_LINES.c1 },
+    { say: 'JENK', text: BF_LINES.j4 },
+    { say: 'JENK', text: BF_LINES.j5 },
+    { say: 'JENK', text: BF_LINES.j6 },
+    { say: 'CYN', text: BF_LINES.c2 },
+    { say: 'JENK', text: BF_LINES.j7 },
+    { say: 'JENK', text: BF_LINES.j8 },
+    { say: 'CYN', text: BF_LINES.c3 },
+    { say: 'CYN', text: BF_LINES.c4 },
+    { say: 'JENK', text: BF_LINES.j9 },
+    { act: 'leave', frames: 110 },
+    { act: 'toCave', frames: 70 },
+    { act: 'startCave', frames: 1 }
+  ];
+}
+function bfRejectSteps() {
+  return [
+    { act: 'rejectFade', frames: 100 },
+    { act: 'gameOver', frames: 1 }
+  ];
+}
+
+function startBfFloor(B) {
+  B.phase = 'floor';
+  const W = width, H = height;
+  const floorY = H * 0.8;
+  B.floor = {
+    steps: bfFloorSteps(), i: 0, t: 0, clock: 0, typed: 0, buttons: null,
+    floorY: floorY, blood: 0, fire: 1, asleep: false, arrowA: 1, jx: W + 40, jPose: 'walk', jA: 1, wing: 0,
+    dragon: { x: W * 0.4, y: floorY - 12, rot: 0.22 },
+    wreck: []
+  };
+  // the burning wreckage of the tower all around him
+  const kinds = [[0.1, 'timber'], [0.22, 'stone'], [0.6, 'stone'], [0.7, 'timber'], [0.9, 'stone'], [0.04, 'stone']];
+  kinds.forEach(([fx, k], i) => B.floor.wreck.push({ x: W * fx, k: k, s: 12 + (i * 7) % 12, rot: (i * 1.3) % 1 - 0.5, seed: i * 2.1 }));
+  B.floor.wreck.push({ x: W * 0.82, k: 'turret', s: 40, rot: -0.25, seed: 9 });
+  dragon.wingState = 0;
+}
+
+function bfStep() { return bossFall && bossFall.floor && bossFall.floor.steps[bossFall.floor.i]; }
+
+function bfNext() {
+  const F = bossFall.floor;
+  F.i++; F.t = 0; F.typed = 0; F.buttons = null;
+  const s = bfStep();
+  if (!s) return;
+  if (s.act === 'heal') { sound.magicShimmer(2.4, 0.3); sound.teleportWhoosh(); }
+  else if (s.act === 'heart') {
+    maxLives = Math.min(CATH_MAX_LIVES, maxLives + 1);
+    lives = maxLives;
+    updateHeartsDisplay();
+    sound.powerup(); sound.heartPickup();
+  }
+  else if (s.act === 'startCave') { bossFall = null; startCaveLevel(1); }
+  else if (s.act === 'gameOver') {
+    bossFall = null;
+    jenkinsRejected = true;
+    lives = 0;
+    updateHeartsDisplay();
+    state = 'GAMEOVER';
+    updateLevelBadgeUI();
   }
 }
 
-function bossFallTap() {
-  if (!bossFall || bossFall.t < BF_SKIP_AFTER) return;
-  finishBossFall();
+function updateBfFloor(B) {
+  const F = B.floor;
+  const s = bfStep();
+  if (!s) return;
+  F.t++; F.clock++;
+  if (s.say) F.typed = Math.min(s.text.length, F.typed + 1.15);
+  if (s.act === 'lie' || (s.say && F.i < 5)) F.blood = Math.min(1, F.blood + 0.006);
+  if (s.act === 'die') { F.blood = Math.min(1, F.blood + 0.003); if (F.t === 30) F.asleep = true; }
+  if (s.act === 'black') { F.fire = 0.35; F.blood = 1.15; }
+  if (s.act === 'wake' && F.t === 160) F.asleep = false;
+  if (s.act === 'wake' && F.t === 200) F.wing = 1;
+  if (s.act === 'jenkins') {
+    const target = width * 0.7;
+    if (F.jx > target) { F.jx = Math.max(target, F.jx - 2.2); F.jPose = 'walk'; }
+    else F.jPose = 'sit';
+  }
+  if (s.act === 'heal') {
+    F.arrowA = Math.max(0, 1 - F.t / 140);
+    F.blood = Math.max(0, F.blood - 0.008);
+    if (F.t === 150) { F.wing = 1; sound.flap(); }
+  }
+  if (s.act === 'heart') F.dragonUp = Math.min(1, (F.dragonUp || 0) + 0.04);
+  if (s.act === 'leave') { F.jPose = 'walk'; F.jx += 2.6; F.jA = Math.max(0, 1 - F.t / 90); }
+  F.wing *= 0.9;
+  if (!s.say && F.t >= s.frames) bfNext();
 }
 
-// Fade out of the cavern into the level-clear dialogue (as if the level-clear celebration had played).
+function bossFallTap(x, y) {
+  const B = bossFall;
+  if (!B) return;
+  if (B.phase !== 'floor') {
+    // after a few seconds, a tap skips the collapse and the fall (straight to the cavern floor)
+    if (B.t >= BF_SKIP_AFTER) startBfFloor(B);
+    return;
+  }
+  const F = B.floor, s = bfStep();
+  if (!s) return;
+  if (s.say) {
+    if (F.typed < s.text.length) { F.typed = s.text.length; return; }
+    if (s.choice) {
+      if (x === undefined || !F.buttons) return;
+      const hit = F.buttons.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+      if (!hit) return;
+      sound.score();
+      F.steps = F.steps.slice(0, F.i + 1).concat(hit.id === 'accept' ? bfAcceptSteps() : bfRejectSteps());
+      bfNext();
+      return;
+    }
+    bfNext();
+    return;
+  }
+  const skippable = { lie: 30, die: 60, black: 40, wake: 60, jenkins: 40, heal: 60, heart: 70, leave: 30 };
+  if (skippable[s.act] !== undefined && F.t > skippable[s.act]) {
+    if (s.act === 'jenkins') { F.jx = width * 0.7; F.jPose = 'sit'; }
+    if (s.act === 'heal') { F.arrowA = 0; F.blood = 0; }
+    if (s.act === 'die') F.asleep = true;
+    if (s.act === 'wake') F.asleep = false;
+    bfNext();
+  }
+}
+
+// keys at the choice: A = accept, R = reject
+function bossFallKey(code) {
+  const s = bfStep();
+  if (!s || !s.choice || bossFall.floor.typed < s.text.length) return false;
+  if (code !== 'KeyA' && code !== 'KeyR') return false;
+  const F = bossFall.floor;
+  F.steps = F.steps.slice(0, F.i + 1).concat(code === 'KeyA' ? bfAcceptSteps() : bfRejectSteps());
+  bfNext();
+  return true;
+}
+
+// Rejecting Brown Jenkins: the game-over screen's CONTINUE goes straight to level 4 (no caves).
+let jenkinsRejected = false;
 function finishBossFall() {
   bossFall = null;
+  jenkinsRejected = false;
   blackDebris = [];
   particles = [];
   flames = [];
@@ -481,42 +699,66 @@ function bfWallEdge(side, worldY) {
   return width * (0.1 + 0.08 * n);
 }
 
-function drawBossFallCavern() {
-  const B = bossFall;
-  const C = B.cave;
-  const t = C.t, fall = C.fall;
-  const W = width, H = height;
-  // the dark
-  const bg = ctx.createRadialGradient(W / 2, H * 0.45, 10, W / 2, H * 0.45, Math.max(W, H) * 0.8);
-  bg.addColorStop(0, '#0b1024');
-  bg.addColorStop(0.6, '#05060f');
-  bg.addColorStop(1, '#010103');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
+// a glowing winged creature flitting through the dark
+function drawGlowFlyer(x, y, hue, t, i, a) {
+  const flap = Math.sin(t * 0.4 + i) * 0.8;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.globalCompositeOperation = 'lighter';
+  const gl = ctx.createRadialGradient(x, y, 0, x, y, 22);
+  gl.addColorStop(0, 'hsla(' + hue + ',100%,70%,0.6)');
+  gl.addColorStop(1, 'hsla(' + hue + ',100%,50%,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(x - 22, y - 22, 44, 44);
+  ctx.fillStyle = 'hsla(' + hue + ',100%,75%,0.75)';
+  [-1, 1].forEach(sd => {
+    ctx.beginPath();
+    ctx.ellipse(x + sd * 6, y - 2, 7, 3 + flap * 2, sd * (0.5 + flap * 0.4), 0, Math.PI * 2);
+    ctx.fill();
+  });
+  ctx.fillStyle = 'hsla(' + ((hue + 40) % 360) + ',100%,90%,1)';
+  ctx.fillRect(x - 1.5, y - 4, 3, 8);
+  ctx.restore();
+}
 
-  // far away: jellyfish-like creatures drifting in the black, flashing in neon patterns
+// the bioluminescent life of the cavern, fading in with `bio` (0..1)
+function drawCavernLife(t, scroll, bio, flyers) {
+  if (bio <= 0) return;
+  const W = width, H = height;
   const period = H * 1.6;
+  ctx.save();
+  ctx.globalAlpha = bio;
   for (let i = 0; i < BF_JELLIES; i++) {
     const baseY = hash2(i, 21) * period;
-    const y = ((baseY - fall * 0.22) % period + period) % period - H * 0.2;
+    const y = ((baseY - scroll * 0.22) % period + period) % period - H * 0.2;
     const x = W * (0.12 + hash2(i, 23) * 0.76) + Math.sin(t * 0.01 + i) * 14;
     const r = 9 + hash2(i, 25) * 16;
     const hue = (hash2(i, 27) * 360 + (Math.floor(t / BF_PATTERN_LEN) % 3 === 2 ? t * 1.5 : 0)) % 360;
     drawJelly(x, y, r, hue, bfNeon(i, y, t), t, i);
   }
-
-  // drifting spores
+  ctx.restore();
+  for (let i = 0; i < (flyers || 0); i++) {
+    const x = ((hash2(i, 51) * W + t * (0.6 + hash2(i, 53))) % (W + 60)) - 30;
+    const y = H * (0.08 + hash2(i, 55) * 0.5) + Math.sin(t * 0.03 + i * 2) * 26;
+    drawGlowFlyer(x, y, Math.floor(hash2(i, 57) * 360), t, i, bio);
+  }
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 40; i++) {
-    const y = ((hash2(i, 31) * H - fall * 0.6) % H + H) % H;
+    const y = ((hash2(i, 31) * H - scroll * 0.6) % H + H) % H;
     const x = hash2(i, 33) * W + Math.sin(t * 0.02 + i) * 8;
-    ctx.fillStyle = 'hsla(' + (160 + hash2(i, 35) * 140) + ',100%,75%,' + (0.3 + 0.4 * Math.sin(t * 0.1 + i)) + ')';
+    ctx.fillStyle = 'hsla(' + (160 + hash2(i, 35) * 140) + ',100%,75%,' + bio * (0.3 + 0.4 * Math.sin(t * 0.1 + i)) + ')';
     ctx.fillRect(x, y, 2, 2);
   }
   ctx.restore();
+}
 
-  // the cavern walls rushing up past him, with glowing mushrooms on every ledge
+// rock walls down both sides with glowing mushrooms on their ledges (alpha a)
+function drawCavernWalls(t, fall, a) {
+  if (a <= 0) return;
+  const W = width, H = height;
+  ctx.save();
+  ctx.globalAlpha = a;
   [0, 1].forEach(side => {
     const edgeX = sy => side === 0 ? bfWallEdge(0, sy + fall) : W - bfWallEdge(1, sy + fall);
     ctx.beginPath();
@@ -529,7 +771,6 @@ function drawBossFallCavern() {
     wg.addColorStop(1, '#1b2236');
     ctx.fillStyle = wg;
     ctx.fill();
-    // rough rock: dark cracks and lighter knobs that scroll with the wall
     ctx.save();
     ctx.clip();
     for (let k = Math.floor(fall / 26) - 1; k < Math.floor(fall / 26) + H / 26 + 2; k++) {
@@ -546,7 +787,6 @@ function drawBossFallCavern() {
     ctx.beginPath();
     for (let sy = -10; sy <= H + 10; sy += 10) { if (sy === -10) ctx.moveTo(edgeX(sy), sy); else ctx.lineTo(edgeX(sy), sy); }
     ctx.stroke();
-    // mushrooms: clusters every so often down the wall, pulsing with a glow that ripples downward
     const step = 70;
     const first = Math.floor(fall / step) - 1;
     for (let k = first; k < first + H / step + 3; k++) {
@@ -563,35 +803,425 @@ function drawBossFallCavern() {
       }
     }
   });
+  ctx.restore();
+}
 
-  // the burning wreck of the tower tumbling down with him
-  for (let i = 0; i < 6; i++) {
-    const y = ((hash2(i, 81) * H * 1.4 - t * (1.2 + hash2(i, 83) * 1.5)) % (H * 1.4) + H * 1.4) % (H * 1.4) - H * 0.2;
-    const x = W * (0.25 + hash2(i, 85) * 0.5);
-    const s = 8 + hash2(i, 87) * 12;
+function drawBfStream(C, front) {
+  C.stream.forEach((p, i) => {
+    if ((i % 3 === 0) !== front) return;
+    if (p.k === 'ember') {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(255,' + (140 + (i * 13) % 100) + ',60,' + Math.min(1, p.life / 40) + ')';
+      ctx.fillRect(p.x, p.y, p.s, p.s * 3);
+      ctx.restore();
+    } else if (p.k === 'flame') {
+      drawFlame(p.x, p.y, p.s, p.s * 1.8, i * 0.7, Math.min(1, p.life / 30));
+    } else if (p.k === 'smoke') {
+      ctx.fillStyle = 'rgba(30,26,28,' + Math.min(0.35, p.life / 200) + ')';
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.s * (1.6 - p.life / 90), 0, Math.PI * 2); ctx.fill();
+    } else if (p.k === 'chunk') {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = '#1c1512';
+      ctx.fillRect(-p.s, -p.s * 0.55, p.s * 2, p.s * 1.1);
+      ctx.fillStyle = '#4a3020';
+      ctx.fillRect(-p.s, -p.s * 0.55, p.s * 2, 3);
+      ctx.restore();
+      drawFlame(p.x, p.y - p.s * 0.3, p.s * 1.2, p.s * 2, i * 1.3, 0.9);
+    }
+  });
+}
+
+// the burning siege tower falling just below him (tower coordinates: turret roof at y = 0)
+function bfCavernTowerXform(spot, t) {
+  const g = bossGeom();
+  return { tx: spot.x, ty: spot.y + 120, rot: Math.sin(t * 0.02) * 0.05, sc: BF_TOWER_SCALE, cx: bossFall.bx + g.bw / 2 };
+}
+function bfCavernToScreen(X, x, y) {
+  const lx = (x - X.cx) * X.sc, ly = y * X.sc;
+  const c = Math.cos(X.rot), s = Math.sin(X.rot);
+  return { x: X.tx + lx * c - ly * s, y: X.ty + lx * s + ly * c };
+}
+
+function drawBossFallCavern() {
+  const B = bossFall;
+  if (B.phase === 'floor') { drawBfFloor(); return; }
+  const C = B.cave;
+  const t = C.t, fall = C.fall;
+  const W = width, H = height;
+  const bg = ctx.createRadialGradient(W / 2, H * 0.45, 10, W / 2, H * 0.45, Math.max(W, H) * 0.8);
+  bg.addColorStop(0, '#080a16');
+  bg.addColorStop(0.6, '#03040a');
+  bg.addColorStop(1, '#000000');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  drawCavernLife(t, fall, C.bio, 0);
+  drawCavernWalls(t, fall, C.bio);
+
+  const impact = Math.max(0, t - BF_FALL_LEN);
+  const spot = bfCavernDragonSpot(Math.min(t, BF_FALL_LEN));
+  const X = bfCavernTowerXform(spot, t);
+
+  // firelight from the burning tower
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const fl = 0.35 + Math.sin(t * 0.3) * 0.04 + Math.sin(t * 0.77) * 0.03;
+  const lg = ctx.createRadialGradient(X.tx, X.ty + 60, 10, X.tx, X.ty + 60, H * 0.6);
+  lg.addColorStop(0, 'rgba(255,120,40,' + fl + ')');
+  lg.addColorStop(1, 'rgba(255,80,20,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  drawBfStream(C, false);
+
+  // the tower (until it smashes into the floor)
+  const smash = Math.min(1, impact / 26);
+  if (smash < 1) {
     ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(t * 0.02 * (i % 2 ? 1 : -1) + i);
-    ctx.fillStyle = '#1a1412';
-    ctx.fillRect(-s, -s * 0.6, s * 2, s * 1.2);
-    ctx.fillStyle = '#3a2a1e';
-    ctx.fillRect(-s, -s * 0.6, s * 2, 3);
+    ctx.globalAlpha = 1 - smash;
+    ctx.translate(X.tx, X.ty + smash * 80);
+    ctx.rotate(X.rot);
+    ctx.scale(X.sc, X.sc * (1 - smash * 0.6));
+    ctx.translate(-X.cx, 0);
+    bossState.x = B.bx;
+    renderBoss();
+    const g = bossGeom();
+    for (let i = 0; i < 7; i++) {
+      drawFlame(B.bx + g.bw * (0.1 + i * 0.13), g.turretH * (0.3 + (i % 3) * 0.6), 34, 64 + (i % 3) * 16, i * 1.7);
+    }
+    const a = bfArcherPos();
+    bossArcherSprite(a.x, 0, 'ready', t * 0.1, 1.5, 1);     // the archer clinging to the roof
     ctx.restore();
-    drawFlame(x, y - s * 0.4, s * 1.3, s * 2.2, i * 3.1, 0.9);
   }
 
-  // Cyndraxx, limp, the arrow in his heart and the chain trailing up into the dark
-  const dx = W * 0.5 + Math.sin(t * 0.017) * 34, dy = H * 0.42 + Math.sin(t * 0.03) * 10;
-  dragon.x = dx; dragon.y = dy;
+  // the floor coming up out of the dark
+  let dragonY = spot.y, dragonX = spot.x;
+  const floorY = H * 0.8;
+  if (impact > 0) {
+    const u = Math.min(1, (impact - 10) / 50);
+    const fy = H + 40 - (H + 40 - floorY) * Math.max(0, 1 - Math.pow(1 - Math.max(0, u), 3));
+    ctx.fillStyle = '#0e0b0c';
+    ctx.beginPath();
+    ctx.moveTo(0, H);
+    for (let x = 0; x <= W; x += 12) ctx.lineTo(x, fy + Math.sin(x * 0.05) * 4 + hash2(x, 3) * 5);
+    ctx.lineTo(W, H);
+    ctx.closePath();
+    ctx.fill();
+    const d = Math.min(1, impact / 62);
+    dragonY = spot.y + (floorY - 12 - spot.y) * d * d;
+    dragonX = spot.x + (W * 0.4 - spot.x) * d;
+  }
+
+  // Cyndraxx, limp; the chain from his heart pulled taut down to the tower
+  dragon.x = dragonX; dragon.y = dragonY;
   const rot = B.drot || 0;
   const c = bfChest();
-  const tail = { x: c.x - Math.cos(-Math.PI / 2 + Math.sin(t * 0.05) * 0.2) * 30, y: c.y - 34 };
-  drawChainLinks(tail.x, tail.y, dx + Math.sin(t * 0.04) * 30, -20, -10);
-  if (t % 70 < 2) dragon.wingState = 0.5;          // a twitch
-  drawDragon(dx, dy, rot);
-  drawChainArrow(c.x + 4, c.y + 6, Math.atan2(c.y + 6 - tail.y, c.x + 4 - tail.x), true);
+  if (smash < 1) {
+    const hand = bfCavernToScreen(X, bfArcherPos().x - 11, -20);
+    drawChainLinks(c.x, c.y, hand.x, hand.y, 3);
+  }
+  if (t % 70 < 2) dragon.wingState = 0.5;
+  drawDragon(dragonX, dragonY, rot);
+  drawChainArrow(c.x + 4, c.y + 6, Math.PI / 2 + 0.4, true);
 
-  // fade in from the pit's black, fade out at the end
-  const a = Math.max(0, 1 - t / 40, (t - (BF_CAVERN_LEN - 70)) / 70);
-  if (a > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, a) + ')'; ctx.fillRect(0, 0, W, H); }
+  drawBfStream(C, true);
+
+  if (impact > 0 && impact < 20) {
+    ctx.fillStyle = 'rgba(255,200,140,' + (0.5 * (1 - impact / 20)) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+  const a = Math.max(0, 1 - t / 40);
+  if (a > 0) { ctx.fillStyle = 'rgba(0,0,0,' + a + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
+// ---- the cavern floor ----
+function bfLyingChest(D, sc) {
+  const c = Math.cos(D.rot), s = Math.sin(D.rot);
+  return { x: D.x + (5 * c - 9 * s) * sc, y: D.y + (5 * s + 9 * c) * sc };
+}
+
+function drawBfFloor() {
+  const B = bossFall, F = B.floor, s = bfStep();
+  const W = width, H = height, t = F.clock;
+  const fy = F.floorY;
+  // the dark cave
+  ctx.fillStyle = '#04040a';
+  ctx.fillRect(0, 0, W, H);
+  const bioUp = F.i >= 7 ? 1 : 0.45;           // after he wakes, the creatures above glow brighter
+  drawCavernLife(t, t * 0.3, 0.55 * bioUp, F.i >= 7 ? 9 : 3);
+  // back wall shapes
+  ctx.fillStyle = '#0b0a12';
+  ctx.beginPath();
+  ctx.moveTo(0, fy);
+  for (let x = 0; x <= W; x += 20) ctx.lineTo(x, fy - 60 - Math.sin(x * 0.02) * 30 - hash2(x, 8) * 20);
+  ctx.lineTo(W, fy);
+  ctx.closePath();
+  ctx.fill();
+  // the floor
+  const fg = ctx.createLinearGradient(0, fy, 0, H);
+  fg.addColorStop(0, '#1a1418'); fg.addColorStop(1, '#070508');
+  ctx.fillStyle = fg;
+  ctx.beginPath();
+  ctx.moveTo(0, H);
+  for (let x = 0; x <= W; x += 12) ctx.lineTo(x, fy + Math.sin(x * 0.05) * 3 + hash2(x, 3) * 4);
+  ctx.lineTo(W, H);
+  ctx.closePath();
+  ctx.fill();
+
+  // firelight from the wreckage
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  F.wreck.forEach((w, i) => {
+    const r = (w.k === 'turret' ? 170 : 90) * (0.6 + 0.4 * F.fire);
+    const fl = (0.22 + Math.sin(t * 0.3 + i) * 0.03) * F.fire;
+    const lg = ctx.createRadialGradient(w.x, fy - 10, 4, w.x, fy - 10, r);
+    lg.addColorStop(0, 'rgba(255,120,40,' + fl + ')');
+    lg.addColorStop(1, 'rgba(255,80,20,0)');
+    ctx.fillStyle = lg;
+    ctx.fillRect(w.x - r, fy - 10 - r, r * 2, r * 2);
+  });
+  ctx.restore();
+
+  // the blood pool spreading under him (it shrinks away when he is healed)
+  const D = F.dragon;
+  const sc = 1.3;
+  const chest = bfLyingChest(D, sc);
+  if (F.blood > 0) {
+    const r = 70 * F.blood;
+    ctx.fillStyle = 'rgba(110,8,16,0.9)';
+    ctx.beginPath(); ctx.ellipse(chest.x + 6, fy + 3, r, r * 0.22, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(170,30,40,0.5)';
+    ctx.beginPath(); ctx.ellipse(chest.x - r * 0.2, fy + 1, r * 0.4, r * 0.07, 0, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // wreckage, burning
+  F.wreck.forEach((w, i) => {
+    ctx.save();
+    ctx.translate(w.x, fy - w.s * 0.4);
+    ctx.rotate(w.rot);
+    if (w.k === 'timber') {
+      ctx.fillStyle = '#20140c'; ctx.fillRect(-w.s * 2.2, -w.s * 0.35, w.s * 4.4, w.s * 0.7);
+      ctx.fillStyle = '#4a2c16'; ctx.fillRect(-w.s * 2.2, -w.s * 0.35, w.s * 4.4, 3);
+    } else if (w.k === 'stone') {
+      ctx.fillStyle = '#1e1d22'; ctx.fillRect(-w.s, -w.s * 0.8, w.s * 2, w.s * 1.4);
+      ctx.fillStyle = '#34323a'; ctx.fillRect(-w.s, -w.s * 0.8, w.s * 2, 3);
+    } else {
+      // a broken piece of the turret, its battlement still on it
+      ctx.fillStyle = '#16151a'; ctx.fillRect(-w.s * 1.6, -w.s * 1.6, w.s * 3.2, w.s * 1.9);
+      ctx.fillStyle = '#26252c';
+      for (let k = 0; k < 4; k++) ctx.fillRect(-w.s * 1.6 + k * w.s * 0.85, -w.s * 2.1, w.s * 0.5, w.s * 0.5);
+      ctx.fillStyle = '#0a0a0c'; ctx.fillRect(-w.s * 0.3, -w.s * 1.2, w.s * 0.25, w.s * 0.8);
+    }
+    ctx.restore();
+    const fh = (w.k === 'turret' ? 70 : 34 + w.s) * (0.4 + 0.6 * F.fire);
+    drawFlame(w.x + Math.sin(w.seed) * 6, fy - w.s * (w.k === 'turret' ? 1.6 : 0.6), (w.k === 'turret' ? 44 : 22) * (0.5 + 0.5 * F.fire), fh, w.seed);
+  });
+
+  // the chain lying slack from his chest to the turret
+  if (F.arrowA > 0) {
+    ctx.save();
+    ctx.globalAlpha = F.arrowA;
+    const tur = F.wreck[F.wreck.length - 1];
+    drawChainLinks(chest.x, chest.y, tur.x - 30, fy - 30, 40);
+    ctx.restore();
+  }
+
+  // Cyndraxx lying on the cave floor
+  ctx.save();
+  ctx.translate(D.x, D.y - (F.dragonUp || 0) * 6);
+  ctx.scale(sc, sc);
+  dragon.wingState = Math.max(dragon.wingState * 0.9, F.wing * 0.6);
+  drawDragon(0, 0, D.rot * (1 - (F.dragonUp || 0)));
+  if (F.asleep) {
+    const p = 2.6;
+    ctx.rotate(D.rot);
+    ctx.fillStyle = '#ff793f';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
+    ctx.fillStyle = '#7a1d12';
+    ctx.fillRect(4 * p, -3 * p, 5 * p, 1 * p);
+  }
+  ctx.restore();
+  if (F.arrowA > 0) {
+    ctx.save();
+    ctx.globalAlpha = F.arrowA;
+    drawChainArrow(chest.x + 6, chest.y + 4, -0.5, true);
+    ctx.restore();
+  }
+
+  // Brown Jenkins
+  if (F.i >= 8 && F.jA > 0) drawJenkins(F.jx, fy + 2, F.jPose, t, F.jA);
+
+  // Nyarlathotep's price: sickly light pouring from his little hands into the dragon's wound
+  if (s && s.act === 'heal') drawJenkinsHeal(F, chest, t);
+
+  // dying: his last thoughts are of Sarai as the world goes dark
+  if (s && s.act === 'die') {
+    const k = F.t / s.frames;
+    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, k * 1.15) + ')';
+    ctx.fillRect(0, 0, W, H);
+    const pa = Math.max(0, Math.min(1, (F.t - 40) / 80)) * Math.max(0, Math.min(1, (s.frames - 20 - F.t) / 90));
+    if (pa > 0 && khaleesiFrame1.complete && khaleesiFrame1.naturalWidth) {
+      const ps = Math.min(W, H) * 0.55;
+      ctx.save();
+      ctx.globalAlpha = pa * 0.9;
+      ctx.drawImage(saraiMemory(), (W - ps) / 2, H * 0.4 - ps / 2, ps, ps);
+      ctx.restore();
+    }
+  }
+  if (s && s.act === 'black') { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
+  if (s && s.act === 'wake') {
+    const a = Math.max(0, 1 - F.t / 130);
+    ctx.fillStyle = 'rgba(0,0,0,' + a + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+  if (s && s.act === 'heart') drawHeartContainer(F.t, 'Nyarlathotep\'s gift. Cyndraxx is healed.');
+  if (s && s.say) drawCathDialogue(s, F);
+  if (s && (s.act === 'toCave' || s.act === 'rejectFade' || s.act === 'startCave' || s.act === 'gameOver')) {
+    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, F.t / (s.frames - 5)) + ')';
+    ctx.fillRect(0, 0, W, H);
+  }
+  // a dark vignette over everything
+  const v = ctx.createRadialGradient(W / 2, H * 0.6, Math.min(W, H) * 0.3, W / 2, H * 0.6, Math.max(W, H) * 0.75);
+  v.addColorStop(0, 'rgba(0,0,0,0)');
+  v.addColorStop(1, 'rgba(0,0,0,0.6)');
+  ctx.fillStyle = v;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// Sarai's portrait fading softly out at the edges, like a memory
+let saraiMemoryCanvas = null;
+function saraiMemory() {
+  if (saraiMemoryCanvas) return saraiMemoryCanvas;
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d');
+  g.drawImage(khaleesiFrame1, 0, 0, 256, 256);
+  g.globalCompositeOperation = 'destination-in';
+  const m = g.createRadialGradient(128, 118, 40, 128, 128, 128);
+  m.addColorStop(0, 'rgba(0,0,0,1)');
+  m.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = m;
+  g.fillRect(0, 0, 256, 256);
+  saraiMemoryCanvas = c;
+  return c;
+}
+
+function drawJenkinsHeal(F, chest, t) {
+  const hx = F.jx - 14, hy = F.floorY - 30;
+  const k = Math.min(1, F.t / 40) * Math.min(1, (220 - F.t) / 40);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 6; i++) {
+    ctx.beginPath();
+    for (let u = 0; u <= 1.001; u += 0.05) {
+      const x = hx + (chest.x - hx) * u;
+      const y = hy + (chest.y - hy) * u + Math.sin(u * 10 + t * 0.2 + i) * 16 * Math.sin(u * Math.PI);
+      if (u === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = i % 2 ? 'rgba(160,90,255,' + 0.6 * k + ')' : 'rgba(80,255,160,' + 0.55 * k + ')';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
+  // a turning ring of strange marks around the dragon
+  const R = 70;
+  ctx.strokeStyle = 'rgba(150,100,255,' + 0.6 * k + ')';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.ellipse(chest.x, chest.y, R, R * 0.4, 0, 0, Math.PI * 2); ctx.stroke();
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2 + t * 0.03;
+    const x = chest.x + Math.cos(a) * R, y = chest.y + Math.sin(a) * R * 0.4;
+    ctx.fillStyle = 'rgba(120,255,180,' + 0.8 * k + ')';
+    ctx.fillRect(x - 2, y - 4, 4, 2); ctx.fillRect(x - 1, y - 2, 2, 6);
+  }
+  const gl = ctx.createRadialGradient(chest.x, chest.y, 0, chest.x, chest.y, 60);
+  gl.addColorStop(0, 'rgba(180,140,255,' + 0.5 * k + ')');
+  gl.addColorStop(1, 'rgba(120,60,255,0)');
+  ctx.fillStyle = gl;
+  ctx.fillRect(chest.x - 60, chest.y - 60, 120, 120);
+  ctx.restore();
+}
+
+// ---- Brown Jenkins: a possum with a human face and tiny human hands ----
+function drawJenkins(x, footY, pose, t, alpha) {
+  const p = 3.6;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(Math.round(x), Math.round(footY));
+  const R = (cx, cy, w, h, col) => { ctx.fillStyle = col; ctx.fillRect(cx * p, cy * p, w * p, h * p); };
+  const FUR = '#7a6c60', FUR_D = '#584c43', FUR_L = '#a69888', SKIN = '#d9b59a', SKIN_D = '#b48e74', PINK = '#d9a1a4';
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(0, 1, 9 * p, 1.6 * p, 0, 0, Math.PI * 2); ctx.fill();
+  // the long, bare, pink tail curling out behind him
+  ctx.strokeStyle = PINK; ctx.lineWidth = p * 0.9; ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(3 * p, -2 * p);
+  ctx.bezierCurveTo(12 * p, -1 * p, 14 * p, -8 * p + Math.sin(t * 0.08) * p, 10 * p, -9 * p);
+  ctx.stroke();
+  if (pose === 'walk') {
+    const step = Math.floor(t / 5) % 2;
+    R(-6, -6, 11, 5, FUR); R(-6, -2, 11, 1, FUR_D); R(-5, -6, 9, 1, FUR_L);
+    // little human hands for front feet, back paws
+    R(-5 + step, -1, 1.5, 1, SKIN); R(-3 - step, -1, 1.5, 1, SKIN);
+    R(2 + step, -1, 1.5, 1, FUR_D); R(4 - step, -1, 1.5, 1, FUR_D);
+    // head out in front: fur ruff, pointed ears, a man's face
+    R(-10, -9, 5, 5, FUR);
+    R(-10, -11, 1.5, 2, FUR); R(-6.5, -11, 1.5, 2, FUR); R(-9.7, -10.5, 0.8, 1, PINK); R(-6.2, -10.5, 0.8, 1, PINK);
+    R(-9.5, -8, 3.5, 3.5, SKIN); R(-9.5, -5.5, 3.5, 0.8, SKIN_D);
+    R(-9, -7.3, 0.8, 0.8, '#0a0a0a'); R(-7.2, -7.3, 0.8, 0.8, '#0a0a0a');
+    R(-9, -5.5, 2.5, 0.5, '#e8e0a8');
+  } else {
+    // sitting up on his haunches, hands folded, grinning
+    R(-4, -10, 8, 10, FUR); R(-3, -9, 6, 8, FUR_L); R(2.5, -10, 1.5, 10, FUR_D);
+    R(-5, -1, 3, 1, FUR_D); R(2, -1, 3, 1, FUR_D);
+    R(-2.5, -7, 5, 1.5, SKIN); R(-2.5, -7.5, 1, 0.5, SKIN_D); R(-0.5, -7.5, 1, 0.5, SKIN_D); R(1.5, -7.5, 1, 0.5, SKIN_D);   // little fingers
+    R(-4, -16, 8, 6.5, FUR);
+    R(-4.2, -18.5, 2, 3, FUR); R(2.2, -18.5, 2, 3, FUR); R(-3.7, -17.8, 1, 1.6, PINK); R(2.7, -17.8, 1, 1.6, PINK);
+    R(-3, -15.5, 6, 5, SKIN); R(-3, -11, 6, 0.6, SKIN_D);
+    R(-2.4, -14.5, 1.8, 0.4, '#5a4a40'); R(0.6, -14.5, 1.8, 0.4, '#5a4a40');
+    const glint = (t % 110) < 10;
+    R(-2.2, -13.8, 1.2, 1.2, '#0a0a0a'); R(0.9, -13.8, 1.2, 1.2, '#0a0a0a');
+    if (glint) { R(-2, -13.7, 0.4, 0.4, '#dfffb0'); R(1.1, -13.7, 0.4, 0.4, '#dfffb0'); }
+    R(-0.5, -12.5, 1, 1.4, SKIN_D);
+    R(-2, -11.6, 4, 0.8, '#3a1a14'); R(-1.6, -11.6, 0.6, 0.6, '#efe6b0'); R(-0.4, -11.6, 0.6, 0.6, '#efe6b0'); R(0.8, -11.6, 0.6, 0.6, '#efe6b0');
+    R(-3, -11.2, 6, 1.2, '#6b5a4c');     // scraggly beard
+  }
+  ctx.restore();
+}
+
+let jenkinsPortraitCanvas = null;
+function jenkinsPortrait() {
+  if (jenkinsPortraitCanvas) return jenkinsPortraitCanvas;
+  const c = document.createElement('canvas');
+  c.width = 128; c.height = 128;
+  const g = c.getContext('2d');
+  const q = 4;
+  const R = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x * q, y * q, w * q, h * q); };
+  const bg = g.createRadialGradient(64, 60, 4, 64, 64, 100);
+  bg.addColorStop(0, '#203a1c'); bg.addColorStop(1, '#05080a');
+  g.fillStyle = bg; g.fillRect(0, 0, 128, 128);
+  const FUR = '#7a6c60', FUR_D = '#584c43', FUR_L = '#a69888', SKIN = '#d9b59a', SKIN_D = '#b48e74', PINK = '#d9a1a4';
+  R(4, 3, 6, 9, FUR); R(22, 3, 6, 9, FUR);              // pointed possum ears
+  R(6, 5, 2, 5, PINK); R(24, 5, 2, 5, PINK);
+  R(5, 8, 22, 18, FUR); R(7, 24, 18, 6, FUR_D);         // fur all around the face
+  R(6, 9, 2, 14, FUR_L); R(24, 9, 2, 14, FUR_L);
+  R(9, 9, 14, 15, SKIN);                                // a man's face
+  R(9, 9, 14, 1, SKIN_D); R(10, 12, 4, 1, '#5a4a40'); R(18, 12, 4, 1, '#5a4a40');   // brows
+  R(11, 13, 3, 3, '#0a0a0a'); R(18, 13, 3, 3, '#0a0a0a');   // beady eyes
+  R(10, 16, 4, 1, SKIN_D); R(18, 16, 4, 1, SKIN_D);       // bags under them
+  R(15, 14, 2, 5, SKIN_D);                              // long nose
+  R(11, 20, 10, 2, '#3a1a14');                          // a wide grin...
+  R(12, 20, 1, 1, '#efe6b0'); R(14, 20, 1, 2, '#efe6b0'); R(16, 20, 1, 1, '#efe6b0'); R(18, 20, 1, 2, '#efe6b0');   // ...sharp teeth
+  R(10, 22, 12, 3, '#6b5a4c'); R(11, 25, 10, 1, '#6b5a4c');   // scraggly beard
+  R(9, 17, 1, 2, SKIN_D); R(22, 17, 1, 2, SKIN_D);
+  // two tiny human hands, fingertips together
+  R(8, 27, 6, 4, SKIN); R(18, 27, 6, 4, SKIN);
+  R(13, 26, 2, 3, SKIN); R(17, 26, 2, 3, SKIN);
+  R(9, 27, 1, 1, SKIN_D); R(11, 27, 1, 1, SKIN_D); R(20, 27, 1, 1, SKIN_D); R(22, 27, 1, 1, SKIN_D);
+  jenkinsPortraitCanvas = c;
+  return c;
 }

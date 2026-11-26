@@ -440,16 +440,6 @@
         h.y = h.baseY + Math.sin(h.bobPhase) * (drifting ? 4 : 8);
         const swayX = drifting ? Math.sin(h.bobPhase * 0.7) * 3 : 0;
 
-        if (drifting) {
-          // balloon string
-          ctx.strokeStyle = 'rgba(240,240,240,0.7)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(h.x + swayX, h.y + 26);
-          ctx.quadraticCurveTo(h.x + swayX - 6, h.y + 38, h.x + swayX + 2, h.y + 52);
-          ctx.stroke();
-        }
-
         ctx.save();
         ctx.translate(h.x + swayX, h.y);
         if (drifting) ctx.rotate(Math.sin(h.bobPhase * 0.7) * 0.12);

@@ -113,7 +113,7 @@ function khaleesiRidingNow() {
 }
 
 function updateFireButtonLock() {
-  const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory() || cathCinematic() || bossFallCinematic();
+  const cine = (state === 'CAPTURE' && !!(pro && pro.cap && pro.cap.t >= CAP_CLOSE)) || festStory() || cathCinematic() || bossFallCinematic() || state === 'SURFACE';
   if (cine !== cinematicShown) { cinematicShown = cine; container.classList.toggle('cinematic', cine); }
   updateSingButton();
   const off = fireDisabled() && !singBtnShown;

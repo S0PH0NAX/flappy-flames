@@ -57,6 +57,9 @@
       } else if (levelDialogueType === 'LEVEL4_CLEAR') {
         title = "LEVEL 4 CONQUERED!";
         buttonText = "START LEVEL 5";
+      } else if (levelDialogueType === 'CAVE_CLEAR') {
+        title = "OUT OF THE DEPTHS!";
+        buttonText = "START LEVEL 4";
       } else if (levelDialogueType === 'VICTORY') {
         title = "SLAVERS DEFEATED! VICTORY!";
         buttonText = "PLAY AGAIN";
@@ -333,6 +336,22 @@
       ctx.font = 'bold 34px "Proxima Nova", sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText('GAME OVER', width / 2, height / 2 - 170);
+
+      if (jenkinsRejected) {          // refused Brown Jenkins: one way on, straight to level 4
+        ctx.fillStyle = '#d8d0c0';
+        fitFont('Cyndraxx refused Nyarlathotep\'s price.', 16, width - 30);
+        ctx.fillText('Cyndraxx refused Nyarlathotep\'s price.', width / 2, height / 2 - 120);
+        const bw = 200, bx = (width - bw) / 2, by = height / 2 - 35;
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(bx, by, bw, 44);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(bx, by, bw, 44);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+        ctx.fillText('CONTINUE', width / 2, by + 28);
+        return;
+      }
 
       ctx.fillStyle = '#f1c40f';
       ctx.font = 'bold 15px "Proxima Nova", sans-serif';

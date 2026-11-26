@@ -138,6 +138,7 @@
     const CODE_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const SAVE_CODE_BOSS = 11;   // level character "B": the code starts the siege-tower boss
     let saveCodeBoss = false;    // set by loadSaveCode() when the code is a boss code
+    let saveCodeCave = 0;        // ...or the cave level (1 or 2) for a cave code
 
     function atBossFight() {
       if (state === 'BOSS_INTRO') return true;
@@ -175,6 +176,7 @@
       const v = Math.min(gameStats.villagersKilled, 36 ** 3 - 1);
       let lvl = atBossFight() ? SAVE_CODE_BOSS : Math.min(currentLevel, FINAL_LEVEL);
       if (inPrologue() || state === 'CAPTURE') lvl = currentLevel === PRO_MEADOW ? PRO_CODE_MEADOW : PRO_CODE_VILLAGE;
+      if (caveLevel > 0 && cave) lvl = CAVE_CODES[caveLevel];
       const body = codeEncode(p, 5) + CODE_CHARS[k] + CODE_CHARS[q] + codeEncode(v, 3) + CODE_CHARS[lvl];
       const code = body + codeCheckChar(body);
       return code.slice(0, 4) + '-' + code.slice(4, 8) + '-' + code.slice(8);
@@ -207,6 +209,8 @@
       const isBoss = lvlVal === SAVE_CODE_BOSS;
       let savedLvl = isBoss ? 3 : Math.max(1, Math.min(FINAL_LEVEL, lvlVal));
       if (clean.length === 12 && isPrologueCode(lvlVal)) savedLvl = lvlVal === PRO_CODE_MEADOW ? PRO_MEADOW : PRO_VILLAGE;
+      const caveCode = clean.length === 12 ? (lvlVal === CAVE_CODES[1] ? 1 : (lvlVal === CAVE_CODES[2] ? 2 : 0)) : 0;
+      if (caveCode) savedLvl = 4;
 
       resetGame();
       score = savedScore;
@@ -228,6 +232,7 @@
       scoreDisplay.innerText = score;
       updateHeartsDisplay();
       saveCodeBoss = isBoss;
+      saveCodeCave = caveCode;
       return true;
     }
 

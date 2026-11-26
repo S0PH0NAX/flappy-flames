@@ -847,9 +847,20 @@ function cathWrap(text, maxW) {
   return lines;
 }
 
-function drawCathDialogue(s) {
-  const S = cathScene;
+// Speakers: CYN (Cyndraxx), CLEM (Clement the Simple), JENK (Brown Jenkins, boss-fall.js), NARR (narration).
+const SPEAKERS = {
+  CYN:  { name: 'CYNDRAXX', border: '#d9a93a', frame: '#f1c40f', label: '#b5651d' },
+  CLEM: { name: 'CLEMENT THE SIMPLE', border: '#9b8cc4', frame: '#9b8cc4', label: '#5b4a8c' },
+  JENK: { name: 'BROWN JENKINS', border: '#7fae4a', frame: '#8fc455', label: '#4d7a1e' }
+};
+SPEAKERS.THINK = SPEAKERS.CYN;
+// A dialogue box at the top of the screen, sized to its text, with an optional row of choice buttons
+// (s.choice: an array of { id, label, col, edge }, or true for the cathedral's REST / FIGHT ON).
+// S is the scene that owns it (typed, clock, buttons).
+function drawCathDialogue(s, S) {
+  S = S || cathScene;
   const who = s.say;
+  const spk = SPEAKERS[who] || SPEAKERS.CYN;
   const W = width, H = height;
   const P = who === 'NARR' ? 0 : Math.min(78, W * 0.19);
   const margin = 12;
@@ -870,7 +881,7 @@ function drawCathDialogue(s) {
   ctx.fillStyle = who === 'NARR' ? 'rgba(12,8,22,0.88)' : '#ffffff';
   ctx.fill();
   ctx.lineWidth = 2;
-  ctx.strokeStyle = who === 'CLEM' ? '#9b8cc4' : '#d9a93a';
+  ctx.strokeStyle = spk.border;
   ctx.stroke();
   if (P) {
     const px = margin + 10, py = boxY + 10;
@@ -883,18 +894,25 @@ function drawCathDialogue(s) {
         ctx.fillRect(px + P * 13 / 32, py + P * 13 / 32, P * 2 / 32, P * 2 / 32);
         ctx.fillRect(px + P * 18 / 32, py + P * 13 / 32, P * 2 / 32, P * 2 / 32);
       }
+    } else if (who === 'JENK') {
+      ctx.drawImage(jenkinsPortrait(), px, py, P, P);
+      if ((S.clock % 110) < 10) {          // his beady eyes catch the light
+        ctx.fillStyle = 'rgba(220,255,170,0.95)';
+        ctx.fillRect(px + P * 12.5 / 32, py + P * 13.5 / 32, P * 1 / 32, P * 1 / 32);
+        ctx.fillRect(px + P * 18.5 / 32, py + P * 13.5 / 32, P * 1 / 32, P * 1 / 32);
+      }
     } else if (cynPortrait.complete && cynPortrait.naturalWidth) {
       ctx.drawImage(cynPortrait, px, py, P, P);
     }
     ctx.lineWidth = 3;
-    ctx.strokeStyle = who === 'CLEM' ? '#9b8cc4' : '#f1c40f';
+    ctx.strokeStyle = spk.frame;
     ctx.strokeRect(px, py, P, P);
   }
   ctx.textAlign = 'left';
   if (nameH) {
     ctx.font = 'bold 13px "Proxima Nova", sans-serif';
-    ctx.fillStyle = who === 'CLEM' ? '#5b4a8c' : '#b5651d';
-    ctx.fillText(who === 'CLEM' ? 'CLEMENT THE SIMPLE' : 'CYNDRAXX', textX, boxY + 22);
+    ctx.fillStyle = spk.label;
+    ctx.fillText(spk.name, textX, boxY + 22);
   }
   ctx.font = font;
   ctx.fillStyle = who === 'NARR' ? '#f3e6d0' : '#111111';
@@ -918,10 +936,11 @@ function drawCathDialogue(s) {
     const bw = Math.min(160, (W - 36) / 2), bh = 48, gap = 12;
     const by = boxY + boxH + 16;
     const bx = (W - bw * 2 - gap) / 2;
-    S.buttons = [
-      { id: 'rest', x: bx, y: by, w: bw, h: bh, label: 'REST', col: '#27ae60', edge: '#1b7a43' },
-      { id: 'fight', x: bx + bw + gap, y: by, w: bw, h: bh, label: 'FIGHT ON', col: '#c0392b', edge: '#7f241b' }
+    const opts = Array.isArray(s.choice) ? s.choice : [
+      { id: 'rest', label: 'REST', col: '#27ae60', edge: '#1b7a43' },
+      { id: 'fight', label: 'FIGHT ON', col: '#c0392b', edge: '#7f241b' }
     ];
+    S.buttons = opts.map((o, i) => Object.assign({ x: bx + i * (bw + gap), y: by, w: bw, h: bh }, o));
     const pulse = 1 + Math.sin(S.clock * 0.08) * 0.02;
     S.buttons.forEach(b => {
       ctx.save();
@@ -956,7 +975,7 @@ function heartPath(cx, cy, s) {
   ctx.closePath();
 }
 
-function drawHeartContainer(t) {
+function drawHeartContainer(t, sub) {
   const W = width, H = height;
   const a = Math.min(1, t / 20);
   ctx.fillStyle = 'rgba(20,6,10,' + 0.65 * a + ')';
@@ -998,7 +1017,7 @@ function drawHeartContainer(t) {
     ctx.fillText('HEART CONTAINER!', W / 2, cy + s * 0.5 + 34);
     ctx.font = 'bold 16px "Proxima Nova", sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText('Cyndraxx awakens refreshed.', W / 2, cy + s * 0.5 + 60);
+    ctx.fillText(sub || 'Cyndraxx awakens refreshed.', W / 2, cy + s * 0.5 + 60);
     let row = '';
     for (let i = 0; i < maxLives; i++) row += '❤️';
     ctx.font = '26px sans-serif';

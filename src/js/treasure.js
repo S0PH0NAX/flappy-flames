@@ -43,6 +43,8 @@ function clearLevelExtras() {
   treasureMult = 1;
   setFireButtonDrop(false);
   resetCathedral();
+  if (typeof resetCave === 'function') resetCave();
+  if (typeof bossFall !== 'undefined') { bossFall = null; jenkinsRejected = false; }
 }
 
 function setFireButtonDrop(on) {
