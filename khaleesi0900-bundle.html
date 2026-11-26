@@ -12501,12 +12501,12 @@ function drawCathDialogue(s) {
   const P = who === 'NARR' ? 0 : Math.min(78, W * 0.19);
   const margin = 12;
   const boxW = W - margin * 2;
-  const italic = who === 'THINK' || who === 'NARR';
+  const italic = who === 'NARR';                  // Cyndraxx's lines (spoken or thought) are plain text
   const font = (italic ? 'italic ' : '') + 'bold 15px "Proxima Nova", sans-serif';
   ctx.font = font;
   const textX = margin + (P ? P + 22 : 18);
   const maxW = boxW - (P ? P + 34 : 36);
-  const full = who === 'NARR' ? s.text : (who === 'THINK' ? '(' + s.text + ')' : '"' + s.text + '"');
+  const full = who === 'CLEM' ? '"' + s.text + '"' : s.text;
   const lines = cathWrap(full, maxW);
   const nameH = who === 'NARR' ? 0 : 22;
   const boxH = Math.max(P + 20, nameH + lines.length * 20 + 24);
@@ -12515,7 +12515,7 @@ function drawCathDialogue(s) {
   ctx.save();
   ctx.beginPath();
   if (ctx.roundRect) ctx.roundRect(margin, boxY, boxW, boxH, 12); else ctx.rect(margin, boxY, boxW, boxH);
-  ctx.fillStyle = who === 'NARR' ? 'rgba(12,8,22,0.88)' : (who === 'THINK' ? 'rgba(232,236,250,0.96)' : '#ffffff');
+  ctx.fillStyle = who === 'NARR' ? 'rgba(12,8,22,0.88)' : '#ffffff';
   ctx.fill();
   ctx.lineWidth = 2;
   ctx.strokeStyle = who === 'CLEM' ? '#9b8cc4' : '#d9a93a';
@@ -12542,11 +12542,11 @@ function drawCathDialogue(s) {
   if (nameH) {
     ctx.font = 'bold 13px "Proxima Nova", sans-serif';
     ctx.fillStyle = who === 'CLEM' ? '#5b4a8c' : '#b5651d';
-    ctx.fillText(who === 'CLEM' ? 'CLEMENT THE SIMPLE' : (who === 'THINK' ? 'CYNDRAXX (THINKING)' : 'CYNDRAXX'), textX, boxY + 22);
+    ctx.fillText(who === 'CLEM' ? 'CLEMENT THE SIMPLE' : 'CYNDRAXX', textX, boxY + 22);
   }
   ctx.font = font;
-  ctx.fillStyle = who === 'NARR' ? '#f3e6d0' : (who === 'THINK' ? '#2c3550' : '#111111');
-  let left = S.typed >= s.text.length ? Infinity : Math.floor(S.typed) + (who === 'NARR' ? 0 : 1);
+  ctx.fillStyle = who === 'NARR' ? '#f3e6d0' : '#111111';
+  let left = S.typed >= s.text.length ? Infinity : Math.floor(S.typed) + (who === 'CLEM' ? 1 : 0);
   lines.forEach((ln, i) => {
     const part = left >= ln.length ? ln : ln.slice(0, Math.max(0, left));
     left -= ln.length + 1;
@@ -12855,17 +12855,17 @@ function drawCathedralHUD() {
     ctx.lineWidth = 3;
     ctx.strokeStyle = '#f1c40f';
     ctx.strokeRect(pX, pY, pSize, pSize);
-    ctx.font = 'italic bold 15px "Proxima Nova", sans-serif';
-    const lines = cathWrap('(' + cathAfter.text + ')', width * 0.76);
+    ctx.font = 'bold 15px "Proxima Nova", sans-serif';
+    const lines = cathWrap(cathAfter.text, width * 0.76);
     let longest = 0;
     lines.forEach(l => { longest = Math.max(longest, ctx.measureText(l).width); });
     const bW = longest + 28, bH = lines.length * 20 + 20;
     const bX = Math.min(width - bW - 15, pX), bY = pY + pSize + 14;
-    ctx.fillStyle = 'rgba(232,236,250,0.96)';
+    ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     if (ctx.roundRect) ctx.roundRect(bX, bY, bW, bH, 10); else ctx.rect(bX, bY, bW, bH);
     ctx.fill();
-    ctx.fillStyle = '#2c3550';
+    ctx.fillStyle = '#111111';
     ctx.textAlign = 'center';
     lines.forEach((l, i) => ctx.fillText(l, bX + bW / 2, bY + 24 + i * 20));
     ctx.restore();
