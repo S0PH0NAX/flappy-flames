@@ -1182,6 +1182,16 @@ function drawCathDream(t) {
   const second = t >= CATH_DREAM;
   const f = t - (second ? CATH_DREAM : 0);
   drawStoryPicture(second ? danceImg2 : danceImg1, 'Cyndraxx dreams of the spring festival, singing with Queen Sarai...', f, CATH_DREAM);
+  drawDreamGlow(t);
+  const W = width, H = height;
+  // fade in from the white of sleep, and back to white at the end
+  const edge = Math.max(0, 1 - f / 30, (f - (CATH_DREAM - 30)) / 30 * (second ? 1 : 0));
+  if (edge > 0) { ctx.fillStyle = 'rgba(255,248,235,' + Math.min(1, edge) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
+// the dream look: a circle of memory fading out to soft white at the edges, a warm haze, drifting sparkles
+// (also used for Cyndraxx's last dream of Sarai on the cavern floor, boss-fall.js)
+function drawDreamGlow(t) {
   const W = width, H = height;
   ctx.save();
   // a warm, hazy glow and soft white edges
@@ -1199,9 +1209,6 @@ function drawCathDream(t) {
     ctx.fillRect(sx, sy, 2, 2);
   }
   ctx.restore();
-  // fade in from the white of sleep, and back to white at the end
-  const edge = Math.max(0, 1 - f / 30, (f - (CATH_DREAM - 30)) / 30 * (second ? 1 : 0));
-  if (edge > 0) { ctx.fillStyle = 'rgba(255,248,235,' + Math.min(1, edge) + ')'; ctx.fillRect(0, 0, W, H); }
 }
 
 // back in the level: the dread, the lingering thought, the fade back in

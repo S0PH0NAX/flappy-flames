@@ -550,6 +550,12 @@
         ctx.textAlign = 'left';
         return;
       }
+      if (bossFallStory()) {      // the storybook picture of the arrow striking him (boss-fall.js)
+        drawBossFallStory();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
       if (bossFallCinematic() && (bossFall.phase === 'cavern' || bossFall.phase === 'floor')) {   // the cavern (boss-fall.js)
         drawBossFallCavern();
         ctx.restore();

@@ -363,6 +363,133 @@
       }
 
       // the arrow striking Cyndraxx's heart: a hard thud and a deep, ringing heartbeat
+      // a cave spider's hiss as it leaps (also a web tearing)
+      spiderHiss() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const hp = c.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 2600;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.Q.value = 3;
+        bp.frequency.setValueAtTime(5200, now);
+        bp.frequency.exponentialRampToValueAtTime(3200, now + 0.35);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.32, now + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+        n.connect(hp).connect(bp).connect(g).connect(c.destination);
+        n.start(now); n.stop(now + 0.45);
+      }
+
+      // a spider burning up: a wet crackle and a squeal
+      spiderSquish() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 1.4;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.45, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+        n.connect(bp).connect(g).connect(c.destination);
+        n.start(now); n.stop(now + 0.25);
+        const o = c.createOscillator();
+        o.type = 'square';
+        o.frequency.setValueAtTime(1900, now);
+        o.frequency.exponentialRampToValueAtTime(700, now + 0.18);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        o.connect(og).connect(c.destination);
+        o.start(now); o.stop(now + 0.22);
+      }
+
+      // one slow, muffled heartbeat (lub-dub); `vol` 0..1 so the last ones can fade
+      heartbeat(vol = 1) {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.9 * vol;
+        out.connect(c.destination);
+        [0, 0.28].forEach((d, i) => {
+          const o = c.createOscillator();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(i ? 52 : 62, now + d);
+          o.frequency.exponentialRampToValueAtTime(30, now + d + 0.25);
+          const g = c.createGain();
+          g.gain.setValueAtTime(0.0001, now + d);
+          g.gain.exponentialRampToValueAtTime(i ? 0.55 : 0.9, now + d + 0.025);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + d + 0.38);
+          const lp = c.createBiquadFilter();
+          lp.type = 'lowpass'; lp.frequency.value = 160;
+          o.connect(lp).connect(g).connect(out);
+          o.start(now + d); o.stop(now + d + 0.42);
+        });
+      }
+
+      // a dying breath: a long, wet, rattling exhale that sinks away
+      deathRattle() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime, dur = 2.6;
+        const out = c.createGain();
+        out.gain.value = 0.55;
+        out.connect(c.destination);
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        n.loop = true;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.Q.value = 2.2;
+        bp.frequency.setValueAtTime(700, now);
+        bp.frequency.exponentialRampToValueAtTime(180, now + dur);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.7, now + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        // the rattle: the breath stutters through the throat
+        const am = c.createGain();
+        am.gain.value = 0.5;
+        const lfo = c.createOscillator();
+        lfo.type = 'square';
+        lfo.frequency.setValueAtTime(19, now);
+        lfo.frequency.linearRampToValueAtTime(9, now + dur);
+        const lfoG = c.createGain();
+        lfoG.gain.value = 0.5;
+        lfo.connect(lfoG).connect(am.gain);
+        n.connect(bp).connect(am).connect(g).connect(out);
+        // a low groan under it
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(78, now);
+        o.frequency.exponentialRampToValueAtTime(41, now + dur);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.12, now + 0.3);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + dur * 0.9);
+        const olp = c.createBiquadFilter();
+        olp.type = 'lowpass'; olp.frequency.value = 300;
+        o.connect(olp).connect(og).connect(out);
+        n.start(now); n.stop(now + dur + 0.1);
+        lfo.start(now); lfo.stop(now + dur + 0.1);
+        o.start(now); o.stop(now + dur);
+      }
+
       pierceHit() {
         if (this.muted || this.hidden) return;
         this.init();
@@ -621,6 +748,11 @@ knightHit() {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (bossIntroMusicOn() && cutsceneMusicAudio.paused) cutsceneMusicAudio.play().catch(() => {});
+        }
+        else if (gameState === 'BOSS_FALL' && bossFallSilent()) {   // his death on the cavern floor: no music, only his heart
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
         }
         else if (gameState === 'CATHEDRAL') {   // the cathedral cutscene plays the village music
           if (!bgMusicAudio.paused) bgMusicAudio.pause();

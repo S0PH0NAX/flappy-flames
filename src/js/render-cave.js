@@ -26,18 +26,29 @@ const CAVE_DEPTH_LAYERS = [
   { par: 0.18, a: 0.7, sc: 0.65, hue: 190, step: 190 },
   { par: 0.32, a: 1, sc: 0.85, hue: 175, step: 240 }    // nearest of the background
 ];
+// Everything in the background fades out before the tunnel's ceiling and floor, so its edges never show
+// the shape of the cave in the dark. 0 at the rock, 1 once CAVE_EDGE_FADE px clear of it.
+const CAVE_EDGE_FADE = 70;
+function caveEdgeFade(C, x, y) {
+  const d = Math.min(y - caveCeilAt(C.scroll + x), caveFloorAt(C.scroll + x) - y);
+  return Math.max(0, Math.min(1, (d - 6) / CAVE_EDGE_FADE));
+}
 function drawCaveDepth(C) {
   const W = width, H = height, t = C.t;
   ctx.save();
-  // a faint haze of light hanging in the air of the great cavern
   ctx.globalCompositeOperation = 'lighter';
-  const hz = ctx.createLinearGradient(0, 0, 0, H);
-  hz.addColorStop(0, 'rgba(10,30,45,0)');
-  hz.addColorStop(0.5, 'rgba(14,46,62,0.22)');
-  hz.addColorStop(1, 'rgba(10,30,45,0)');
-  ctx.fillStyle = hz;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalCompositeOperation = 'lighter';
+  // a faint haze of light hanging in the air of the great cavern: soft pools along the middle of the tunnel
+  const hs = 170, ho = (C.scroll * 0.2) % hs;
+  for (let i = -1; i <= Math.ceil(W / hs) + 1; i++) {
+    const hx = i * hs - ho, wx = C.scroll + hx;
+    const hy = (caveCeilAt(wx) + caveFloorAt(wx)) / 2;
+    const hr = Math.max(20, (caveFloorAt(wx) - caveCeilAt(wx)) / 2 - CAVE_EDGE_FADE * 0.4);
+    const hz = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+    hz.addColorStop(0, 'rgba(14,46,62,0.16)');
+    hz.addColorStop(1, 'rgba(14,46,62,0)');
+    ctx.fillStyle = hz;
+    ctx.fillRect(hx - hr, hy - hr, hr * 2, hr * 2);
+  }
   CAVE_DEPTH_LAYERS.forEach((L, li) => {
     const off = C.scroll * L.par;
     const k0 = Math.floor(off / L.step) - 1, k1 = Math.floor((off + W) / L.step) + 1;
@@ -48,16 +59,27 @@ function drawCaveDepth(C) {
       const len = H * (0.42 + hash2(seed, 3) * 0.3);          // long enough to reach into the open tunnel
       const wide = (40 + hash2(seed, 4) * 60) * L.sc;
       const baseY = top ? 0 : H, tipY = top ? len : H - len;
-      // the spire: a dark blue-grey silhouette with a faint rim of glow down one side
+      // the spire: a dark blue-grey silhouette with a faint rim of glow down one side, fading out before the rock
+      const edge = top ? Math.max(caveCeilAt(C.scroll + x - wide), caveCeilAt(C.scroll + x), caveCeilAt(C.scroll + x + wide))
+                       : Math.min(caveFloorAt(C.scroll + x - wide), caveFloorAt(C.scroll + x), caveFloorAt(C.scroll + x + wide));
+      const e0 = top ? edge + 6 : edge - 6, e1 = top ? edge + 6 + CAVE_EDGE_FADE : edge - 6 - CAVE_EDGE_FADE;
+      if (top ? tipY <= e0 : tipY >= e0) continue;     // the whole spire is hidden behind the rock
+      const col = 'hsla(' + L.hue + ',40%,' + (10 + li * 4) + '%,';
+      const fillG = ctx.createLinearGradient(0, e0, 0, e1);
+      fillG.addColorStop(0, col + '0)');
+      fillG.addColorStop(1, col + '1)');
+      const rimG = ctx.createLinearGradient(0, e0, 0, e1);
+      rimG.addColorStop(0, 'hsla(' + (L.hue - 20) + ',90%,60%,0)');
+      rimG.addColorStop(1, 'hsla(' + (L.hue - 20) + ',90%,60%,0.6)');
       ctx.globalAlpha = L.a;
-      ctx.fillStyle = 'hsl(' + L.hue + ',40%,' + (10 + li * 4) + '%)';   // added as light, so it never dims what's lit
+      ctx.fillStyle = fillG;   // added as light, so it never dims what's lit
       ctx.beginPath();
       ctx.moveTo(x - wide, baseY);
       ctx.quadraticCurveTo(x - wide * 0.35, (baseY + tipY) / 2, x, tipY);
       ctx.quadraticCurveTo(x + wide * 0.4, (baseY + tipY) / 2, x + wide, baseY);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = 'hsla(' + (L.hue - 20) + ',90%,60%,0.6)';
+      ctx.strokeStyle = rimG;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x + wide, baseY);
@@ -74,6 +96,9 @@ function drawCaveDepth(C) {
         const hue = [175, 195, 280, 140, 320][Math.floor(hash2(seed, 50 + j) * 5)];
         const tw = 0.5 + 0.5 * Math.sin(t * (0.03 + hash2(seed, 70 + j) * 0.05) + j * 2.1);
         const r = (10 + hash2(seed, 90 + j) * 14) * L.sc;
+        const ef = caveEdgeFade(C, px, py);
+        if (ef <= 0) continue;
+        ctx.globalAlpha = L.a * ef;
         const g = ctx.createRadialGradient(px, py, 0, px, py, r);
         g.addColorStop(0, 'hsla(' + hue + ',100%,65%,' + (0.35 + 0.5 * tw) + ')');
         g.addColorStop(1, 'hsla(' + hue + ',100%,50%,0)');
@@ -87,6 +112,7 @@ function drawCaveDepth(C) {
         const tx = x + (hash2(seed, 7) - 0.5) * wide;
         const tl = (40 + hash2(seed, 8) * 80) * L.sc;
         const ty = Math.max(0, tipY - len * 0.3);
+        ctx.globalAlpha = L.a * Math.min(caveEdgeFade(C, tx, ty), caveEdgeFade(C, tx, ty + tl));
         ctx.strokeStyle = 'hsla(165,100%,60%,' + (0.35 + 0.15 * Math.sin(t * 0.05 + k)) + ')';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -112,7 +138,7 @@ function drawCaveDepth(C) {
       const g = ctx.createRadialGradient(px, py, 0, px, py, r);
       g.addColorStop(0, 'hsla(' + hue + ',100%,60%,' + 0.22 * tw * L.a + ')');
       g.addColorStop(1, 'hsla(' + hue + ',100%,50%,0)');
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = caveEdgeFade(C, px, py - r * 0.6) * caveEdgeFade(C, px, py + r * 0.6);
       ctx.fillStyle = g;
       ctx.fillRect(px - r, py - r, r * 2, r * 2);
     }
@@ -127,7 +153,7 @@ function drawCaveDepth(C) {
       for (let f = 0; f < 7; f++) {
         const fx = cx + Math.sin(t * 0.03 + f * 1.7 + sd) * 18 * L.sc + f * 6 * L.sc;
         const fy = cy + Math.cos(t * 0.025 + f * 2.3) * 10 * L.sc;
-        ctx.globalAlpha = L.a * (0.6 + 0.4 * Math.sin(t * 0.1 + f));
+        ctx.globalAlpha = L.a * (0.6 + 0.4 * Math.sin(t * 0.1 + f)) * caveEdgeFade(C, fx, fy);
         ctx.fillStyle = 'hsla(' + hue + ',100%,75%,1)';
         ctx.fillRect(fx, fy, 2 * L.sc + 0.5, 1.2 * L.sc + 0.4);
       }
@@ -146,20 +172,183 @@ function drawCaveLife(C) {
     const y = H * (0.22 + hash2(i, 123) * 0.56) + Math.sin(t * 0.012 + i) * 18;
     const r = 8 + hash2(i, 125) * 14;
     const hue = (hash2(i, 127) * 360 + (Math.floor(t / BF_PATTERN_LEN) % 3 === 2 ? t * 1.5 : 0)) % 360;
-    drawJelly(x, y, r, hue, bfNeon(i, y, t), t, i);
+    ctx.save();
+    ctx.globalAlpha = Math.min(caveEdgeFade(C, x, y - r * 2.4), caveEdgeFade(C, x, y + r * 2.6));
+    if (ctx.globalAlpha > 0) drawJelly(x, y, r, hue, bfNeon(i, y, t), t, i);
+    ctx.restore();
   }
   for (let i = 0; i < 7; i++) {
     const x = ((hash2(i, 131) * period - C.scroll * 0.6 + t * (0.4 + hash2(i, 133))) % period + period) % period - W * 0.3;
     const y = H * (0.25 + hash2(i, 135) * 0.5) + Math.sin(t * 0.04 + i * 2) * 24;
-    drawGlowFlyer(x, y, Math.floor(hash2(i, 137) * 360), t, i, 0.9);
+    drawGlowFlyer(x, y, Math.floor(hash2(i, 137) * 360), t, i, 0.9 * caveEdgeFade(C, x, y));
   }
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 36; i++) {
     const x = ((hash2(i, 141) * W - C.scroll * 0.8) % W + W) % W;
     const y = H * 0.15 + hash2(i, 143) * H * 0.7 + Math.sin(t * 0.02 + i) * 10;
-    ctx.fillStyle = 'hsla(' + (150 + hash2(i, 145) * 160) + ',100%,75%,' + (0.25 + 0.35 * Math.sin(t * 0.09 + i)) + ')';
+    ctx.fillStyle = 'hsla(' + (150 + hash2(i, 145) * 160) + ',100%,75%,' + (0.25 + 0.35 * Math.sin(t * 0.09 + i)) * caveEdgeFade(C, x, y) + ')';
     ctx.fillRect(x, y, 2, 2);
+  }
+  ctx.restore();
+}
+
+// ---- webs: an orb web stretched from the ceiling to the floor (logic in cave.js) ----
+function caveWebGeom(wb, C) {
+  const sx = wb.wx - C.scroll;
+  const c = caveCeilAt(wb.wx), f = caveFloorAt(wb.wx);
+  const hx = sx + (hash2(wb.seed, 1) - 0.5) * 10;
+  const hy = (c + f) / 2 + (hash2(wb.seed, 2) - 0.5) * (f - c) * 0.25;
+  const half = 30 + hash2(wb.seed, 3) * 10;
+  const ends = [];
+  const N = 13;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + (hash2(wb.seed, 10 + i) - 0.5) * 0.35;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const tx = dx > 0.001 ? (sx + half - hx) / dx : (dx < -0.001 ? (sx - half - hx) / dx : 1e9);
+    const ty = dy > 0 ? (f + 5 - hy) / dy : (c - 5 - hy) / dy;
+    const tm = Math.min(tx, ty);
+    ends.push({ x: hx + dx * tm, y: hy + dy * tm });
+  }
+  return { sx, c, f, hx, hy, half, ends };
+}
+// pass 'strands' draws the silk (in the lit scene); pass 'glow' draws dew glints, embers and fire over the dark
+function drawCaveWeb(wb, C, pass) {
+  const G = caveWebGeom(wb, C);
+  if (G.sx < -60 || G.sx > width + 60) return;
+  const t = C.t;
+  const burning = wb.state === 'burning', torn = wb.state === 'torn';
+  const k = burning || torn ? Math.min(1, wb.burnT / WEB_BURN_FRAMES) : 0;
+  if (k >= 1) return;
+  const dmg = 1 - Math.max(0, wb.hp) / WEB_HP;
+  ctx.save();
+  if (torn) ctx.translate(Math.min(30, wb.burnT * 0.8), 0);
+  const ring = (u) => {      // a point u of the way out along each spoke
+    return G.ends.map((e, i) => ({ x: G.hx + (e.x - G.hx) * u, y: G.hy + (e.y - G.hy) * u + (torn ? wb.burnT * wb.burnT * 0.02 * (e.y > G.hy ? 1 : -0.3) : 0) }));
+  };
+  const rings = [];
+  for (let u = 0.12; u < 0.97; u += 0.085) rings.push(ring(u));
+  if (pass === 'strands') {
+    ctx.globalAlpha = 1 - k;
+    ctx.strokeStyle = burning ? 'rgba(255,150,60,0.9)' : 'rgba(215,222,232,' + (0.75 - dmg * 0.3) + ')';
+    ctx.lineWidth = 1;
+    // the frame threads anchoring it to the rock, and the spokes
+    ctx.beginPath();
+    [-1, 1].forEach(sd => {
+      ctx.moveTo(G.sx + sd * G.half, G.c - 4);
+      ctx.quadraticCurveTo(G.sx + sd * (G.half - 8), G.hy, G.sx + sd * G.half, G.f + 4);
+    });
+    G.ends.forEach(e => { ctx.moveTo(G.hx, G.hy); ctx.lineTo(e.x, e.y); });
+    ctx.stroke();
+    // the sticky spiral
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    rings.forEach((pts, ri) => {
+      pts.forEach((p, i) => {
+        const sag = 1.5 + ri * 0.15;
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else { const q = pts[i - 1]; ctx.quadraticCurveTo((p.x + q.x) / 2, (p.y + q.y) / 2 + sag, p.x, p.y); }
+      });
+      const q = pts[pts.length - 1], p = pts[0];
+      ctx.quadraticCurveTo((p.x + q.x) / 2, (p.y + q.y) / 2 + 1.5, p.x, p.y);
+    });
+    ctx.stroke();
+    // where the flames have caught it: blackened, smouldering holes
+    wb.spots.forEach(sp => {
+      ctx.fillStyle = 'rgba(20,10,6,' + Math.min(0.8, sp.t / 10) + ')';
+      ctx.beginPath(); ctx.arc(G.sx, sp.y, 4 + Math.min(10, sp.t * 0.3), 0, Math.PI * 2); ctx.fill();
+    });
+  } else {
+    ctx.globalCompositeOperation = 'lighter';
+    // dew glinting faintly in the dark, so the web can be seen coming
+    if (!burning) {
+      rings.forEach((pts, ri) => pts.forEach((p, i) => {
+        if (hash2(wb.seed + ri, i) > 0.45) return;
+        const tw = 0.5 + 0.5 * Math.sin(t * 0.07 + ri * 1.3 + i * 2.1);
+        ctx.fillStyle = 'rgba(190,220,255,' + (0.18 + 0.32 * tw) * (1 - k) * (1 - dmg * 0.5) + ')';
+        ctx.fillRect(p.x - 0.8, p.y - 0.8, 1.6, 1.6);
+      }));
+    }
+    // fire: glowing where it is catching, and racing through it once it goes up
+    wb.spots.forEach(sp => {
+      const a = Math.max(0, 1 - sp.t / 70);
+      const g = ctx.createRadialGradient(G.sx, sp.y, 0, G.sx, sp.y, 26);
+      g.addColorStop(0, 'rgba(255,150,50,' + 0.6 * a + ')');
+      g.addColorStop(1, 'rgba(255,80,20,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(G.sx - 26, sp.y - 26, 52, 52);
+    });
+    if (burning) {
+      const a = 1 - k;
+      for (let y = G.c; y < G.f; y += 22) {
+        const fx = G.sx + Math.sin(y * 0.1 + t * 0.3) * 10;
+        drawFlame(fx, y + 10, 10 * a + 4, 22 * a + 6, y * 0.05 + wb.seed, a);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// ---- cave spiders (logic in cave.js) ----
+// pass 'body' draws the spider (lit only by the light); pass 'eyes' draws its glowing red eyes over the dark
+function drawCaveSpider(sp, C, pass) {
+  const sx = sp.wx - C.scroll;
+  if (sx < -50 || sx > width + 50) return;
+  const r = sp.r, t = sp.legT;
+  ctx.save();
+  ctx.translate(sx, sp.y);
+  if (sp.surf === 'top' && sp.state !== 'dead') ctx.scale(1, -1);    // hanging upside down from the ceiling
+  ctx.rotate(sp.rot);
+  const faceX = sp.state === 'leap' ? -1 : (sp.dir < 0 ? -1 : 1);
+  if (pass === 'body') {
+    const leaping = sp.state === 'leap', dead = sp.state === 'dead';
+    // eight jointed legs
+    ctx.strokeStyle = '#1a120d';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 8; i++) {
+      const side = i < 4 ? -1 : 1, j = i % 4;
+      const hipX = (j - 1.5) * r * 0.22, hipY = side * r * 0.05;
+      const step = sp.moving && !leaping && !dead ? Math.sin(t * 0.45 + j * 1.6 + (side > 0 ? Math.PI : 0)) * r * 0.25 : 0;
+      let footX = (j - 1.5) * r * 0.75 + step + (j < 2 ? -1 : 1) * r * 0.35;
+      let footY = r * 0.75 + (side > 0 ? 0 : -r * 0.1);
+      let kneeX = hipX + (footX - hipX) * 0.55, kneeY = -r * 0.55;
+      if (leaping) { footX *= 1.5; footY = r * 0.35 + (j % 2) * r * 0.2; kneeY = -r * 0.25; kneeX = hipX + (footX - hipX) * 0.5; }
+      if (dead) { footX *= 0.25; footY = -r * 0.3; kneeX = hipX + (footX - hipX) * 0.5 + (j < 2 ? -1 : 1) * r * 0.25; kneeY = -r * 0.5; }
+      ctx.lineWidth = Math.max(1.5, r * 0.14);
+      ctx.beginPath();
+      ctx.moveTo(hipX, hipY);
+      ctx.lineTo(kneeX, kneeY);
+      ctx.lineTo(footX, footY);
+      ctx.stroke();
+    }
+    // abdomen behind, head in front
+    ctx.fillStyle = '#20150f';
+    ctx.beginPath(); ctx.ellipse(-faceX * r * 0.55, -r * 0.1, r * 0.75, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6b1d14';          // a dull red marking
+    ctx.beginPath(); ctx.ellipse(-faceX * r * 0.6, -r * 0.25, r * 0.22, r * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2a1c14';
+    ctx.beginPath(); ctx.ellipse(faceX * r * 0.3, 0, r * 0.42, r * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+    // bristles
+    ctx.fillStyle = '#4a3527';
+    for (let k = 0; k < 6; k++) ctx.fillRect(-faceX * r * (0.2 + k * 0.17), -r * 0.62 + Math.abs(k - 2.5) * r * 0.06, 1.5, 2.5);
+    // fangs
+    ctx.fillStyle = '#c9c0a8';
+    ctx.fillRect(faceX * r * 0.62, r * 0.12, 2, r * 0.25);
+    ctx.fillRect(faceX * r * 0.52, r * 0.16, 2, r * 0.22);
+  } else if (sp.state !== 'dead') {
+    ctx.globalCompositeOperation = 'lighter';
+    const ex = faceX * r * 0.48, ey = -r * 0.12;
+    const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, r * 1.1);
+    g.addColorStop(0, 'rgba(255,40,30,0.35)');
+    g.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(ex - r * 1.1, ey - r * 1.1, r * 2.2, r * 2.2);
+    const blink = (Math.floor(t / 7) + sp.seed) % 37 === 0 ? 0.2 : 1;
+    ctx.fillStyle = 'rgba(255,70,50,' + blink + ')';
+    [[0, 0], [0.12, -0.12], [0.12, 0.12], [-0.1, -0.16], [-0.1, 0.16], [0.24, 0], [-0.2, -0.05], [-0.2, 0.08]].forEach(([ox, oy], i) => {
+      const s = i < 3 ? 2.4 : 1.6;
+      ctx.fillRect(ex + faceX * ox * r - s / 2, ey + oy * r - s / 2, s, s);
+    });
   }
   ctx.restore();
 }
@@ -255,6 +444,8 @@ function drawCaveScene() {
     ctx.stroke();
   });
   C.torches.forEach(drawCaveTorch);
+  (C.webs || []).forEach(wb => drawCaveWeb(wb, C, 'strands'));
+  (C.spiders || []).forEach(sp => drawCaveSpider(sp, C, 'body'));
 
   // Cyndraxx, his flames and sparks (floating score texts are held back and drawn over the darkness)
   drawDragon(dragon.x, dragon.y);
@@ -281,6 +472,15 @@ function drawCaveScene() {
   };
   light(dragon.x + 6, dragon.y, 78, 0.9);                       // his own faint glow
   flames.forEach(f => light(f.x, f.y, 70 + f.size * 2.2, Math.min(1, f.life / 60)));
+  (C.webs || []).forEach(wb => {        // a web lights up as it burns
+    const sx = wb.wx - C.scroll;
+    wb.spots.forEach(sp => light(sx, sp.y, 46, 0.7 * Math.max(0, 1 - sp.t / 70)));
+    if (wb.state === 'burning') {
+      const a = Math.max(0, 1 - wb.burnT / WEB_BURN_FRAMES);
+      const c = caveCeilAt(wb.wx), f = caveFloorAt(wb.wx);
+      for (let y = c + 20; y < f; y += 40) light(sx, y, 70, 0.85 * a);
+    }
+  });
   C.torches.forEach(tc => {
     const h = caveTorchHead(tc);
     if (!tc.lit) {   // the smouldering ember shows a hint of the torch in the dark
@@ -304,6 +504,8 @@ function drawCaveScene() {
   drawCaveDepth(C);
   drawCaveLife(C);
   ctx.restore();
+  (C.webs || []).forEach(wb => drawCaveWeb(wb, C, 'glow'));
+  (C.spiders || []).forEach(sp => drawCaveSpider(sp, C, 'eyes'));
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
     const ft = floatingTexts[i];
     ctx.save();

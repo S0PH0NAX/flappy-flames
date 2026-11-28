@@ -3,7 +3,7 @@
 // trailing a chain; it pierces Cyndraxx's heart and the chain drags him down into the pit after the tower.
 // He falls through the dark, chained to the burning tower below as it breaks apart, fire and wreckage streaming past, while
 // glowing mushrooms and jellyfish-like creatures slowly appear. He lands on the cavern floor among the burning
-// wreckage, bleeding, thinks of Sarai and fades to black, then wakes, and Brown Jenkins (a possum with a human
+// wreckage, bleeding, dreams of Sarai, and dies; in the dark that follows Brown Jenkins (a possum with a human
 // face and hands) offers to save him for Nyarlathotep's price: ACCEPT (healed, +1 heart container, the debt
 // explained, then the cave levels in cave.js) or REJECT (game over; CONTINUE goes straight to level 4).
 // Classic script: shares global scope with the other src/js files.
@@ -11,9 +11,18 @@
 const BF_ARCHER_AT = 170;        // the lone archer climbs out of the turret
 const BF_DRAW_AT = 205;          // ...draws his bow
 const BF_FIRE_AT = 245;          // ...and fires
-const BF_CAVE_SKIP_AFTER = 60;   // the collapse and drag can't be skipped; the cavern fall can, after this many frames of it
+const BF_STORY_DELAY = 20;       // frames after the arrow strikes before the storybook picture comes up
+const BF_STORY_FRAMES = 300;     // how long the picture stays (the scene behind it is paused; can't be skipped)
+const BF_STORY_CAPTION = 'The arrow found his heart, and the chain held fast.';
+const deathArrowImg = new Image(); deathArrowImg.src = 'assets/images/deatharrow.jpg';
 
 let bossFall = null;
+
+// the storybook picture of the arrow striking him (drawn by render() in place of the scene)
+function bossFallStory() { return bossFallCinematic() && bossFall.story; }
+function drawBossFallStory() {
+  drawStoryPicture(deathArrowImg, BF_STORY_CAPTION, bossFall.story.t, BF_STORY_FRAMES);
+}
 
 function bossFallCinematic() { return state === 'BOSS_FALL' && !!bossFall; }
 
@@ -75,6 +84,13 @@ function bfChest() {
 function updateBossFall() {
   const B = bossFall;
   if (!B) return;
+  // the storybook picture: everything else waits (B.t stands still, so the drag picks up where it left off)
+  if (B.story) {
+    B.story.t++;
+    if (B.story.t >= BF_STORY_FRAMES) { B.story = null; B.storyDone = true; }
+    return;
+  }
+  if (B.hitT >= 0 && !B.storyDone && B.t >= B.hitT + BF_STORY_DELAY) { B.story = { t: 0 }; B.rumble = 0; return; }
   B.t++;
   const g = bossGeom();
   const t = B.t;
@@ -282,7 +298,21 @@ function updateBfCavern(B) {
   if (C.t >= BF_FALL_LEN + BF_IMPACT_LEN) startBfFloor(B);
 }
 
-// ---- on the cavern floor: dying, the dark, waking, Brown Jenkins ----
+// ---- on the cavern floor: his last dream, his death, the dark, Brown Jenkins ----
+const BF_DREAM_FRAMES = 360;
+const BF_DREAM_CAPTION = 'Cyndraxx dreams of Sarai...';
+const BF_DEATH_FRAMES = 680;
+// his heart in the death scene: frame of each beat and how loud (they slow and fade, then stop)
+const BF_BEATS = [[0, 1], [52, 0.92], [110, 0.82], [178, 0.7], [258, 0.56], [352, 0.4], [466, 0.24]];
+const BF_SPASMS = [128, 214];         // his body convulses
+const BF_RATTLE_AT = 300;             // the last breath leaves him
+const BF_DEAD_AT = 330;               // his eye goes dull: he is gone
+const BF_ZOOM_AT = 400;               // the view sinks slowly in on the dead eye...
+const BF_IRIS_AT = 540;               // ...and the dark closes in on it
+function bossFallSilent() {           // no music while he dies (audio.js)
+  const s = bossFall && bossFall.phase === 'floor' && bfStep();
+  return !!(s && (s.act === 'death' || s.act === 'black'));
+}
 const BF_JENK_ACCEPT = { id: 'accept', label: 'ACCEPT', col: '#6c3fa0', edge: '#3f2266' };
 const BF_JENK_REJECT = { id: 'reject', label: 'REJECT', col: '#c0392b', edge: '#7f241b' };
 const BF_LINES = {
@@ -298,7 +328,7 @@ const BF_LINES = {
   j5: 'They feed on their fear and call it sin and forgiveness. They call it purity.',
   j6: 'Nyarlathotep has an undying enemy, a mindless predator that calls itself the Angel that Weeps.',
   c2: 'The Angel that Weeps?',
-  j7: 'That creature is no angel. It\'s a mask, a deception. It\'s a gibbering horror that seeks only to devour, and implant its seed in mortals.',
+  j7: 'That creature is no angel. It is a mask, a deception. It is a gibbering horror that seeks only to devour, and implant its seed in mortals.',   // Brown Jenkins never uses contractions
   j8: 'It grows inside of Clement the Simple.',
   c3: 'Clement the Simple. That priest. He offers forgiveness for sins, but he\'s just finding new hosts for the seed of the Angel that Weeps.',
   c4: 'He\'s too powerful. How do I kill him?',
@@ -312,9 +342,10 @@ function bfFloorSteps() {
     { say: 'CYN', text: BF_LINES.die },
     { say: 'CYN', text: BF_LINES.fly },
     { say: 'CYN', text: BF_LINES.sarai },
-    { act: 'die', frames: 330 },
-    { act: 'black', frames: 150 },
-    { act: 'wake', frames: 260 },
+    { act: 'dream', frames: BF_DREAM_FRAMES },   // his last dream: Sarai, in the soft circle of memory
+    { act: 'death', frames: BF_DEATH_FRAMES },   // torn out of it; his heart slows and stops
+    { act: 'black', frames: 170 },
+    { act: 'dimIn', frames: 150 },               // the cave again: he lies dead
     { act: 'jenkins', frames: 170 },
     { say: 'JENK', text: BF_LINES.j1 },
     { say: 'JENK', text: BF_LINES.j2, choice: [BF_JENK_ACCEPT, BF_JENK_REJECT] }
@@ -396,10 +427,20 @@ function updateBfFloor(B) {
   F.t++; F.clock++;
   if (s.say) F.typed = Math.min(s.text.length, F.typed + 1.15);
   if (s.act === 'lie' || (s.say && F.i < 5)) F.blood = Math.min(1, F.blood + 0.006);
-  if (s.act === 'die') { F.blood = Math.min(1, F.blood + 0.003); if (F.t === 30) F.asleep = true; }
-  if (s.act === 'black') { F.fire = 0.35; F.blood = 1.15; }
-  if (s.act === 'wake' && F.t === 160) F.asleep = false;
-  if (s.act === 'wake' && F.t === 200) F.wing = 1;
+  if (s.act === 'death') {
+    const T = F.t;
+    F.blood = Math.min(1.6, F.blood + 0.0012);
+    BF_BEATS.forEach(([at, v]) => { if (T === at) sound.heartbeat(v); });
+    if (BF_SPASMS.indexOf(T) >= 0) { F.spasm = 14; F.wing = 1; F.spurt = 1; sound.hit(); }
+    if (T === BF_RATTLE_AT) sound.deathRattle();
+    if (T === BF_DEAD_AT) F.dead = true;
+    if (T > 200) F.fire = Math.max(0.2, F.fire - 0.0022);          // the fires gutter
+    F.lifeDim = Math.min(0.85, Math.max(0, (T - 260) / 300));     // the glow above dies away
+  }
+  if (F.spasm > 0) F.spasm--;
+  if (F.spurt > 0) F.spurt = Math.max(0, F.spurt - 0.03);
+  if (s.act === 'black') { F.fire = 0.25; F.blood = 1.6; F.dead = true; F.lifeDim = 0.85; }
+  if (s.act === 'dimIn') F.lifeDim = Math.max(0.35, 0.85 - F.t / 150 * 0.5);
   if (s.act === 'jenkins') {
     const target = width * 0.7;
     if (F.jx > target) { F.jx = Math.max(target, F.jx - 2.2); F.jPose = 'walk'; }
@@ -408,6 +449,9 @@ function updateBfFloor(B) {
   if (s.act === 'heal') {
     F.arrowA = Math.max(0, 1 - F.t / 140);
     F.blood = Math.max(0, F.blood - 0.008);
+    if (F.t === 90) F.dead = false;                                  // life comes back into his eye
+    F.lifeDim = Math.max(0, (F.lifeDim || 0) - 0.01);
+    F.fire = Math.min(1, F.fire + 0.006);
     if (F.t === 150) { F.wing = 1; sound.flap(); }
   }
   if (s.act === 'heart') F.dragonUp = Math.min(1, (F.dragonUp || 0) + 0.04);
@@ -419,12 +463,8 @@ function updateBfFloor(B) {
 function bossFallTap(x, y) {
   const B = bossFall;
   if (!B) return;
-  if (B.phase !== 'floor') {
-    // the collapse, the chain arrow and the drag can't be skipped; once he's falling through the
-    // cavern, a tap (after a short guard, so stray taps don't) skips straight to the cavern floor
-    if (B.phase === 'cavern' && B.cave && B.cave.t >= BF_CAVE_SKIP_AFTER) startBfFloor(B);
-    return;
-  }
+  // the collapse, the chain arrow, the drag and the fall through the cavern can't be skipped
+  if (B.phase !== 'floor') return;
   const F = B.floor, s = bfStep();
   if (!s) return;
   if (s.say) {
@@ -441,12 +481,11 @@ function bossFallTap(x, y) {
     bfNext();
     return;
   }
-  const skippable = { lie: 30, die: 60, black: 40, wake: 60, jenkins: 40, heal: 60, heart: 70, leave: 30 };
+  // (his last dream, his death and the black after it can't be skipped)
+  const skippable = { lie: 30, dimIn: 60, jenkins: 40, heal: 60, heart: 70, leave: 30 };
   if (skippable[s.act] !== undefined && F.t > skippable[s.act]) {
     if (s.act === 'jenkins') { F.jx = width * 0.7; F.jPose = 'sit'; }
-    if (s.act === 'heal') { F.arrowA = 0; F.blood = 0; }
-    if (s.act === 'die') F.asleep = true;
-    if (s.act === 'wake') F.asleep = false;
+    if (s.act === 'heal') { F.arrowA = 0; F.blood = 0; F.dead = false; F.lifeDim = 0; F.fire = 1; }
     bfNext();
   }
 }
@@ -486,7 +525,7 @@ function finishBossFall() {
 
 function bossFallRumble() { return bossFall ? bossFall.rumble : 0; }
 function bossFallShake() {
-  if (!bossFall || bossFall.phase === 'cavern' || bossFall.shake < 0.3) return null;
+  if (!bossFall || bossFall.story || bossFall.phase === 'cavern' || bossFall.shake < 0.3) return null;
   const s = bossFall.shake;
   return { x: (Math.random() - 0.5) * s, y: (Math.random() - 0.5) * s };
 }
@@ -1034,15 +1073,69 @@ function bfLyingChest(D, sc) {
   return { x: D.x + (5 * c - 9 * s) * sc, y: D.y + (5 * s + 9 * c) * sc };
 }
 
+// where his eye is on screen as he lies on the floor (the death scene sinks in on it)
+function bfLyingEye(F) {
+  const D = F.dragon, sc = 1.3, p = 2.6;
+  const lx = 6.5 * p, ly = -3.5 * p, c = Math.cos(D.rot), s = Math.sin(D.rot);
+  return { x: D.x + (lx * c - ly * s) * sc, y: D.y + (lx * s + ly * c) * sc };
+}
+function bfReached(F, act) { const i = F.steps.findIndex(x => x.act === act); return i >= 0 && F.i >= i; }
+
+// his last dream: Sarai's portrait in the soft, fading circle of memory (the cathedral dream's look)
+function drawBfDream(F, s) {
+  const W = width, H = height, f = F.t;
+  ctx.fillStyle = 'rgb(255,248,235)';
+  ctx.fillRect(0, 0, W, H);
+  if (khaleesiFrame1.complete && khaleesiFrame1.naturalWidth) {
+    const ps = Math.min(W, H * 0.8) * (0.95 + 0.06 * f / s.frames);
+    ctx.drawImage(saraiMemory(), (W - ps) / 2, H * 0.44 - ps / 2, ps, ps);
+  }
+  drawDreamGlow(f);
+  const ca = Math.max(0, Math.min(1, (f - 40) / 30));
+  if (ca > 0) {
+    ctx.save();
+    ctx.globalAlpha = ca;
+    ctx.fillStyle = '#6a5238';
+    ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(BF_DREAM_CAPTION, W / 2, H * 0.86);
+    ctx.restore();
+  }
+  // out of the dark at the start; at the end the dream tears: it flickers, bleeds red, and is gone
+  const tail = s.frames - f;
+  let black = Math.max(0, 1 - f / 45);
+  if (tail < 40) {
+    const flick = (Math.floor(f / 3) % 2) ? 0.55 : 0.1;
+    ctx.fillStyle = 'rgba(120,0,10,' + (1 - tail / 40) * 0.6 + ')';
+    ctx.fillRect(0, 0, W, H);
+    black = Math.max(black, (1 - tail / 40) * 0.7 + flick * (1 - tail / 40));
+  }
+  if (black > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, black) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
 function drawBfFloor() {
   const B = bossFall, F = B.floor, s = bfStep();
   const W = width, H = height, t = F.clock;
   const fy = F.floorY;
+  if (s && s.act === 'dream') { drawBfDream(F, s); return; }
+  const dying = s && s.act === 'death';
+  const T = dying ? F.t : 0;
+  // the death scene sinks slowly in on his dead eye
+  const eye = bfLyingEye(F);
+  const zk = dying ? Math.max(0, Math.min(1, (T - BF_ZOOM_AT) / (BF_DEATH_FRAMES - BF_ZOOM_AT))) : 0;
+  const zoom = 1 + 1.8 * zk * zk * (3 - 2 * zk);
+  ctx.save();
+  if (zoom > 1) {
+    ctx.translate(eye.x, eye.y);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-eye.x, -eye.y);
+  }
   // the dark cave
   ctx.fillStyle = '#04040a';
-  ctx.fillRect(0, 0, W, H);
-  const bioUp = F.i >= 7 ? 1 : 0.45;           // after he wakes, the creatures above glow brighter
-  drawCavernLife(t, t * 0.3, 0.55 * bioUp, F.i >= 7 ? 9 : 3);
+  ctx.fillRect(-W, -H, W * 3, H * 3);
+  const after = bfReached(F, 'dimIn');
+  const bioUp = after ? 1 : 0.45;
+  drawCavernLife(t, t * 0.3, 0.55 * bioUp * (1 - (F.lifeDim || 0)), bfReached(F, 'jenkins') ? 9 : 3);
   // back wall shapes
   ctx.fillStyle = '#0b0a12';
   ctx.beginPath();
@@ -1122,19 +1215,74 @@ function drawBfFloor() {
 
   // Cyndraxx lying on the cave floor
   ctx.save();
-  ctx.translate(D.x, D.y - (F.dragonUp || 0) * 6);
+  const jerk = F.spasm > 0 ? F.spasm / 14 : 0;
+  ctx.translate(D.x + (Math.random() - 0.5) * 5 * jerk, D.y - (F.dragonUp || 0) * 6 - Math.sin(jerk * Math.PI) * 6);
   ctx.scale(sc, sc);
   dragon.wingState = Math.max(dragon.wingState * 0.9, F.wing * 0.6);
-  drawDragon(0, 0, D.rot * (1 - (F.dragonUp || 0)));
-  if (F.asleep) {
-    const p = 2.6;
-    ctx.rotate(D.rot);
+  const lieRot = D.rot * (1 - (F.dragonUp || 0)) + (Math.random() - 0.5) * 0.12 * jerk;
+  drawDragon(0, 0, lieRot);
+  const p = 2.6;
+  ctx.rotate(lieRot);
+  if (F.dead) {
+    // the eye stays open, glassy and grey, the pupil rolled away: there is no one behind it
+    ctx.fillStyle = '#b4b9bd';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
+    ctx.fillStyle = 'rgba(120,128,134,0.6)';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 1.5 * p);           // a dull film over it
+    ctx.fillStyle = '#6e7377';
+    ctx.fillRect(5 * p, -2.6 * p, 2 * p, 1.6 * p);
+    ctx.fillStyle = '#7a1d12';
+    ctx.fillRect(4 * p, -1 * p, 5 * p, 0.6 * p);
+    // the jaw hangs slack
+    ctx.fillStyle = '#2a0a08';
+    ctx.fillRect(9 * p, 1 * p, 5 * p, 1 * p);
+  } else if (F.asleep) {
     ctx.fillStyle = '#ff793f';
     ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
     ctx.fillStyle = '#7a1d12';
     ctx.fillRect(4 * p, -3 * p, 5 * p, 1 * p);
+  } else if (dying) {
+    // the light going out of his eye before the end
+    ctx.fillStyle = 'rgba(30,20,20,' + Math.min(0.55, T / BF_DEAD_AT * 0.55) + ')';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
+  }
+  // blood running from his mouth
+  const mouthBlood = dying ? Math.min(1, Math.max(0, (T - 150) / 200)) : (F.dead ? 1 : 0);
+  if (mouthBlood > 0 && (F.arrowA > 0.3)) {
+    ctx.fillStyle = '#7c0a14';
+    ctx.fillRect(13 * p, 1.2 * p, 1.2 * p, (1 + mouthBlood * 5) * p);
+    ctx.fillRect(12 * p, 2 * p, 1 * p, mouthBlood * 3 * p);
   }
   ctx.restore();
+  // blood pumping from the wound when he convulses
+  if (F.spurt > 0) {
+    ctx.fillStyle = 'rgba(170,12,24,' + F.spurt + ')';
+    for (let k = 0; k < 7; k++) {
+      const u = 1 - F.spurt;
+      ctx.fillRect(chest.x + 4 + k * 4 * u * 3, chest.y - 6 - Math.sin(k) * 10 * u + u * u * 30, 3, 3);
+    }
+  }
+  // his last breath: a pale wisp leaves his mouth and drifts away into the dark
+  if (dying && T >= BF_RATTLE_AT && T < BF_RATTLE_AT + 220) {
+    const c = Math.cos(D.rot), sn = Math.sin(D.rot);
+    const mx = D.x + (14 * p * c - 1 * p * sn) * sc, my = D.y + (14 * p * sn + 1 * p * c) * sc;
+    const u = (T - BF_RATTLE_AT) / 220;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 9; k++) {
+      const v = Math.max(0, Math.min(1, u * 1.4 - k * 0.06));
+      if (v <= 0 || v >= 1) continue;
+      const wx = mx + 8 + v * 50 + Math.sin(v * 7 + k) * 8;
+      const wy = my - v * 120 - k * 3;
+      const r = 4 + v * 16;
+      const g = ctx.createRadialGradient(wx, wy, 0, wx, wy, r);
+      g.addColorStop(0, 'rgba(200,215,230,' + 0.22 * (1 - v) + ')');
+      g.addColorStop(1, 'rgba(200,215,230,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(wx - r, wy - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
   if (F.arrowA > 0) {
     ctx.save();
     ctx.globalAlpha = F.arrowA;
@@ -1143,27 +1291,34 @@ function drawBfFloor() {
   }
 
   // Brown Jenkins
-  if (F.i >= 8 && F.jA > 0) drawJenkins(F.jx, fy + 2, F.jPose, t, F.jA);
+  if (bfReached(F, 'jenkins') && F.jA > 0) drawJenkins(F.jx, fy + 2, F.jPose, t, F.jA);
 
   // Nyarlathotep's price: sickly light pouring from his little hands into the dragon's wound
   if (s && s.act === 'heal') drawJenkinsHeal(F, chest, t);
 
-  // dying: his last thoughts are of Sarai as the world goes dark
-  if (s && s.act === 'die') {
-    const k = F.t / s.frames;
-    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, k * 1.15) + ')';
+  ctx.restore();   // end of the death scene's zoom
+
+  // his death: torn from the dream with a red flash; the world darkens around him; then the dark closes in on his eye
+  if (dying) {
+    if (T < 26) { ctx.fillStyle = 'rgba(150,0,14,' + (0.7 * (1 - T / 26)) + ')'; ctx.fillRect(0, 0, W, H); }
+    const gloom = Math.min(0.55, T / BF_DEATH_FRAMES * 0.7);
+    const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.12, W / 2, H / 2, Math.max(W, H) * 0.7);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, 'rgba(0,0,0,' + (0.35 + gloom) + ')');
+    ctx.fillStyle = v;
     ctx.fillRect(0, 0, W, H);
-    const pa = Math.max(0, Math.min(1, (F.t - 40) / 80)) * Math.max(0, Math.min(1, (s.frames - 20 - F.t) / 90));
-    if (pa > 0 && khaleesiFrame1.complete && khaleesiFrame1.naturalWidth) {
-      const ps = Math.min(W, H) * 0.55;
-      ctx.save();
-      ctx.globalAlpha = pa * 0.9;
-      ctx.drawImage(saraiMemory(), (W - ps) / 2, H * 0.4 - ps / 2, ps, ps);
-      ctx.restore();
+    if (T >= BF_IRIS_AT) {
+      const k = (T - BF_IRIS_AT) / (BF_DEATH_FRAMES - BF_IRIS_AT);
+      const r = Math.max(0, Math.hypot(W, H) * (1 - k) * (1 - k));
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.arc(eye.x, eye.y, r, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
     }
   }
   if (s && s.act === 'black') { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
-  if (s && s.act === 'wake') {
+  if (s && s.act === 'dimIn') {
     const a = Math.max(0, 1 - F.t / 130);
     ctx.fillStyle = 'rgba(0,0,0,' + a + ')';
     ctx.fillRect(0, 0, W, H);

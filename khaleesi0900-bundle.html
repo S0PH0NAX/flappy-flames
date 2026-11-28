@@ -1053,6 +1053,133 @@
       }
 
       // the arrow striking Cyndraxx's heart: a hard thud and a deep, ringing heartbeat
+      // a cave spider's hiss as it leaps (also a web tearing)
+      spiderHiss() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const hp = c.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 2600;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.Q.value = 3;
+        bp.frequency.setValueAtTime(5200, now);
+        bp.frequency.exponentialRampToValueAtTime(3200, now + 0.35);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.32, now + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.4);
+        n.connect(hp).connect(bp).connect(g).connect(c.destination);
+        n.start(now); n.stop(now + 0.45);
+      }
+
+      // a spider burning up: a wet crackle and a squeal
+      spiderSquish() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 1400; bp.Q.value = 1.4;
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.45, now + 0.01);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+        n.connect(bp).connect(g).connect(c.destination);
+        n.start(now); n.stop(now + 0.25);
+        const o = c.createOscillator();
+        o.type = 'square';
+        o.frequency.setValueAtTime(1900, now);
+        o.frequency.exponentialRampToValueAtTime(700, now + 0.18);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.06, now + 0.01);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        o.connect(og).connect(c.destination);
+        o.start(now); o.stop(now + 0.22);
+      }
+
+      // one slow, muffled heartbeat (lub-dub); `vol` 0..1 so the last ones can fade
+      heartbeat(vol = 1) {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime;
+        const out = c.createGain();
+        out.gain.value = 0.9 * vol;
+        out.connect(c.destination);
+        [0, 0.28].forEach((d, i) => {
+          const o = c.createOscillator();
+          o.type = 'sine';
+          o.frequency.setValueAtTime(i ? 52 : 62, now + d);
+          o.frequency.exponentialRampToValueAtTime(30, now + d + 0.25);
+          const g = c.createGain();
+          g.gain.setValueAtTime(0.0001, now + d);
+          g.gain.exponentialRampToValueAtTime(i ? 0.55 : 0.9, now + d + 0.025);
+          g.gain.exponentialRampToValueAtTime(0.0001, now + d + 0.38);
+          const lp = c.createBiquadFilter();
+          lp.type = 'lowpass'; lp.frequency.value = 160;
+          o.connect(lp).connect(g).connect(out);
+          o.start(now + d); o.stop(now + d + 0.42);
+        });
+      }
+
+      // a dying breath: a long, wet, rattling exhale that sinks away
+      deathRattle() {
+        if (this.muted || this.hidden) return;
+        this.init();
+        const c = this.ctx;
+        if (!c) return;
+        const now = c.currentTime, dur = 2.6;
+        const out = c.createGain();
+        out.gain.value = 0.55;
+        out.connect(c.destination);
+        const n = c.createBufferSource();
+        n.buffer = this.noiseBuffer();
+        n.loop = true;
+        const bp = c.createBiquadFilter();
+        bp.type = 'bandpass'; bp.Q.value = 2.2;
+        bp.frequency.setValueAtTime(700, now);
+        bp.frequency.exponentialRampToValueAtTime(180, now + dur);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, now);
+        g.gain.exponentialRampToValueAtTime(0.7, now + 0.25);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        // the rattle: the breath stutters through the throat
+        const am = c.createGain();
+        am.gain.value = 0.5;
+        const lfo = c.createOscillator();
+        lfo.type = 'square';
+        lfo.frequency.setValueAtTime(19, now);
+        lfo.frequency.linearRampToValueAtTime(9, now + dur);
+        const lfoG = c.createGain();
+        lfoG.gain.value = 0.5;
+        lfo.connect(lfoG).connect(am.gain);
+        n.connect(bp).connect(am).connect(g).connect(out);
+        // a low groan under it
+        const o = c.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(78, now);
+        o.frequency.exponentialRampToValueAtTime(41, now + dur);
+        const og = c.createGain();
+        og.gain.setValueAtTime(0.0001, now);
+        og.gain.exponentialRampToValueAtTime(0.12, now + 0.3);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + dur * 0.9);
+        const olp = c.createBiquadFilter();
+        olp.type = 'lowpass'; olp.frequency.value = 300;
+        o.connect(olp).connect(og).connect(out);
+        n.start(now); n.stop(now + dur + 0.1);
+        lfo.start(now); lfo.stop(now + dur + 0.1);
+        o.start(now); o.stop(now + dur);
+      }
+
       pierceHit() {
         if (this.muted || this.hidden) return;
         this.init();
@@ -1311,6 +1438,11 @@ knightHit() {
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
           if (!uiMusicAudio.paused) uiMusicAudio.pause();
           if (bossIntroMusicOn() && cutsceneMusicAudio.paused) cutsceneMusicAudio.play().catch(() => {});
+        }
+        else if (gameState === 'BOSS_FALL' && bossFallSilent()) {   // his death on the cavern floor: no music, only his heart
+          if (!bgMusicAudio.paused) bgMusicAudio.pause();
+          if (!uiMusicAudio.paused) uiMusicAudio.pause();
+          if (!cutsceneMusicAudio.paused) cutsceneMusicAudio.pause();
         }
         else if (gameState === 'CATHEDRAL') {   // the cathedral cutscene plays the village music
           if (!bgMusicAudio.paused) bgMusicAudio.pause();
@@ -12974,6 +13106,16 @@ function drawCathDream(t) {
   const second = t >= CATH_DREAM;
   const f = t - (second ? CATH_DREAM : 0);
   drawStoryPicture(second ? danceImg2 : danceImg1, 'Cyndraxx dreams of the spring festival, singing with Queen Sarai...', f, CATH_DREAM);
+  drawDreamGlow(t);
+  const W = width, H = height;
+  // fade in from the white of sleep, and back to white at the end
+  const edge = Math.max(0, 1 - f / 30, (f - (CATH_DREAM - 30)) / 30 * (second ? 1 : 0));
+  if (edge > 0) { ctx.fillStyle = 'rgba(255,248,235,' + Math.min(1, edge) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
+// the dream look: a circle of memory fading out to soft white at the edges, a warm haze, drifting sparkles
+// (also used for Cyndraxx's last dream of Sarai on the cavern floor, boss-fall.js)
+function drawDreamGlow(t) {
   const W = width, H = height;
   ctx.save();
   // a warm, hazy glow and soft white edges
@@ -12991,9 +13133,6 @@ function drawCathDream(t) {
     ctx.fillRect(sx, sy, 2, 2);
   }
   ctx.restore();
-  // fade in from the white of sleep, and back to white at the end
-  const edge = Math.max(0, 1 - f / 30, (f - (CATH_DREAM - 30)) / 30 * (second ? 1 : 0));
-  if (edge > 0) { ctx.fillStyle = 'rgba(255,248,235,' + Math.min(1, edge) + ')'; ctx.fillRect(0, 0, W, H); }
 }
 
 // back in the level: the dread, the lingering thought, the fade back in
@@ -13046,7 +13185,7 @@ function drawCathedralHUD() {
 // trailing a chain; it pierces Cyndraxx's heart and the chain drags him down into the pit after the tower.
 // He falls through the dark, chained to the burning tower below as it breaks apart, fire and wreckage streaming past, while
 // glowing mushrooms and jellyfish-like creatures slowly appear. He lands on the cavern floor among the burning
-// wreckage, bleeding, thinks of Sarai and fades to black, then wakes, and Brown Jenkins (a possum with a human
+// wreckage, bleeding, dreams of Sarai, and dies; in the dark that follows Brown Jenkins (a possum with a human
 // face and hands) offers to save him for Nyarlathotep's price: ACCEPT (healed, +1 heart container, the debt
 // explained, then the cave levels in cave.js) or REJECT (game over; CONTINUE goes straight to level 4).
 // Classic script: shares global scope with the other src/js files.
@@ -13054,9 +13193,18 @@ function drawCathedralHUD() {
 const BF_ARCHER_AT = 170;        // the lone archer climbs out of the turret
 const BF_DRAW_AT = 205;          // ...draws his bow
 const BF_FIRE_AT = 245;          // ...and fires
-const BF_CAVE_SKIP_AFTER = 60;   // the collapse and drag can't be skipped; the cavern fall can, after this many frames of it
+const BF_STORY_DELAY = 20;       // frames after the arrow strikes before the storybook picture comes up
+const BF_STORY_FRAMES = 300;     // how long the picture stays (the scene behind it is paused; can't be skipped)
+const BF_STORY_CAPTION = 'The arrow found his heart, and the chain held fast.';
+const deathArrowImg = new Image(); deathArrowImg.src = 'assets/images/deatharrow.jpg';
 
 let bossFall = null;
+
+// the storybook picture of the arrow striking him (drawn by render() in place of the scene)
+function bossFallStory() { return bossFallCinematic() && bossFall.story; }
+function drawBossFallStory() {
+  drawStoryPicture(deathArrowImg, BF_STORY_CAPTION, bossFall.story.t, BF_STORY_FRAMES);
+}
 
 function bossFallCinematic() { return state === 'BOSS_FALL' && !!bossFall; }
 
@@ -13118,6 +13266,13 @@ function bfChest() {
 function updateBossFall() {
   const B = bossFall;
   if (!B) return;
+  // the storybook picture: everything else waits (B.t stands still, so the drag picks up where it left off)
+  if (B.story) {
+    B.story.t++;
+    if (B.story.t >= BF_STORY_FRAMES) { B.story = null; B.storyDone = true; }
+    return;
+  }
+  if (B.hitT >= 0 && !B.storyDone && B.t >= B.hitT + BF_STORY_DELAY) { B.story = { t: 0 }; B.rumble = 0; return; }
   B.t++;
   const g = bossGeom();
   const t = B.t;
@@ -13325,7 +13480,21 @@ function updateBfCavern(B) {
   if (C.t >= BF_FALL_LEN + BF_IMPACT_LEN) startBfFloor(B);
 }
 
-// ---- on the cavern floor: dying, the dark, waking, Brown Jenkins ----
+// ---- on the cavern floor: his last dream, his death, the dark, Brown Jenkins ----
+const BF_DREAM_FRAMES = 360;
+const BF_DREAM_CAPTION = 'Cyndraxx dreams of Sarai...';
+const BF_DEATH_FRAMES = 680;
+// his heart in the death scene: frame of each beat and how loud (they slow and fade, then stop)
+const BF_BEATS = [[0, 1], [52, 0.92], [110, 0.82], [178, 0.7], [258, 0.56], [352, 0.4], [466, 0.24]];
+const BF_SPASMS = [128, 214];         // his body convulses
+const BF_RATTLE_AT = 300;             // the last breath leaves him
+const BF_DEAD_AT = 330;               // his eye goes dull: he is gone
+const BF_ZOOM_AT = 400;               // the view sinks slowly in on the dead eye...
+const BF_IRIS_AT = 540;               // ...and the dark closes in on it
+function bossFallSilent() {           // no music while he dies (audio.js)
+  const s = bossFall && bossFall.phase === 'floor' && bfStep();
+  return !!(s && (s.act === 'death' || s.act === 'black'));
+}
 const BF_JENK_ACCEPT = { id: 'accept', label: 'ACCEPT', col: '#6c3fa0', edge: '#3f2266' };
 const BF_JENK_REJECT = { id: 'reject', label: 'REJECT', col: '#c0392b', edge: '#7f241b' };
 const BF_LINES = {
@@ -13341,7 +13510,7 @@ const BF_LINES = {
   j5: 'They feed on their fear and call it sin and forgiveness. They call it purity.',
   j6: 'Nyarlathotep has an undying enemy, a mindless predator that calls itself the Angel that Weeps.',
   c2: 'The Angel that Weeps?',
-  j7: 'That creature is no angel. It\'s a mask, a deception. It\'s a gibbering horror that seeks only to devour, and implant its seed in mortals.',
+  j7: 'That creature is no angel. It is a mask, a deception. It is a gibbering horror that seeks only to devour, and implant its seed in mortals.',   // Brown Jenkins never uses contractions
   j8: 'It grows inside of Clement the Simple.',
   c3: 'Clement the Simple. That priest. He offers forgiveness for sins, but he\'s just finding new hosts for the seed of the Angel that Weeps.',
   c4: 'He\'s too powerful. How do I kill him?',
@@ -13355,9 +13524,10 @@ function bfFloorSteps() {
     { say: 'CYN', text: BF_LINES.die },
     { say: 'CYN', text: BF_LINES.fly },
     { say: 'CYN', text: BF_LINES.sarai },
-    { act: 'die', frames: 330 },
-    { act: 'black', frames: 150 },
-    { act: 'wake', frames: 260 },
+    { act: 'dream', frames: BF_DREAM_FRAMES },   // his last dream: Sarai, in the soft circle of memory
+    { act: 'death', frames: BF_DEATH_FRAMES },   // torn out of it; his heart slows and stops
+    { act: 'black', frames: 170 },
+    { act: 'dimIn', frames: 150 },               // the cave again: he lies dead
     { act: 'jenkins', frames: 170 },
     { say: 'JENK', text: BF_LINES.j1 },
     { say: 'JENK', text: BF_LINES.j2, choice: [BF_JENK_ACCEPT, BF_JENK_REJECT] }
@@ -13439,10 +13609,20 @@ function updateBfFloor(B) {
   F.t++; F.clock++;
   if (s.say) F.typed = Math.min(s.text.length, F.typed + 1.15);
   if (s.act === 'lie' || (s.say && F.i < 5)) F.blood = Math.min(1, F.blood + 0.006);
-  if (s.act === 'die') { F.blood = Math.min(1, F.blood + 0.003); if (F.t === 30) F.asleep = true; }
-  if (s.act === 'black') { F.fire = 0.35; F.blood = 1.15; }
-  if (s.act === 'wake' && F.t === 160) F.asleep = false;
-  if (s.act === 'wake' && F.t === 200) F.wing = 1;
+  if (s.act === 'death') {
+    const T = F.t;
+    F.blood = Math.min(1.6, F.blood + 0.0012);
+    BF_BEATS.forEach(([at, v]) => { if (T === at) sound.heartbeat(v); });
+    if (BF_SPASMS.indexOf(T) >= 0) { F.spasm = 14; F.wing = 1; F.spurt = 1; sound.hit(); }
+    if (T === BF_RATTLE_AT) sound.deathRattle();
+    if (T === BF_DEAD_AT) F.dead = true;
+    if (T > 200) F.fire = Math.max(0.2, F.fire - 0.0022);          // the fires gutter
+    F.lifeDim = Math.min(0.85, Math.max(0, (T - 260) / 300));     // the glow above dies away
+  }
+  if (F.spasm > 0) F.spasm--;
+  if (F.spurt > 0) F.spurt = Math.max(0, F.spurt - 0.03);
+  if (s.act === 'black') { F.fire = 0.25; F.blood = 1.6; F.dead = true; F.lifeDim = 0.85; }
+  if (s.act === 'dimIn') F.lifeDim = Math.max(0.35, 0.85 - F.t / 150 * 0.5);
   if (s.act === 'jenkins') {
     const target = width * 0.7;
     if (F.jx > target) { F.jx = Math.max(target, F.jx - 2.2); F.jPose = 'walk'; }
@@ -13451,6 +13631,9 @@ function updateBfFloor(B) {
   if (s.act === 'heal') {
     F.arrowA = Math.max(0, 1 - F.t / 140);
     F.blood = Math.max(0, F.blood - 0.008);
+    if (F.t === 90) F.dead = false;                                  // life comes back into his eye
+    F.lifeDim = Math.max(0, (F.lifeDim || 0) - 0.01);
+    F.fire = Math.min(1, F.fire + 0.006);
     if (F.t === 150) { F.wing = 1; sound.flap(); }
   }
   if (s.act === 'heart') F.dragonUp = Math.min(1, (F.dragonUp || 0) + 0.04);
@@ -13462,12 +13645,8 @@ function updateBfFloor(B) {
 function bossFallTap(x, y) {
   const B = bossFall;
   if (!B) return;
-  if (B.phase !== 'floor') {
-    // the collapse, the chain arrow and the drag can't be skipped; once he's falling through the
-    // cavern, a tap (after a short guard, so stray taps don't) skips straight to the cavern floor
-    if (B.phase === 'cavern' && B.cave && B.cave.t >= BF_CAVE_SKIP_AFTER) startBfFloor(B);
-    return;
-  }
+  // the collapse, the chain arrow, the drag and the fall through the cavern can't be skipped
+  if (B.phase !== 'floor') return;
   const F = B.floor, s = bfStep();
   if (!s) return;
   if (s.say) {
@@ -13484,12 +13663,11 @@ function bossFallTap(x, y) {
     bfNext();
     return;
   }
-  const skippable = { lie: 30, die: 60, black: 40, wake: 60, jenkins: 40, heal: 60, heart: 70, leave: 30 };
+  // (his last dream, his death and the black after it can't be skipped)
+  const skippable = { lie: 30, dimIn: 60, jenkins: 40, heal: 60, heart: 70, leave: 30 };
   if (skippable[s.act] !== undefined && F.t > skippable[s.act]) {
     if (s.act === 'jenkins') { F.jx = width * 0.7; F.jPose = 'sit'; }
-    if (s.act === 'heal') { F.arrowA = 0; F.blood = 0; }
-    if (s.act === 'die') F.asleep = true;
-    if (s.act === 'wake') F.asleep = false;
+    if (s.act === 'heal') { F.arrowA = 0; F.blood = 0; F.dead = false; F.lifeDim = 0; F.fire = 1; }
     bfNext();
   }
 }
@@ -13529,7 +13707,7 @@ function finishBossFall() {
 
 function bossFallRumble() { return bossFall ? bossFall.rumble : 0; }
 function bossFallShake() {
-  if (!bossFall || bossFall.phase === 'cavern' || bossFall.shake < 0.3) return null;
+  if (!bossFall || bossFall.story || bossFall.phase === 'cavern' || bossFall.shake < 0.3) return null;
   const s = bossFall.shake;
   return { x: (Math.random() - 0.5) * s, y: (Math.random() - 0.5) * s };
 }
@@ -14077,15 +14255,69 @@ function bfLyingChest(D, sc) {
   return { x: D.x + (5 * c - 9 * s) * sc, y: D.y + (5 * s + 9 * c) * sc };
 }
 
+// where his eye is on screen as he lies on the floor (the death scene sinks in on it)
+function bfLyingEye(F) {
+  const D = F.dragon, sc = 1.3, p = 2.6;
+  const lx = 6.5 * p, ly = -3.5 * p, c = Math.cos(D.rot), s = Math.sin(D.rot);
+  return { x: D.x + (lx * c - ly * s) * sc, y: D.y + (lx * s + ly * c) * sc };
+}
+function bfReached(F, act) { const i = F.steps.findIndex(x => x.act === act); return i >= 0 && F.i >= i; }
+
+// his last dream: Sarai's portrait in the soft, fading circle of memory (the cathedral dream's look)
+function drawBfDream(F, s) {
+  const W = width, H = height, f = F.t;
+  ctx.fillStyle = 'rgb(255,248,235)';
+  ctx.fillRect(0, 0, W, H);
+  if (khaleesiFrame1.complete && khaleesiFrame1.naturalWidth) {
+    const ps = Math.min(W, H * 0.8) * (0.95 + 0.06 * f / s.frames);
+    ctx.drawImage(saraiMemory(), (W - ps) / 2, H * 0.44 - ps / 2, ps, ps);
+  }
+  drawDreamGlow(f);
+  const ca = Math.max(0, Math.min(1, (f - 40) / 30));
+  if (ca > 0) {
+    ctx.save();
+    ctx.globalAlpha = ca;
+    ctx.fillStyle = '#6a5238';
+    ctx.font = 'bold 16px "Proxima Nova", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(BF_DREAM_CAPTION, W / 2, H * 0.86);
+    ctx.restore();
+  }
+  // out of the dark at the start; at the end the dream tears: it flickers, bleeds red, and is gone
+  const tail = s.frames - f;
+  let black = Math.max(0, 1 - f / 45);
+  if (tail < 40) {
+    const flick = (Math.floor(f / 3) % 2) ? 0.55 : 0.1;
+    ctx.fillStyle = 'rgba(120,0,10,' + (1 - tail / 40) * 0.6 + ')';
+    ctx.fillRect(0, 0, W, H);
+    black = Math.max(black, (1 - tail / 40) * 0.7 + flick * (1 - tail / 40));
+  }
+  if (black > 0) { ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, black) + ')'; ctx.fillRect(0, 0, W, H); }
+}
+
 function drawBfFloor() {
   const B = bossFall, F = B.floor, s = bfStep();
   const W = width, H = height, t = F.clock;
   const fy = F.floorY;
+  if (s && s.act === 'dream') { drawBfDream(F, s); return; }
+  const dying = s && s.act === 'death';
+  const T = dying ? F.t : 0;
+  // the death scene sinks slowly in on his dead eye
+  const eye = bfLyingEye(F);
+  const zk = dying ? Math.max(0, Math.min(1, (T - BF_ZOOM_AT) / (BF_DEATH_FRAMES - BF_ZOOM_AT))) : 0;
+  const zoom = 1 + 1.8 * zk * zk * (3 - 2 * zk);
+  ctx.save();
+  if (zoom > 1) {
+    ctx.translate(eye.x, eye.y);
+    ctx.scale(zoom, zoom);
+    ctx.translate(-eye.x, -eye.y);
+  }
   // the dark cave
   ctx.fillStyle = '#04040a';
-  ctx.fillRect(0, 0, W, H);
-  const bioUp = F.i >= 7 ? 1 : 0.45;           // after he wakes, the creatures above glow brighter
-  drawCavernLife(t, t * 0.3, 0.55 * bioUp, F.i >= 7 ? 9 : 3);
+  ctx.fillRect(-W, -H, W * 3, H * 3);
+  const after = bfReached(F, 'dimIn');
+  const bioUp = after ? 1 : 0.45;
+  drawCavernLife(t, t * 0.3, 0.55 * bioUp * (1 - (F.lifeDim || 0)), bfReached(F, 'jenkins') ? 9 : 3);
   // back wall shapes
   ctx.fillStyle = '#0b0a12';
   ctx.beginPath();
@@ -14165,19 +14397,74 @@ function drawBfFloor() {
 
   // Cyndraxx lying on the cave floor
   ctx.save();
-  ctx.translate(D.x, D.y - (F.dragonUp || 0) * 6);
+  const jerk = F.spasm > 0 ? F.spasm / 14 : 0;
+  ctx.translate(D.x + (Math.random() - 0.5) * 5 * jerk, D.y - (F.dragonUp || 0) * 6 - Math.sin(jerk * Math.PI) * 6);
   ctx.scale(sc, sc);
   dragon.wingState = Math.max(dragon.wingState * 0.9, F.wing * 0.6);
-  drawDragon(0, 0, D.rot * (1 - (F.dragonUp || 0)));
-  if (F.asleep) {
-    const p = 2.6;
-    ctx.rotate(D.rot);
+  const lieRot = D.rot * (1 - (F.dragonUp || 0)) + (Math.random() - 0.5) * 0.12 * jerk;
+  drawDragon(0, 0, lieRot);
+  const p = 2.6;
+  ctx.rotate(lieRot);
+  if (F.dead) {
+    // the eye stays open, glassy and grey, the pupil rolled away: there is no one behind it
+    ctx.fillStyle = '#b4b9bd';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
+    ctx.fillStyle = 'rgba(120,128,134,0.6)';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 1.5 * p);           // a dull film over it
+    ctx.fillStyle = '#6e7377';
+    ctx.fillRect(5 * p, -2.6 * p, 2 * p, 1.6 * p);
+    ctx.fillStyle = '#7a1d12';
+    ctx.fillRect(4 * p, -1 * p, 5 * p, 0.6 * p);
+    // the jaw hangs slack
+    ctx.fillStyle = '#2a0a08';
+    ctx.fillRect(9 * p, 1 * p, 5 * p, 1 * p);
+  } else if (F.asleep) {
     ctx.fillStyle = '#ff793f';
     ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
     ctx.fillStyle = '#7a1d12';
     ctx.fillRect(4 * p, -3 * p, 5 * p, 1 * p);
+  } else if (dying) {
+    // the light going out of his eye before the end
+    ctx.fillStyle = 'rgba(30,20,20,' + Math.min(0.55, T / BF_DEAD_AT * 0.55) + ')';
+    ctx.fillRect(4 * p, -6 * p, 5 * p, 5 * p);
+  }
+  // blood running from his mouth
+  const mouthBlood = dying ? Math.min(1, Math.max(0, (T - 150) / 200)) : (F.dead ? 1 : 0);
+  if (mouthBlood > 0 && (F.arrowA > 0.3)) {
+    ctx.fillStyle = '#7c0a14';
+    ctx.fillRect(13 * p, 1.2 * p, 1.2 * p, (1 + mouthBlood * 5) * p);
+    ctx.fillRect(12 * p, 2 * p, 1 * p, mouthBlood * 3 * p);
   }
   ctx.restore();
+  // blood pumping from the wound when he convulses
+  if (F.spurt > 0) {
+    ctx.fillStyle = 'rgba(170,12,24,' + F.spurt + ')';
+    for (let k = 0; k < 7; k++) {
+      const u = 1 - F.spurt;
+      ctx.fillRect(chest.x + 4 + k * 4 * u * 3, chest.y - 6 - Math.sin(k) * 10 * u + u * u * 30, 3, 3);
+    }
+  }
+  // his last breath: a pale wisp leaves his mouth and drifts away into the dark
+  if (dying && T >= BF_RATTLE_AT && T < BF_RATTLE_AT + 220) {
+    const c = Math.cos(D.rot), sn = Math.sin(D.rot);
+    const mx = D.x + (14 * p * c - 1 * p * sn) * sc, my = D.y + (14 * p * sn + 1 * p * c) * sc;
+    const u = (T - BF_RATTLE_AT) / 220;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 9; k++) {
+      const v = Math.max(0, Math.min(1, u * 1.4 - k * 0.06));
+      if (v <= 0 || v >= 1) continue;
+      const wx = mx + 8 + v * 50 + Math.sin(v * 7 + k) * 8;
+      const wy = my - v * 120 - k * 3;
+      const r = 4 + v * 16;
+      const g = ctx.createRadialGradient(wx, wy, 0, wx, wy, r);
+      g.addColorStop(0, 'rgba(200,215,230,' + 0.22 * (1 - v) + ')');
+      g.addColorStop(1, 'rgba(200,215,230,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(wx - r, wy - r, r * 2, r * 2);
+    }
+    ctx.restore();
+  }
   if (F.arrowA > 0) {
     ctx.save();
     ctx.globalAlpha = F.arrowA;
@@ -14186,27 +14473,34 @@ function drawBfFloor() {
   }
 
   // Brown Jenkins
-  if (F.i >= 8 && F.jA > 0) drawJenkins(F.jx, fy + 2, F.jPose, t, F.jA);
+  if (bfReached(F, 'jenkins') && F.jA > 0) drawJenkins(F.jx, fy + 2, F.jPose, t, F.jA);
 
   // Nyarlathotep's price: sickly light pouring from his little hands into the dragon's wound
   if (s && s.act === 'heal') drawJenkinsHeal(F, chest, t);
 
-  // dying: his last thoughts are of Sarai as the world goes dark
-  if (s && s.act === 'die') {
-    const k = F.t / s.frames;
-    ctx.fillStyle = 'rgba(0,0,0,' + Math.min(1, k * 1.15) + ')';
+  ctx.restore();   // end of the death scene's zoom
+
+  // his death: torn from the dream with a red flash; the world darkens around him; then the dark closes in on his eye
+  if (dying) {
+    if (T < 26) { ctx.fillStyle = 'rgba(150,0,14,' + (0.7 * (1 - T / 26)) + ')'; ctx.fillRect(0, 0, W, H); }
+    const gloom = Math.min(0.55, T / BF_DEATH_FRAMES * 0.7);
+    const v = ctx.createRadialGradient(W / 2, H / 2, Math.min(W, H) * 0.12, W / 2, H / 2, Math.max(W, H) * 0.7);
+    v.addColorStop(0, 'rgba(0,0,0,0)');
+    v.addColorStop(1, 'rgba(0,0,0,' + (0.35 + gloom) + ')');
+    ctx.fillStyle = v;
     ctx.fillRect(0, 0, W, H);
-    const pa = Math.max(0, Math.min(1, (F.t - 40) / 80)) * Math.max(0, Math.min(1, (s.frames - 20 - F.t) / 90));
-    if (pa > 0 && khaleesiFrame1.complete && khaleesiFrame1.naturalWidth) {
-      const ps = Math.min(W, H) * 0.55;
-      ctx.save();
-      ctx.globalAlpha = pa * 0.9;
-      ctx.drawImage(saraiMemory(), (W - ps) / 2, H * 0.4 - ps / 2, ps, ps);
-      ctx.restore();
+    if (T >= BF_IRIS_AT) {
+      const k = (T - BF_IRIS_AT) / (BF_DEATH_FRAMES - BF_IRIS_AT);
+      const r = Math.max(0, Math.hypot(W, H) * (1 - k) * (1 - k));
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.rect(0, 0, W, H);
+      ctx.arc(eye.x, eye.y, r, 0, Math.PI * 2, true);
+      ctx.fill('evenodd');
     }
   }
   if (s && s.act === 'black') { ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H); }
-  if (s && s.act === 'wake') {
+  if (s && s.act === 'dimIn') {
     const a = Math.max(0, 1 - F.t / 130);
     ctx.fillStyle = 'rgba(0,0,0,' + a + ')';
     ctx.fillRect(0, 0, W, H);
@@ -14394,7 +14688,8 @@ function startCaveLevel(n) {
   currentLevel = 4;
   levelTimerSeconds = 0;
   caveLevel = n;
-  cave = { scroll: 0, t: 0, torches: [], nextTorch: 520, ending: 0, distAcc: 0, title: 260 };
+  cave = { scroll: 0, t: 0, torches: [], nextTorch: 520, ending: 0, distAcc: 0, title: 260,
+    spiders: [], nextSpider: 1100, webs: [], nextWeb: 1700 };
   dragon.x = dragon.baseX; dragon.targetX = dragon.baseX; dragon.vx = 0;
   dragon.y = height * 0.5; dragon.velocity = dragon.jump; dragon.wingState = 1;
   invulnerableTimer = 0;
@@ -14511,6 +14806,9 @@ function updateCave() {
   });
   C.torches = C.torches.filter(tc => tc.wx - C.scroll > -120);
 
+  updateCaveSpiders(C, speed);
+  updateCaveWebs(C);
+
   // a point for every stretch of tunnel survived
   C.distAcc += speed;
   if (C.distAcc >= 240) { C.distAcc -= 240; addScore(1); }
@@ -14524,6 +14822,134 @@ function updateCave() {
       else startSurfaceScene();
     }
   }
+}
+
+// ---- cave spiders: they crawl along the ceiling and floor and leap at him when he comes close ----
+// (wx is in world coordinates like the torches; y is on screen). A flame kills one; touching one costs a heart.
+const SPIDER_GAP = { 1: [950, 700], 2: [620, 480] };   // world px between spiders: base + random
+const SPIDER_PTS = 25;
+const SPIDER_LEAP_RANGE = 220;
+const SPIDER_LEAP_FRAMES = 26;
+const SPIDER_GRAVITY = 0.3;
+function caveSpiderRest(sp) {
+  return sp.surf === 'top' ? caveCeilAt(sp.wx) + sp.r * 0.7 : caveFloorAt(sp.wx) - sp.r * 0.7;
+}
+function updateCaveSpiders(C, speed) {
+  const gap = SPIDER_GAP[caveLevel] || SPIDER_GAP[1];
+  while (C.nextSpider < C.scroll + width + 160) {
+    const h = hash2(Math.floor(C.nextSpider), 21);
+    const sp = { wx: C.nextSpider, surf: h < 0.5 ? 'top' : 'floor', state: 'crawl', r: 11 + hash2(Math.floor(C.nextSpider), 23) * (caveLevel === 2 ? 8 : 5),
+      dir: hash2(Math.floor(C.nextSpider), 25) < 0.7 ? -1 : 1, crawl: 0.6 + hash2(Math.floor(C.nextSpider), 27) * 0.9,
+      vx: 0, vy: 0, leapT: 0, cool: 40, legT: 0, rot: 0, seed: Math.floor(C.nextSpider) };
+    sp.y = caveSpiderRest(sp);
+    C.spiders.push(sp);
+    C.nextSpider += gap[0] + hash2(Math.floor(C.nextSpider), 29) * gap[1];
+  }
+  C.spiders.forEach(sp => {
+    const sx = sp.wx - C.scroll;
+    sp.legT++;
+    if (sp.cool > 0) sp.cool--;
+    if (sp.state === 'crawl') {
+      // skitter along the rock, now and then stopping and turning
+      if (hash2(sp.seed, Math.floor(sp.legT / 50)) < 0.12) { sp.moving = false; }
+      else { sp.moving = true; sp.wx += sp.dir * sp.crawl; }
+      if (sp.legT % 140 === 0 && hash2(sp.seed, sp.legT) < 0.35) sp.dir = -sp.dir;
+      sp.y = caveSpiderRest(sp);
+      const dx = sx - dragon.x;
+      if (sp.cool <= 0 && dx > -10 && dx < SPIDER_LEAP_RANGE && !C.ending) {
+        // leap: aim at where he will be, allowing for the scroll
+        const T = SPIDER_LEAP_FRAMES;
+        const tx = dragon.x + 10, ty = dragon.y;
+        sp.vx = (tx - sx) / T + speed;
+        sp.vy = (ty - sp.y) / T - 0.5 * SPIDER_GRAVITY * T;
+        sp.state = 'leap'; sp.leapT = 0;
+        sound.spiderHiss();
+      }
+    } else if (sp.state === 'leap') {
+      sp.leapT++;
+      sp.wx += sp.vx;
+      sp.vy += SPIDER_GRAVITY;
+      sp.y += sp.vy;
+      sp.rot += 0.12 * Math.sign(sp.vx - speed || 1);
+      const ceil = caveCeilAt(sp.wx), floor = caveFloorAt(sp.wx);
+      if (sp.leapT > 6 && (sp.y < ceil + sp.r * 0.7 || sp.y > floor - sp.r * 0.7)) {
+        sp.surf = sp.y < (ceil + floor) / 2 ? 'top' : 'floor';
+        sp.state = 'crawl'; sp.rot = 0; sp.cool = 130; sp.dir = -1;
+        sp.y = caveSpiderRest(sp);
+      }
+    } else if (sp.state === 'dead') {
+      sp.vy += 0.35; sp.y += sp.vy; sp.wx += sp.vx; sp.rot += 0.15;
+    }
+    if (sp.state === 'dead') return;
+    const nsx = sp.wx - C.scroll;
+    // burned by his flame
+    if (flames.some(f => Math.hypot(f.x - nsx, f.y - sp.y) < sp.r + 12)) {
+      sp.state = 'dead'; sp.vx = speed * 0.5; sp.vy = sp.surf === 'top' ? 0 : -3;
+      sound.spiderSquish();
+      const r = addScore(SPIDER_PTS);
+      floatingTexts.push({ x: nsx - 30, y: sp.y - 20, text: 'SPIDER +' + r.totalPts, color: '#ff6b6b', alpha: 1.0, vy: -1.2 });
+      for (let i = 0; i < 14; i++) particles.push({ x: nsx, y: sp.y, vx: (Math.random() - 0.5) * 5, vy: (Math.random() - 0.7) * 4, size: 2 + Math.random() * 3, life: 20 + Math.random() * 20, color: i % 3 ? '#ff9f43' : '#6a8f2a' });
+      return;
+    }
+    // it gets him
+    if (Math.hypot(nsx - dragon.x, sp.y - dragon.y) < sp.r + dragon.size * 0.32) {
+      if (invulnerableTimer <= 0) triggerHit();
+      sp.state = 'leap'; sp.leapT = 0; sp.vx = speed + 3; sp.vy = sp.y < dragon.y ? -2 : 2; sp.cool = 200;   // it springs off him
+    }
+  });
+  C.spiders = C.spiders.filter(sp => sp.wx - C.scroll > -80 && sp.y < height + 60 && sp.y > -60);
+}
+
+// ---- webs strung across the whole tunnel: burn through them, or fly into them and lose a heart ----
+const WEB_GAP = { 1: [1800, 900], 2: [1300, 700] };
+const WEB_HP = 100;
+const WEB_BURN_PER_FLAME = 9;    // per flame, per frame it touches the web
+const WEB_BURN_FRAMES = 45;
+const WEB_PTS = 15;
+function updateCaveWebs(C) {
+  const gap = WEB_GAP[caveLevel] || WEB_GAP[1];
+  while (C.nextWeb < C.scroll + width + 200) {
+    // keep webs clear of torches so a torch is never trapped behind one
+    let wx = C.nextWeb;
+    if (C.torches.some(tc => Math.abs(tc.wx - wx) < 90)) wx += 120;
+    C.webs.push({ wx: wx, hp: WEB_HP, state: 'whole', burnT: 0, spots: [], seed: Math.floor(wx) });
+    C.nextWeb = wx + gap[0] + hash2(Math.floor(wx), 31) * gap[1];
+  }
+  C.webs.forEach(wb => {
+    const sx = wb.wx - C.scroll;
+    wb.spots.forEach(sp => sp.t++);
+    wb.spots = wb.spots.filter(sp => sp.t < 70);
+    if (wb.state === 'whole') {
+      const ceil = caveCeilAt(wb.wx), floor = caveFloorAt(wb.wx);
+      flames.forEach(f => {
+        if (Math.abs(f.x - sx) < 16 && f.y > ceil && f.y < floor) {
+          wb.hp -= WEB_BURN_PER_FLAME;
+          if (wb.spots.length < 24 && Math.random() < 0.5) wb.spots.push({ y: f.y, t: 0 });
+        }
+      });
+      if (wb.hp <= 0) {
+        wb.state = 'burning'; wb.burnT = 0;
+        sound.fireRoar();
+        const r = addScore(WEB_PTS);
+        floatingTexts.push({ x: sx - 40, y: (ceil + floor) / 2 - 30, text: 'WEB BURNED +' + r.totalPts, color: '#ffcf5a', alpha: 1.0, vy: -1.2 });
+      }
+      // flying into it
+      if (wb.state === 'whole' && Math.abs(dragon.x + dragon.size * 0.25 - sx) < 12) {
+        if (invulnerableTimer <= 0) triggerHit();
+        wb.state = 'torn'; wb.burnT = 0;
+        dragon.vx = -3;
+        sound.spiderHiss();
+        for (let i = 0; i < 16; i++) particles.push({ x: sx, y: dragon.y + (Math.random() - 0.5) * 60, vx: (Math.random() - 0.3) * 4, vy: (Math.random() - 0.5) * 3, size: 1.5 + Math.random() * 2, life: 25 + Math.random() * 20, color: '#dfe6ee' });
+      }
+    } else {
+      wb.burnT++;
+      if (wb.state === 'burning' && wb.burnT % 3 === 0) {
+        const ceil = caveCeilAt(wb.wx), floor = caveFloorAt(wb.wx);
+        particles.push({ x: sx + (Math.random() - 0.5) * 20, y: ceil + Math.random() * (floor - ceil), vx: (Math.random() - 0.5) * 1.5, vy: -1 - Math.random() * 2, size: 2 + Math.random() * 2, life: 18 + Math.random() * 14, color: Math.random() < 0.5 ? '#ffcf5a' : '#ff793f' });
+      }
+    }
+  });
+  C.webs = C.webs.filter(wb => wb.wx - C.scroll > -80 && !(wb.state !== 'whole' && wb.burnT > WEB_BURN_FRAMES + 40));
 }
 
 // ---- climbing back to the surface ----
@@ -14600,18 +15026,29 @@ const CAVE_DEPTH_LAYERS = [
   { par: 0.18, a: 0.7, sc: 0.65, hue: 190, step: 190 },
   { par: 0.32, a: 1, sc: 0.85, hue: 175, step: 240 }    // nearest of the background
 ];
+// Everything in the background fades out before the tunnel's ceiling and floor, so its edges never show
+// the shape of the cave in the dark. 0 at the rock, 1 once CAVE_EDGE_FADE px clear of it.
+const CAVE_EDGE_FADE = 70;
+function caveEdgeFade(C, x, y) {
+  const d = Math.min(y - caveCeilAt(C.scroll + x), caveFloorAt(C.scroll + x) - y);
+  return Math.max(0, Math.min(1, (d - 6) / CAVE_EDGE_FADE));
+}
 function drawCaveDepth(C) {
   const W = width, H = height, t = C.t;
   ctx.save();
-  // a faint haze of light hanging in the air of the great cavern
   ctx.globalCompositeOperation = 'lighter';
-  const hz = ctx.createLinearGradient(0, 0, 0, H);
-  hz.addColorStop(0, 'rgba(10,30,45,0)');
-  hz.addColorStop(0.5, 'rgba(14,46,62,0.22)');
-  hz.addColorStop(1, 'rgba(10,30,45,0)');
-  ctx.fillStyle = hz;
-  ctx.fillRect(0, 0, W, H);
-  ctx.globalCompositeOperation = 'lighter';
+  // a faint haze of light hanging in the air of the great cavern: soft pools along the middle of the tunnel
+  const hs = 170, ho = (C.scroll * 0.2) % hs;
+  for (let i = -1; i <= Math.ceil(W / hs) + 1; i++) {
+    const hx = i * hs - ho, wx = C.scroll + hx;
+    const hy = (caveCeilAt(wx) + caveFloorAt(wx)) / 2;
+    const hr = Math.max(20, (caveFloorAt(wx) - caveCeilAt(wx)) / 2 - CAVE_EDGE_FADE * 0.4);
+    const hz = ctx.createRadialGradient(hx, hy, 0, hx, hy, hr);
+    hz.addColorStop(0, 'rgba(14,46,62,0.16)');
+    hz.addColorStop(1, 'rgba(14,46,62,0)');
+    ctx.fillStyle = hz;
+    ctx.fillRect(hx - hr, hy - hr, hr * 2, hr * 2);
+  }
   CAVE_DEPTH_LAYERS.forEach((L, li) => {
     const off = C.scroll * L.par;
     const k0 = Math.floor(off / L.step) - 1, k1 = Math.floor((off + W) / L.step) + 1;
@@ -14622,16 +15059,27 @@ function drawCaveDepth(C) {
       const len = H * (0.42 + hash2(seed, 3) * 0.3);          // long enough to reach into the open tunnel
       const wide = (40 + hash2(seed, 4) * 60) * L.sc;
       const baseY = top ? 0 : H, tipY = top ? len : H - len;
-      // the spire: a dark blue-grey silhouette with a faint rim of glow down one side
+      // the spire: a dark blue-grey silhouette with a faint rim of glow down one side, fading out before the rock
+      const edge = top ? Math.max(caveCeilAt(C.scroll + x - wide), caveCeilAt(C.scroll + x), caveCeilAt(C.scroll + x + wide))
+                       : Math.min(caveFloorAt(C.scroll + x - wide), caveFloorAt(C.scroll + x), caveFloorAt(C.scroll + x + wide));
+      const e0 = top ? edge + 6 : edge - 6, e1 = top ? edge + 6 + CAVE_EDGE_FADE : edge - 6 - CAVE_EDGE_FADE;
+      if (top ? tipY <= e0 : tipY >= e0) continue;     // the whole spire is hidden behind the rock
+      const col = 'hsla(' + L.hue + ',40%,' + (10 + li * 4) + '%,';
+      const fillG = ctx.createLinearGradient(0, e0, 0, e1);
+      fillG.addColorStop(0, col + '0)');
+      fillG.addColorStop(1, col + '1)');
+      const rimG = ctx.createLinearGradient(0, e0, 0, e1);
+      rimG.addColorStop(0, 'hsla(' + (L.hue - 20) + ',90%,60%,0)');
+      rimG.addColorStop(1, 'hsla(' + (L.hue - 20) + ',90%,60%,0.6)');
       ctx.globalAlpha = L.a;
-      ctx.fillStyle = 'hsl(' + L.hue + ',40%,' + (10 + li * 4) + '%)';   // added as light, so it never dims what's lit
+      ctx.fillStyle = fillG;   // added as light, so it never dims what's lit
       ctx.beginPath();
       ctx.moveTo(x - wide, baseY);
       ctx.quadraticCurveTo(x - wide * 0.35, (baseY + tipY) / 2, x, tipY);
       ctx.quadraticCurveTo(x + wide * 0.4, (baseY + tipY) / 2, x + wide, baseY);
       ctx.closePath();
       ctx.fill();
-      ctx.strokeStyle = 'hsla(' + (L.hue - 20) + ',90%,60%,0.6)';
+      ctx.strokeStyle = rimG;
       ctx.lineWidth = 1;
       ctx.beginPath();
       ctx.moveTo(x + wide, baseY);
@@ -14648,6 +15096,9 @@ function drawCaveDepth(C) {
         const hue = [175, 195, 280, 140, 320][Math.floor(hash2(seed, 50 + j) * 5)];
         const tw = 0.5 + 0.5 * Math.sin(t * (0.03 + hash2(seed, 70 + j) * 0.05) + j * 2.1);
         const r = (10 + hash2(seed, 90 + j) * 14) * L.sc;
+        const ef = caveEdgeFade(C, px, py);
+        if (ef <= 0) continue;
+        ctx.globalAlpha = L.a * ef;
         const g = ctx.createRadialGradient(px, py, 0, px, py, r);
         g.addColorStop(0, 'hsla(' + hue + ',100%,65%,' + (0.35 + 0.5 * tw) + ')');
         g.addColorStop(1, 'hsla(' + hue + ',100%,50%,0)');
@@ -14661,6 +15112,7 @@ function drawCaveDepth(C) {
         const tx = x + (hash2(seed, 7) - 0.5) * wide;
         const tl = (40 + hash2(seed, 8) * 80) * L.sc;
         const ty = Math.max(0, tipY - len * 0.3);
+        ctx.globalAlpha = L.a * Math.min(caveEdgeFade(C, tx, ty), caveEdgeFade(C, tx, ty + tl));
         ctx.strokeStyle = 'hsla(165,100%,60%,' + (0.35 + 0.15 * Math.sin(t * 0.05 + k)) + ')';
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -14686,7 +15138,7 @@ function drawCaveDepth(C) {
       const g = ctx.createRadialGradient(px, py, 0, px, py, r);
       g.addColorStop(0, 'hsla(' + hue + ',100%,60%,' + 0.22 * tw * L.a + ')');
       g.addColorStop(1, 'hsla(' + hue + ',100%,50%,0)');
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = caveEdgeFade(C, px, py - r * 0.6) * caveEdgeFade(C, px, py + r * 0.6);
       ctx.fillStyle = g;
       ctx.fillRect(px - r, py - r, r * 2, r * 2);
     }
@@ -14701,7 +15153,7 @@ function drawCaveDepth(C) {
       for (let f = 0; f < 7; f++) {
         const fx = cx + Math.sin(t * 0.03 + f * 1.7 + sd) * 18 * L.sc + f * 6 * L.sc;
         const fy = cy + Math.cos(t * 0.025 + f * 2.3) * 10 * L.sc;
-        ctx.globalAlpha = L.a * (0.6 + 0.4 * Math.sin(t * 0.1 + f));
+        ctx.globalAlpha = L.a * (0.6 + 0.4 * Math.sin(t * 0.1 + f)) * caveEdgeFade(C, fx, fy);
         ctx.fillStyle = 'hsla(' + hue + ',100%,75%,1)';
         ctx.fillRect(fx, fy, 2 * L.sc + 0.5, 1.2 * L.sc + 0.4);
       }
@@ -14720,20 +15172,183 @@ function drawCaveLife(C) {
     const y = H * (0.22 + hash2(i, 123) * 0.56) + Math.sin(t * 0.012 + i) * 18;
     const r = 8 + hash2(i, 125) * 14;
     const hue = (hash2(i, 127) * 360 + (Math.floor(t / BF_PATTERN_LEN) % 3 === 2 ? t * 1.5 : 0)) % 360;
-    drawJelly(x, y, r, hue, bfNeon(i, y, t), t, i);
+    ctx.save();
+    ctx.globalAlpha = Math.min(caveEdgeFade(C, x, y - r * 2.4), caveEdgeFade(C, x, y + r * 2.6));
+    if (ctx.globalAlpha > 0) drawJelly(x, y, r, hue, bfNeon(i, y, t), t, i);
+    ctx.restore();
   }
   for (let i = 0; i < 7; i++) {
     const x = ((hash2(i, 131) * period - C.scroll * 0.6 + t * (0.4 + hash2(i, 133))) % period + period) % period - W * 0.3;
     const y = H * (0.25 + hash2(i, 135) * 0.5) + Math.sin(t * 0.04 + i * 2) * 24;
-    drawGlowFlyer(x, y, Math.floor(hash2(i, 137) * 360), t, i, 0.9);
+    drawGlowFlyer(x, y, Math.floor(hash2(i, 137) * 360), t, i, 0.9 * caveEdgeFade(C, x, y));
   }
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 36; i++) {
     const x = ((hash2(i, 141) * W - C.scroll * 0.8) % W + W) % W;
     const y = H * 0.15 + hash2(i, 143) * H * 0.7 + Math.sin(t * 0.02 + i) * 10;
-    ctx.fillStyle = 'hsla(' + (150 + hash2(i, 145) * 160) + ',100%,75%,' + (0.25 + 0.35 * Math.sin(t * 0.09 + i)) + ')';
+    ctx.fillStyle = 'hsla(' + (150 + hash2(i, 145) * 160) + ',100%,75%,' + (0.25 + 0.35 * Math.sin(t * 0.09 + i)) * caveEdgeFade(C, x, y) + ')';
     ctx.fillRect(x, y, 2, 2);
+  }
+  ctx.restore();
+}
+
+// ---- webs: an orb web stretched from the ceiling to the floor (logic in cave.js) ----
+function caveWebGeom(wb, C) {
+  const sx = wb.wx - C.scroll;
+  const c = caveCeilAt(wb.wx), f = caveFloorAt(wb.wx);
+  const hx = sx + (hash2(wb.seed, 1) - 0.5) * 10;
+  const hy = (c + f) / 2 + (hash2(wb.seed, 2) - 0.5) * (f - c) * 0.25;
+  const half = 30 + hash2(wb.seed, 3) * 10;
+  const ends = [];
+  const N = 13;
+  for (let i = 0; i < N; i++) {
+    const a = (i / N) * Math.PI * 2 + (hash2(wb.seed, 10 + i) - 0.5) * 0.35;
+    const dx = Math.cos(a), dy = Math.sin(a);
+    const tx = dx > 0.001 ? (sx + half - hx) / dx : (dx < -0.001 ? (sx - half - hx) / dx : 1e9);
+    const ty = dy > 0 ? (f + 5 - hy) / dy : (c - 5 - hy) / dy;
+    const tm = Math.min(tx, ty);
+    ends.push({ x: hx + dx * tm, y: hy + dy * tm });
+  }
+  return { sx, c, f, hx, hy, half, ends };
+}
+// pass 'strands' draws the silk (in the lit scene); pass 'glow' draws dew glints, embers and fire over the dark
+function drawCaveWeb(wb, C, pass) {
+  const G = caveWebGeom(wb, C);
+  if (G.sx < -60 || G.sx > width + 60) return;
+  const t = C.t;
+  const burning = wb.state === 'burning', torn = wb.state === 'torn';
+  const k = burning || torn ? Math.min(1, wb.burnT / WEB_BURN_FRAMES) : 0;
+  if (k >= 1) return;
+  const dmg = 1 - Math.max(0, wb.hp) / WEB_HP;
+  ctx.save();
+  if (torn) ctx.translate(Math.min(30, wb.burnT * 0.8), 0);
+  const ring = (u) => {      // a point u of the way out along each spoke
+    return G.ends.map((e, i) => ({ x: G.hx + (e.x - G.hx) * u, y: G.hy + (e.y - G.hy) * u + (torn ? wb.burnT * wb.burnT * 0.02 * (e.y > G.hy ? 1 : -0.3) : 0) }));
+  };
+  const rings = [];
+  for (let u = 0.12; u < 0.97; u += 0.085) rings.push(ring(u));
+  if (pass === 'strands') {
+    ctx.globalAlpha = 1 - k;
+    ctx.strokeStyle = burning ? 'rgba(255,150,60,0.9)' : 'rgba(215,222,232,' + (0.75 - dmg * 0.3) + ')';
+    ctx.lineWidth = 1;
+    // the frame threads anchoring it to the rock, and the spokes
+    ctx.beginPath();
+    [-1, 1].forEach(sd => {
+      ctx.moveTo(G.sx + sd * G.half, G.c - 4);
+      ctx.quadraticCurveTo(G.sx + sd * (G.half - 8), G.hy, G.sx + sd * G.half, G.f + 4);
+    });
+    G.ends.forEach(e => { ctx.moveTo(G.hx, G.hy); ctx.lineTo(e.x, e.y); });
+    ctx.stroke();
+    // the sticky spiral
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    rings.forEach((pts, ri) => {
+      pts.forEach((p, i) => {
+        const sag = 1.5 + ri * 0.15;
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else { const q = pts[i - 1]; ctx.quadraticCurveTo((p.x + q.x) / 2, (p.y + q.y) / 2 + sag, p.x, p.y); }
+      });
+      const q = pts[pts.length - 1], p = pts[0];
+      ctx.quadraticCurveTo((p.x + q.x) / 2, (p.y + q.y) / 2 + 1.5, p.x, p.y);
+    });
+    ctx.stroke();
+    // where the flames have caught it: blackened, smouldering holes
+    wb.spots.forEach(sp => {
+      ctx.fillStyle = 'rgba(20,10,6,' + Math.min(0.8, sp.t / 10) + ')';
+      ctx.beginPath(); ctx.arc(G.sx, sp.y, 4 + Math.min(10, sp.t * 0.3), 0, Math.PI * 2); ctx.fill();
+    });
+  } else {
+    ctx.globalCompositeOperation = 'lighter';
+    // dew glinting faintly in the dark, so the web can be seen coming
+    if (!burning) {
+      rings.forEach((pts, ri) => pts.forEach((p, i) => {
+        if (hash2(wb.seed + ri, i) > 0.45) return;
+        const tw = 0.5 + 0.5 * Math.sin(t * 0.07 + ri * 1.3 + i * 2.1);
+        ctx.fillStyle = 'rgba(190,220,255,' + (0.18 + 0.32 * tw) * (1 - k) * (1 - dmg * 0.5) + ')';
+        ctx.fillRect(p.x - 0.8, p.y - 0.8, 1.6, 1.6);
+      }));
+    }
+    // fire: glowing where it is catching, and racing through it once it goes up
+    wb.spots.forEach(sp => {
+      const a = Math.max(0, 1 - sp.t / 70);
+      const g = ctx.createRadialGradient(G.sx, sp.y, 0, G.sx, sp.y, 26);
+      g.addColorStop(0, 'rgba(255,150,50,' + 0.6 * a + ')');
+      g.addColorStop(1, 'rgba(255,80,20,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(G.sx - 26, sp.y - 26, 52, 52);
+    });
+    if (burning) {
+      const a = 1 - k;
+      for (let y = G.c; y < G.f; y += 22) {
+        const fx = G.sx + Math.sin(y * 0.1 + t * 0.3) * 10;
+        drawFlame(fx, y + 10, 10 * a + 4, 22 * a + 6, y * 0.05 + wb.seed, a);
+      }
+    }
+  }
+  ctx.restore();
+}
+
+// ---- cave spiders (logic in cave.js) ----
+// pass 'body' draws the spider (lit only by the light); pass 'eyes' draws its glowing red eyes over the dark
+function drawCaveSpider(sp, C, pass) {
+  const sx = sp.wx - C.scroll;
+  if (sx < -50 || sx > width + 50) return;
+  const r = sp.r, t = sp.legT;
+  ctx.save();
+  ctx.translate(sx, sp.y);
+  if (sp.surf === 'top' && sp.state !== 'dead') ctx.scale(1, -1);    // hanging upside down from the ceiling
+  ctx.rotate(sp.rot);
+  const faceX = sp.state === 'leap' ? -1 : (sp.dir < 0 ? -1 : 1);
+  if (pass === 'body') {
+    const leaping = sp.state === 'leap', dead = sp.state === 'dead';
+    // eight jointed legs
+    ctx.strokeStyle = '#1a120d';
+    ctx.lineCap = 'round';
+    for (let i = 0; i < 8; i++) {
+      const side = i < 4 ? -1 : 1, j = i % 4;
+      const hipX = (j - 1.5) * r * 0.22, hipY = side * r * 0.05;
+      const step = sp.moving && !leaping && !dead ? Math.sin(t * 0.45 + j * 1.6 + (side > 0 ? Math.PI : 0)) * r * 0.25 : 0;
+      let footX = (j - 1.5) * r * 0.75 + step + (j < 2 ? -1 : 1) * r * 0.35;
+      let footY = r * 0.75 + (side > 0 ? 0 : -r * 0.1);
+      let kneeX = hipX + (footX - hipX) * 0.55, kneeY = -r * 0.55;
+      if (leaping) { footX *= 1.5; footY = r * 0.35 + (j % 2) * r * 0.2; kneeY = -r * 0.25; kneeX = hipX + (footX - hipX) * 0.5; }
+      if (dead) { footX *= 0.25; footY = -r * 0.3; kneeX = hipX + (footX - hipX) * 0.5 + (j < 2 ? -1 : 1) * r * 0.25; kneeY = -r * 0.5; }
+      ctx.lineWidth = Math.max(1.5, r * 0.14);
+      ctx.beginPath();
+      ctx.moveTo(hipX, hipY);
+      ctx.lineTo(kneeX, kneeY);
+      ctx.lineTo(footX, footY);
+      ctx.stroke();
+    }
+    // abdomen behind, head in front
+    ctx.fillStyle = '#20150f';
+    ctx.beginPath(); ctx.ellipse(-faceX * r * 0.55, -r * 0.1, r * 0.75, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6b1d14';          // a dull red marking
+    ctx.beginPath(); ctx.ellipse(-faceX * r * 0.6, -r * 0.25, r * 0.22, r * 0.12, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2a1c14';
+    ctx.beginPath(); ctx.ellipse(faceX * r * 0.3, 0, r * 0.42, r * 0.36, 0, 0, Math.PI * 2); ctx.fill();
+    // bristles
+    ctx.fillStyle = '#4a3527';
+    for (let k = 0; k < 6; k++) ctx.fillRect(-faceX * r * (0.2 + k * 0.17), -r * 0.62 + Math.abs(k - 2.5) * r * 0.06, 1.5, 2.5);
+    // fangs
+    ctx.fillStyle = '#c9c0a8';
+    ctx.fillRect(faceX * r * 0.62, r * 0.12, 2, r * 0.25);
+    ctx.fillRect(faceX * r * 0.52, r * 0.16, 2, r * 0.22);
+  } else if (sp.state !== 'dead') {
+    ctx.globalCompositeOperation = 'lighter';
+    const ex = faceX * r * 0.48, ey = -r * 0.12;
+    const g = ctx.createRadialGradient(ex, ey, 0, ex, ey, r * 1.1);
+    g.addColorStop(0, 'rgba(255,40,30,0.35)');
+    g.addColorStop(1, 'rgba(255,0,0,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(ex - r * 1.1, ey - r * 1.1, r * 2.2, r * 2.2);
+    const blink = (Math.floor(t / 7) + sp.seed) % 37 === 0 ? 0.2 : 1;
+    ctx.fillStyle = 'rgba(255,70,50,' + blink + ')';
+    [[0, 0], [0.12, -0.12], [0.12, 0.12], [-0.1, -0.16], [-0.1, 0.16], [0.24, 0], [-0.2, -0.05], [-0.2, 0.08]].forEach(([ox, oy], i) => {
+      const s = i < 3 ? 2.4 : 1.6;
+      ctx.fillRect(ex + faceX * ox * r - s / 2, ey + oy * r - s / 2, s, s);
+    });
   }
   ctx.restore();
 }
@@ -14829,6 +15444,8 @@ function drawCaveScene() {
     ctx.stroke();
   });
   C.torches.forEach(drawCaveTorch);
+  (C.webs || []).forEach(wb => drawCaveWeb(wb, C, 'strands'));
+  (C.spiders || []).forEach(sp => drawCaveSpider(sp, C, 'body'));
 
   // Cyndraxx, his flames and sparks (floating score texts are held back and drawn over the darkness)
   drawDragon(dragon.x, dragon.y);
@@ -14855,6 +15472,15 @@ function drawCaveScene() {
   };
   light(dragon.x + 6, dragon.y, 78, 0.9);                       // his own faint glow
   flames.forEach(f => light(f.x, f.y, 70 + f.size * 2.2, Math.min(1, f.life / 60)));
+  (C.webs || []).forEach(wb => {        // a web lights up as it burns
+    const sx = wb.wx - C.scroll;
+    wb.spots.forEach(sp => light(sx, sp.y, 46, 0.7 * Math.max(0, 1 - sp.t / 70)));
+    if (wb.state === 'burning') {
+      const a = Math.max(0, 1 - wb.burnT / WEB_BURN_FRAMES);
+      const c = caveCeilAt(wb.wx), f = caveFloorAt(wb.wx);
+      for (let y = c + 20; y < f; y += 40) light(sx, y, 70, 0.85 * a);
+    }
+  });
   C.torches.forEach(tc => {
     const h = caveTorchHead(tc);
     if (!tc.lit) {   // the smouldering ember shows a hint of the torch in the dark
@@ -14878,6 +15504,8 @@ function drawCaveScene() {
   drawCaveDepth(C);
   drawCaveLife(C);
   ctx.restore();
+  (C.webs || []).forEach(wb => drawCaveWeb(wb, C, 'glow'));
+  (C.spiders || []).forEach(sp => drawCaveSpider(sp, C, 'eyes'));
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
     const ft = floatingTexts[i];
     ctx.save();
@@ -15533,6 +16161,12 @@ function drawSurfaceScene() {
 
       if (cathCinematic()) {      // inside the cathedral (cathedral.js / render-cathedral.js)
         drawCathedralScene();
+        ctx.restore();
+        ctx.textAlign = 'left';
+        return;
+      }
+      if (bossFallStory()) {      // the storybook picture of the arrow striking him (boss-fall.js)
+        drawBossFallStory();
         ctx.restore();
         ctx.textAlign = 'left';
         return;
