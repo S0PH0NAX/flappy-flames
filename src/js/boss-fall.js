@@ -1,7 +1,7 @@
 // boss-fall.js — The siege tower boss's ending (state 'BOSS_FALL'): the burned-out tower stops, the ground
 // gives way and it sinks, burning, into a huge pit. A lone archer climbs out of the turret and fires an arrow
 // trailing a chain; it pierces Cyndraxx's heart and the chain drags him down into the pit after the tower.
-// He falls through the dark, anchored to the burning tower below, fire and wreckage streaming past, while
+// He falls through the dark, chained to the burning tower below as it breaks apart, fire and wreckage streaming past, while
 // glowing mushrooms and jellyfish-like creatures slowly appear. He lands on the cavern floor among the burning
 // wreckage, bleeding, thinks of Sarai and fades to black, then wakes, and Brown Jenkins (a possum with a human
 // face and hands) offers to save him for Nyarlathotep's price: ACCEPT (healed, +1 heart container, the debt
@@ -11,7 +11,7 @@
 const BF_ARCHER_AT = 170;        // the lone archer climbs out of the turret
 const BF_DRAW_AT = 205;          // ...draws his bow
 const BF_FIRE_AT = 245;          // ...and fires
-const BF_SKIP_AFTER = 240;       // taps can skip once this much has played (so fire-button taps at the kill don't)
+const BF_CAVE_SKIP_AFTER = 60;   // the collapse and drag can't be skipped; the cavern fall can, after this many frames of it
 
 let bossFall = null;
 
@@ -173,7 +173,7 @@ function updateBossFall() {
       B.fade = Math.min(1, B.fade + 1 / 30);
       if (B.fade >= 1) {
         B.phase = 'cavern';
-        B.cave = { t: 0, fall: 0, bio: 0, stream: [] };
+        B.cave = { t: 0, fall: 0, bio: 0, stream: [], cells: bfTowerCells(), pieces: [] };
         dragon.wingState = 0;
       }
     }
@@ -187,6 +187,57 @@ function updateBossFall() {
 const BF_FALL_LEN = 600;         // frames of the fall
 const BF_IMPACT_LEN = 80;        // the tower hits the cavern floor, then Cyndraxx does
 const BF_TOWER_SCALE = 0.6;      // the tower is drawn a little smaller in the cavern
+
+// The tower breaks apart on the way down: it is cut into a grid of blocks (tower coordinates, turret roof
+// at y = 0) that tear loose one by one and drift up past him. The block holding the chain's anchor ring
+// never breaks off, so he is always visibly chained to what is left of the tower.
+const BF_BREAK_FIRST = 70;       // cavern frame of the first break
+const BF_BREAK_LAST = BF_FALL_LEN - 70;
+const BF_PIECE_LIFE = 150;
+function bfAnchorLocal() {       // the iron ring on the turret roof the chain is fastened to
+  const g = bossGeom();
+  return { x: bossFall.bx + g.bw * 0.22, y: -10 };
+}
+function bfTowerCells() {
+  const g = bossGeom(), bx = bossFall.bx;
+  const xs = [bx - g.over - 50, bx + g.bw * 0.36, bx + g.bw * 0.68, bx + g.bw + g.over + 50];
+  const ys = [-160, g.turretH, (g.turretH + g.baseTop) / 2, g.deckTop - 8, g.gY + 16];
+  const an = bfAnchorLocal();
+  const cells = [];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) {
+    const cell = { x: xs[c], y: ys[r], w: xs[c + 1] - xs[c], h: ys[r + 1] - ys[r], r: r, c: c, loose: false };
+    cell.anchor = an.x >= cell.x && an.x < cell.x + cell.w && an.y >= cell.y && an.y < cell.y + cell.h;
+    cells.push(cell);
+  }
+  // break order: the wheels and deck first, working up; the anchor block never goes
+  const order = cells.filter(k => !k.anchor).sort((a, b) => (b.r - a.r) || (hash2(a.c, a.r * 7 + 3) - hash2(b.c, b.r * 7 + 3)));
+  order.forEach((k, i) => { k.breakAt = Math.round(BF_BREAK_FIRST + (BF_BREAK_LAST - BF_BREAK_FIRST) * i / Math.max(1, order.length - 1)); });
+  return cells;
+}
+function updateBfPieces(B, X) {
+  const C = B.cave;
+  C.cells.forEach(k => {
+    if (k.loose || k.breakAt === undefined || C.t !== k.breakAt) return;
+    k.loose = true;
+    const away = k.c === 1 ? (hash2(k.r, 5) < 0.5 ? -1 : 1) : (k.c === 0 ? -1 : 1);
+    C.pieces.push({ cell: k, dx: 0, dy: 0, vx: away * (0.6 + Math.random() * 1.4), vy: -0.5 - Math.random(), rot: 0, vr: away * (0.01 + Math.random() * 0.025), age: 0 });
+    B.shake = Math.max(B.shake, 3);
+    if (k.r === 3 || k.r === 0) sound.towerDestroy(); else sound.knightHit();
+    // a burst of embers and fire where it tore loose
+    const p = bfCavernToScreen(X, k.x + k.w / 2, k.y + k.h / 2);
+    for (let i = 0; i < 14; i++) {
+      C.stream.push({ k: i % 4 ? 'ember' : 'flame', x: p.x + (Math.random() - 0.5) * k.w * X.sc, y: p.y + (Math.random() - 0.5) * k.h * X.sc,
+        vx: (Math.random() - 0.5) * 4, vy: -2 - Math.random() * 5, s: i % 4 ? 2 : 10 + Math.random() * 10, life: 50 });
+    }
+  });
+  for (let i = C.pieces.length - 1; i >= 0; i--) {
+    const p = C.pieces[i];
+    p.age++;
+    p.vy -= 0.11;                // it falls slower than the tower, so it drifts up past him
+    p.dx += p.vx; p.dy += p.vy; p.rot += p.vr;
+    if (p.age > BF_PIECE_LIFE) C.pieces.splice(i, 1);
+  }
+}
 
 function bfCavernDragonSpot(t) {
   return { x: width * 0.5 + Math.sin(t * 0.017) * 22, y: height * 0.27 + Math.sin(t * 0.03) * 8 };
@@ -202,6 +253,7 @@ function updateBfCavern(B) {
   B.drot = Math.sin(C.t * 0.02) * 0.25 + 0.35;
   if (C.t % 130 === 70 && C.bio > 0.2) sound.magicShimmer(0.9, 0.12 * C.bio);
   const spot = bfCavernDragonSpot(C.t);
+  if (C.cells) updateBfPieces(B, bfCavernTowerXform(bfCavernDragonSpot(Math.min(C.t, BF_FALL_LEN)), C.t));
   // fire, embers, burning timbers and stones streaming up past him from the tower below
   if (falling) {
     const tx = spot.x, ty = spot.y + 120;
@@ -368,8 +420,9 @@ function bossFallTap(x, y) {
   const B = bossFall;
   if (!B) return;
   if (B.phase !== 'floor') {
-    // after a few seconds, a tap skips the collapse and the fall (straight to the cavern floor)
-    if (B.t >= BF_SKIP_AFTER) startBfFloor(B);
+    // the collapse, the chain arrow and the drag can't be skipped; once he's falling through the
+    // cavern, a tap (after a short guard, so stray taps don't) skips straight to the cavern floor
+    if (B.phase === 'cavern' && B.cave && B.cave.t >= BF_CAVE_SKIP_AFTER) startBfFloor(B);
     return;
   }
   const F = B.floor, s = bfStep();
@@ -620,7 +673,7 @@ function drawBossFallScene() {
 }
 
 // ---- the cavern ----
-const BF_JELLIES = 11;
+const BF_JELLIES = 5;
 const BF_PATTERN_LEN = 300;     // frames per neon pattern (wave, chase, rainbow)
 
 function bfNeon(i, y, t) {
@@ -880,6 +933,29 @@ function drawBossFallCavern() {
 
   // the tower (until it smashes into the floor)
   const smash = Math.min(1, impact / 26);
+  const g = bossGeom();
+  const cells = C.cells || [];
+  const towerFlames = [];
+  for (let i = 0; i < 7; i++) towerFlames.push({ x: B.bx + g.bw * (0.1 + i * 0.13), y: g.turretH * (0.3 + (i % 3) * 0.6), w: 34, h: 64 + (i % 3) * 16, seed: i * 1.7 });
+  const inCell = (k, x, y) => x >= k.x && x < k.x + k.w && y >= k.y && y < k.y + k.h;
+  bossState.x = B.bx;
+  // pieces that have torn loose, tumbling and drifting up past him, fading into the dark
+  (C.pieces || []).forEach(p => {
+    const k = p.cell, kx = k.x + k.w / 2, ky = k.y + k.h / 2;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, (BF_PIECE_LIFE - p.age) / 50));
+    ctx.translate(X.tx, X.ty);
+    ctx.rotate(X.rot);
+    ctx.scale(X.sc, X.sc);
+    ctx.translate(-X.cx + kx + p.dx, ky + p.dy);   // tower coordinates, moved and turned about the block's middle
+    ctx.rotate(p.rot);
+    ctx.translate(-kx, -ky);
+    ctx.beginPath(); ctx.rect(k.x, k.y, k.w, k.h); ctx.clip();
+    renderBoss();
+    drawFlame(kx, ky, 30, 50, k.r * 3 + k.c, 0.9);
+    ctx.restore();
+  });
+  // what is still in one piece (until it smashes into the floor)
   if (smash < 1) {
     ctx.save();
     ctx.globalAlpha = 1 - smash;
@@ -887,14 +963,27 @@ function drawBossFallCavern() {
     ctx.rotate(X.rot);
     ctx.scale(X.sc, X.sc * (1 - smash * 0.6));
     ctx.translate(-X.cx, 0);
-    bossState.x = B.bx;
-    renderBoss();
-    const g = bossGeom();
-    for (let i = 0; i < 7; i++) {
-      drawFlame(B.bx + g.bw * (0.1 + i * 0.13), g.turretH * (0.3 + (i % 3) * 0.6), 34, 64 + (i % 3) * 16, i * 1.7);
+    ctx.save();
+    if (cells.length) {
+      ctx.beginPath();
+      cells.forEach(k => { if (!k.loose) ctx.rect(k.x, k.y, k.w, k.h); });
+      ctx.clip();
     }
-    const a = bfArcherPos();
-    bossArcherSprite(a.x, 0, 'ready', t * 0.1, 1.5, 1);     // the archer clinging to the roof
+    renderBoss();
+    ctx.restore();
+    towerFlames.forEach(f => {
+      if (cells.some(k => !k.loose && inCell(k, f.x, f.y))) drawFlame(f.x, f.y, f.w, f.h, f.seed);
+    });
+    // the iron ring bolted to the turret roof that the chain is fastened to
+    const an = bfAnchorLocal();
+    ctx.fillStyle = '#1c1f24';
+    ctx.fillRect(an.x - 15, an.y + 8, 30, 9);
+    ctx.fillStyle = '#7f8790';
+    ctx.fillRect(an.x - 12, an.y + 10, 3, 3); ctx.fillRect(an.x + 9, an.y + 10, 3, 3);   // bolt heads
+    ctx.strokeStyle = '#2a2d33'; ctx.lineWidth = 7;
+    ctx.beginPath(); ctx.arc(an.x, an.y, 10, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = '#b8c0c8'; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(an.x, an.y, 10, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
 
@@ -921,8 +1010,9 @@ function drawBossFallCavern() {
   const rot = B.drot || 0;
   const c = bfChest();
   if (smash < 1) {
-    const hand = bfCavernToScreen(X, bfArcherPos().x - 11, -20);
-    drawChainLinks(c.x, c.y, hand.x, hand.y, 3);
+    const an = bfAnchorLocal();
+    const ring = bfCavernToScreen(X, an.x, an.y);
+    drawChainLinks(c.x, c.y, ring.x, ring.y, 3);
   }
   if (t % 70 < 2) dragon.wingState = 0.5;
   drawDragon(dragonX, dragonY, rot);

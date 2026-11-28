@@ -62,9 +62,12 @@ function caveMid(wx) {
 function caveCeilAt(wx) { return Math.max(16, caveMid(wx) - caveGap(wx) / 2 + (caveNoise(wx / 34, 17) - 0.5) * 16); }
 function caveFloorAt(wx) { return Math.min(height - 16, caveMid(wx) + caveGap(wx) / 2 + (caveNoise(wx / 34, 19) - 0.5) * 16); }
 
-// where a torch's flame burns: hanging from the ceiling or standing on the floor
+// where a torch's flame burns: hanging from the ceiling, standing on the floor, or swinging on a long
+// chain in the middle of the tunnel (tc.kind 'top', 'floor' or 'mid')
 function caveTorchHead(tc) {
-  return tc.top ? { x: tc.wx - cave.scroll, y: caveCeilAt(tc.wx) + 26 } : { x: tc.wx - cave.scroll, y: caveFloorAt(tc.wx) - 28 };
+  const x = tc.wx - cave.scroll;
+  if (tc.kind === 'mid') return { x: x + Math.sin(cave.t * 0.025 + tc.wx) * 6, y: caveMid(tc.wx) + (hash2(Math.floor(tc.wx), 11) - 0.5) * caveGap(tc.wx) * 0.3 };
+  return tc.kind === 'top' ? { x: x, y: caveCeilAt(tc.wx) + 26 } : { x: x, y: caveFloorAt(tc.wx) - 28 };
 }
 
 function updateCave() {
@@ -127,7 +130,8 @@ function updateCave() {
     if (f.y < caveCeilAt(wx) || f.y > caveFloorAt(wx)) { f.life = Math.min(f.life, 5); f.vx *= 0.4; }
   });
   while (C.nextTorch < C.scroll + width + 120) {
-    C.torches.push({ wx: C.nextTorch, top: hash2(Math.floor(C.nextTorch), 7) < 0.5, lit: false, litT: 0 });
+    const kr = hash2(Math.floor(C.nextTorch), 7);
+    C.torches.push({ wx: C.nextTorch, kind: kr < 0.36 ? 'top' : (kr < 0.72 ? 'floor' : 'mid'), lit: false, litT: 0 });
     C.nextTorch += (caveLevel === 2 ? 460 : 380) + hash2(Math.floor(C.nextTorch), 9) * 340;
   }
   C.torches.forEach(tc => {
